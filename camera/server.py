@@ -3,6 +3,7 @@ from labrad.server import LabradServer
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet import reactor, task
 import cv2
+import numpy as np
 
 from labrad.server import setting
 from vimba import *
@@ -13,9 +14,8 @@ class CameraServer(LabradServer):
 
     name = 'zuko_camera'
     this_camera = None
+    align_path = 'K:/data/align.png'
 
-    def sleep(self, delay):
-        return task.deferLater(reactor, delay, lambda: None)
 
     @setting(0)
     def init_camera(self, c):
@@ -33,17 +33,20 @@ class CameraServer(LabradServer):
 
     @setting(1)
     def get_frame(self, c, camera_save_path):
-        print(camera_save_path)
         with Vimba.get_instance() as vimba:
             cam = self.this_camera
             with cam:
                 frame = cam.get_frame(5000)
-                print('Frame acquired')#: {}'.format(frame), flush=True)
+                print('Frame acquired: ' + camera_save_path)
                 cv2.imwrite(camera_save_path, frame.as_opencv_image())
-      
+              
+
     @setting(2)
     def say_hello(self, c):
         print('hizukohere')
+
+
+    
 
 
 # create an instance of our server class
