@@ -1,1 +1,1 @@
-{"data_recorder": null, "fake_clock_aom": 4, "sequencer.previous_sequence": ["blue_TOF"], "RecordPath": null, "timestamp": 1610836861.184782, "*t1": null, "sequencer.T1": 4, "sequencer.t1": 0.02, "sequencer.sequence": ["blue_TOF"], "record_path": null}
+{"data_recorder": null, "fake_clock_aom": 4, "sequencer.previous_sequence": ["constant_blue_align"], "RecordPath": null, "timestamp": 1610907302.918458, "*t1": null, "sequencer.T1": 4, "sequencer.t1": 0.02, "sequencer.sequence": ["constant_blue_align"], "record_path": null}
