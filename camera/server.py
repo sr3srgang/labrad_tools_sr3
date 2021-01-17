@@ -14,7 +14,6 @@ class CameraServer(LabradServer):
 
     name = 'zuko_camera'
     this_camera = None
-    align_path = 'K:/data/align.png'
 
 
     @setting(0)
