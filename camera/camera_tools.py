@@ -81,7 +81,7 @@ def live_plot_ROI(img, background_file = None):
     
 
 n_show = 30
-ROI_start = (400, 50)
-ROI_end = (1000, 800) 
+ROI_start = (500, 200)
+ROI_end = (900, 800) 
 live_data = np.full(n_show, None)
     
