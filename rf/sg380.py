@@ -24,6 +24,7 @@ class SG380(object):
     
     @frequency.setter
     def frequency(self, frequency):
+        print(self._frequency_range)
         if frequency < min(self._frequency_range) or frequency > max(self._frequency_range):
             raise FrequencyOutOfBoundsError(frequency)
         print frequency
