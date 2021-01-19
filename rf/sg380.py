@@ -31,7 +31,15 @@ class SG380(object):
         print frequency
         command = 'FREQ {}'.format(frequency)
         self._inst.write(command)
-    
+
+    def set_frequency(self, frequency):
+        print(self._frequency_range)
+        if frequency < min(self._frequency_range) or frequency > max(self._frequency_range):
+            raise FrequencyOutOfBoundsError(frequency)
+        print frequency
+        command = 'FREQ {}'.format(frequency)
+        self._inst.write(command)
+        
 class SG380Proxy(SG380):
     _vxi11_servername = None
 
