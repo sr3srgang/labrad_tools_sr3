@@ -18,6 +18,7 @@ class SG380(object):
 
     @property
     def frequency(self):
+        print('hi!')
         command = 'FREQ?'
         ans = self._inst.ask(command)
         return float(ans)
