@@ -43,14 +43,5 @@ class SG380Proxy(SG380):
         SG380.__init__(self, **kwargs)
 
 
-""" 
-from rf.devices.sg380 
-class Device(SG380):
-    _vxi11_address = "192.168.1.10"
 
-dev = Device()
-f0 = dev.frequency
-dev.frequency = f0 + 1
-print dev.frequency
-'''
 
