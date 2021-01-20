@@ -8,10 +8,10 @@ class SetRecordPath(ConductorParameter):
     priority = 2
     record_keyword = 'savePictures'
     align_keyword = 'align'
-    data_filename = '{}_mako.png'
+    data_filename = '{}_mako.txt'
     camera_data_path = "K:/data/data"
     data_path = os.path.join(os.getenv('PROJECT_DATA_PATH'), 'data')
-    align_name = 'align.png'
+    align_name = 'align.txt'
 
     def initialize(self, config):
         self.connect_to_labrad()
