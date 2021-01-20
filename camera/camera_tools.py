@@ -20,14 +20,15 @@ def auto_refresh_dir(script, ext = '.txt'):
         try:
             this_dir = get_today_path()
             img = get_most_recent_file(this_dir, ext)
-            script(np.loadtxt(img))
+            script(img)
             cv2.waitKey(1)
-        except (TypeError, SyntaxError, ValueError) as e:
+        except (TypeError, SyntaxError, ValueError, IndexError) as e:
             pass
         except KeyboardInterrupt:
             break
 
-def align_mot(mot_image, background_file = None):
+def align_mot(img, background_file = None):
+    mot_image = np.loadtxt(img)
     if background_file is not None:
         background = imread(background_file)
         mot_image -= background
@@ -35,23 +36,24 @@ def align_mot(mot_image, background_file = None):
     cv2.putText(mot_image, show_text, (200, 150), cv2.FONT_HERSHEY_SIMPLEX, 5, (255, 255, 255), 3) 
     cv2.imshow('align', mot_image)
 
-def extract_ROI(mot_image, background_file = None):
+def extract_ROI(img, background_file = None):
+    mot_image = np.loadtxt(img)
     if background_file is not None:
         background = np.loadtxt(background_file)
         mot_image -= background
     x0, y0 = ROI_start
     xf, yf = ROI_end
-    return mot_image[x0:xf, y0:yf], mot_image
+    return mot_image, mot_image[x0:xf, y0:yf]
 
 def align_mot_ROI(mot_img, background_file = None):
-    ROI, mot_image = extract_ROI(mot_img, background_file)
+    mot_image, ROI = extract_ROI(mot_img, background_file)
     show_text = "{:.2f}*1e+3".format(np.sum(ROI)*1e-3)
     cv2.rectangle(mot_image, ROI_start, ROI_end, (255, 105, 180), 5)
     cv2.putText(mot_image, show_text, (200, 150), cv2.FONT_HERSHEY_SIMPLEX, 5, (0, 0, 0), 3)
     cv2.imshow('align', mot_image)
 
 def live_plot_ROI(mot_img, background_file = None):
-    ROI, mot_image = extract_ROI(mot_img, background_file)
+    mot_image, ROI = extract_ROI(mot_img, background_file)
     empty_data = np.where(live_data == None)
     this_shot = np.sum(ROI)*1e-3
     if len(empty_data[0]) == 0:
