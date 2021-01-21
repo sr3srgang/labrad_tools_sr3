@@ -4,42 +4,51 @@ import matplotlib.pyplot as plt
 from pylab import imread
 from scipy.optimize import curve_fit
 
+most_recent_file_time = 'start'
+
 def get_today_path():
     time_string = time.strftime('%Y%m%d')
     return 'K:/data/data/' + time_string + '/**'
 
-def get_most_recent_file(directory, ext = '.txt'):
+def get_most_recent_file(directory, ext = '.png'):
     files = glob.glob(directory + "/*" + ext, recursive = True)
     try:
         return max(files, key = os.path.getmtime)
     except:
         pass
 
-def auto_refresh_dir(script, ext = '.txt'):
+def auto_refresh_dir(script, ext = '.png'):
     while True:
         try:
             this_dir = get_today_path()
             img = get_most_recent_file(this_dir, ext)
             script(img)
-            cv2.waitKey(1)
+            cv2.waitKey(1000)
         except (TypeError, SyntaxError, ValueError, IndexError) as e:
             pass
         except KeyboardInterrupt:
             break
 
+def test_png(img):
+    mot_image = cv2.imread(img, 0)
+    print('start')
+    print(np.sum(mot_image))
+    img_old = cv2.imread(img)
+    print(np.sum(img_old))
+    
 def align_mot(img, background_file = None):
-    mot_image = np.loadtxt(img)
+    mot_image = cv2.imread(img, 0)
     if background_file is not None:
         background = imread(background_file)
         mot_image -= background
-    show_text = "{:.2f}*1e+4".format(np.sum(mot_image*1e-4))
+    show_text = "{:.2f}*1e+7".format(np.sum(mot_image*1e-7))
     cv2.putText(mot_image, show_text, (200, 150), cv2.FONT_HERSHEY_SIMPLEX, 5, (255, 255, 255), 3) 
     cv2.imshow('align', mot_image)
 
 def extract_ROI(img, background_file = None):
-    mot_image = np.loadtxt(img)
+    mot_image = cv2.imread(img, 0)
     if background_file is not None:
-        background = np.loadtxt(background_file)
+        background = cv2.imread(background_file)
         mot_image -= background
     x0, y0 = ROI_start
     xf, yf = ROI_end
@@ -47,9 +56,9 @@ def extract_ROI(img, background_file = None):
 
 def align_mot_ROI(mot_img, background_file = None):
     mot_image, ROI = extract_ROI(mot_img, background_file)
-    show_text = "{:.2f}*1e+3".format(np.sum(ROI)*1e-3)
+    show_text = "{:.2f}*1e+5".format(np.sum(ROI)*1e-5)
     cv2.rectangle(mot_image, ROI_start, ROI_end, (255, 105, 180), 5)
-    cv2.putText(mot_image, show_text, (200, 150), cv2.FONT_HERSHEY_SIMPLEX, 5, (0, 0, 0), 3)
+    cv2.putText(mot_image, show_text, (200, 150), cv2.FONT_HERSHEY_SIMPLEX, 5, (255, 255, 255), 3)
     cv2.imshow('align', mot_image)
 
 def live_plot_ROI(mot_img, background_file = None):
@@ -73,6 +82,14 @@ def live_plot_ROI(mot_img, background_file = None):
     cv2.imshow('align_plot', img)
     plt.close()
 
+
+def live_plot_ROI_shot(mot_img, background_file = None):
+    global most_recent_file_time
+    this_time = os.path.getatime(mot_img)
+    if not(this_time == most_recent_file_time):
+        live_plot_ROI(mot_img, background_file = None)
+        most_recent_file_time = this_time
+    
 def gaussian_2D(x, y, A, x0, y0, sigma_x, sigma_y, p, offset):
     exp_val = ((sigma_y*(x - x0))**2 - 2*p*sigma_x*sigma_y*(x - x0)*(y - y0) + (sigma_x*(y - y0))**2)/((1 - p**2)*(sigma_x*sigma_y)**2)
     N = 2*np.pi*np.sqrt(1 - p**2)*sigma_x*sigma_y
@@ -143,10 +160,11 @@ def gaussian_1D(x, A, x0, sigma_x, offset):
     N =(sigma_x * np.sqrt(2 * np.pi))
     return A* np.exp(-(x - x0)**2/(2 * sigma_x)**2)/N + offset
 
-def fast_fit_gaussian(mot_image):
+def fast_fit_gaussian(mot_img):
     '''
     Fit x, y axes independently, binning along each axis. From Toby's script
     '''
+    mot_image = cv2.imread(mot_img, 0)
     y_data = np.sum(mot_image, axis = 1)
     x_data = np.sum(mot_image, axis = 0)
     y_pix, x_pix = mot_image.shape
@@ -176,7 +194,7 @@ def fast_fit_gaussian(mot_image):
         y0_plot = int((y_vals[1] + 1)*y_pix/2)
         sigma_x_plot = int(x_vals[2]*x_pix/2)
         sigma_y_plot = int(y_vals[2]*y_pix/2)
-        show_text = "{:.2f}*1e+3".format(np.sum(mot_image[in_ellipse]*1e-3))
+        show_text = "{:.2f}*1e+6".format(np.sum(mot_image[in_ellipse]*1e-6))
         cv2.ellipse(mot_image, (x0_plot, y0_plot), (sigma_x_plot*2, sigma_y_plot*2), 0, 0, 360,(255, 105, 180), 5)
 
     except RuntimeError:
@@ -186,12 +204,12 @@ def fast_fit_gaussian(mot_image):
         cv2.putText(mot_image, show_text, (50, 850), cv2.FONT_HERSHEY_SIMPLEX, 5, (255, 255, 255), 3) 
         cv2.imshow('gaussian', mot_image)
     
-    
-    
+
+
 
 n_show = 30
-ROI_start = (500, 200)
-ROI_end = (600, 800) 
+ROI_start = (300, 200)
+ROI_end = (600, 500) 
 
 #ROI_start = (0, 0)
 #sROI_end = (1200, 1200) 
