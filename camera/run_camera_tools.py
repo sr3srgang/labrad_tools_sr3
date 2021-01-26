@@ -6,7 +6,7 @@ def together(img):
    # align_mot(img)
     align_mot_ROI(img)
     live_plot_ROI_shot(img)
-    #fast_fit_gaussian(img)
-
+   # fast_fit_gaussian(img)
+    #fit_gaussian_2D(img, show_plot = True)
 most_recent_file = None
 auto_refresh_dir(together, ext = '.png')
