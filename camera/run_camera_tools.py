@@ -1,15 +1,12 @@
 from camera_tools import *
-import cv2
 
-test_img = 'K:/images/1_14_TOF_2/cam_img_01_14_2021_13_50_54_114654.png'
-background = 'K:/images/1_14_TOF_2/cam_img_01_14_2021_13_50_56_787585.png'
-#fit_gaussian_2D(test_img, background_file = background, show_plot = True, c_max = 1)
-#cv2.waitKey(0)#print(vals)
+test_file = 'K:/images/1_14_TOF_2/cam_img_01_14_2021_13_51_51_248690.png'
 
-#auto_refresh_dir(fast_fit_gaussian)
-def combined(img):
+def together(img):
+   # align_mot(img)
     align_mot_ROI(img)
-    fast_fit_gaussian(img)
-    live_plot_ROI(img)    
-
-auto_refresh_dir(combined)
+    live_plot_ROI_shot(img)
+   # fast_fit_gaussian(img)
+    #fit_gaussian_2D(img, show_plot = True)
+most_recent_file = None
+auto_refresh_dir(together, ext = '.png')

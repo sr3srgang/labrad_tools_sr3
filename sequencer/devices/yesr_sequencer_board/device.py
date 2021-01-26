@@ -25,7 +25,7 @@ class YeSrSequencerBoard(DefaultDevice):
     sequence_pipe = 0x80
     clk = 50e6 # [Hz]
     
-    sequence_directory = '/home/srgang/K/data/sequences/{}/'
+    sequence_directory = '/home/srgang/data/sequences/{}/'
     subsequence_names = None
     sequence = None
     raw_sequene = None

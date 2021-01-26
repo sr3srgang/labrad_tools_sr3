@@ -37,9 +37,10 @@ class CameraServer(LabradServer):
             with cam:
                 frame = cam.get_frame(5000)
                 print('Frame acquired: ' + camera_save_path)
+                img = frame.as_opencv_image()[:,:, 0]
+                print(np.sum(img))
                 cv2.imwrite(camera_save_path, frame.as_opencv_image())
-              
-
+                #np.savetxt(camera_save_path, img)
     @setting(2)
     def say_hello(self, c):
         print('hizukohere')
