@@ -17,6 +17,7 @@ class SetRecordPath(ConductorParameter):
 
     def initialize(self, config):
         self.connect_to_labrad()
+        print(self.cxn)
         self.cxn.zuko_camera.init_camera()
 
     def do_absorption_imaging(self, path):
@@ -37,6 +38,7 @@ class SetRecordPath(ConductorParameter):
                 rel_point_path = os.path.join(self.camera_data_path, experiment_name, point_filename)
                 #check if directory already exists; if not, make it
                 experiment_directory = os.path.join(self.data_path, experiment_name)
+                print(experiment_directory)
                 if not os.path.isdir(experiment_directory):
                     os.makedirs(experiment_directory) 
                 if self.absorption_keyword in str(sequence.value):
