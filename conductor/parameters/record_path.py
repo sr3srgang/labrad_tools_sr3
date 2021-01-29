@@ -11,7 +11,7 @@ class SetRecordPath(ConductorParameter):
     fluorescence_keyword = 'fluor'
     absorption_keyword = 'absorption'
     data_filename = '{}_mako'
-    camera_data_path = 'C:/Users/srgang/data/images'#"K:/data/data"
+    camera_data_path = "K:/data/data"
     data_path = os.path.join(os.getenv('PROJECT_DATA_PATH'), 'data')
     align_name = 'align'
 
