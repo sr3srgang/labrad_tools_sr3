@@ -2,8 +2,10 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+import pylab
+from matplotlib.ticker import NullFormatter
 
-path_to_data = 'home/srgang/K/data/data'
+path_to_data = '/home/srgang/K/data/data'
 
 def bin_reps(data_folder, first_file, n_reps, per_rep, global_path = False):
     '''
@@ -27,39 +29,99 @@ def gaussian_2D(x, y, A, x0, y0, sigma_x, sigma_y, p, offset):
 def fit_gaussian_form(X, A, x0, y0, sigma_x, sigma_y, p, offset):
     x, y = X
     return gaussian_2D(x, y, A, x0, y0, sigma_x, sigma_y, p, offset).flatten() 
+    
 
-def fit_gaussian_2D_real(mot_img, background_file = None, p0 = [.53, 0, .4, .5, .7, .005, 0], show_plot = False, show_guess = False):
-    mot_image = imread(mot_img)
+def visualize_mot_image(mot_array, show_plot = True, c_max = 200, ylim = 20e+3, xlim = 30e+3):
+    #From example here: https://matplotlib.org/examples/pylab_examples/scatter_hist.html
+    nullfmt = NullFormatter()
+    
+    y_len, x_len = mot_array.shape
+    
+    left, width = .1, .65
+    bottom, height = .1, .65
+    left_h = left + width + .02
+    bottom_h = left + height + .02
+    
+    rect_imshow = [left, bottom, width, height]
+    rect_histx = [left, bottom_h, width, .1]
+    rect_histy = [left_h, bottom, .15, height]
+    
+    fig = plt.figure(1, figsize=(8, 8*y_len/x_len))
+    fig.patch.set_facecolor('k')
+    
+    axImshow = plt.axes(rect_imshow)
+    axHistx = plt.axes(rect_histx)
+    axHisty = plt.axes(rect_histy)
+    
+    #turn off labels
+    axHistx.xaxis.set_major_formatter(nullfmt)
+    axHisty.yaxis.set_major_formatter(nullfmt)
+    axHistx.set_facecolor('k')
+    axHisty.set_facecolor('k')
+    
+    #center imshow:
+    im = axImshow.imshow(mot_array, cmap = 'magma', origin = 'lower', aspect = 'equal')
+    axImshow.tick_params(color='white', labelcolor='white', labelsize=20)
+    im.set_clim(0, c_max)
+    #side histograms:
+    xs = np.sum(mot_array, axis = 0)
+    ys = np.sum(mot_array, axis = 1)
+    axHistx.plot(xs, 'white')
+    axHistx.set_xlim(axImshow.get_xlim())
+    axHistx.set_ylim(0, ylim)
+    axHisty.plot(ys, np.arange(len(ys)), 'white')
+    axHisty.set_ylim(axImshow.get_ylim())
+    axHisty.set_xlim(0, xlim)
+    
+    if show_plot:
+    	plt.show()
+    	
+    return axImshow
+    
+    
+    
+
+def fit_gaussian_2D_real(mot_img, background_file = None, show_plot = False, show_guess = False):
+    mot_image = cv2.imread(mot_img, 0).T.astype(np.int16)
     
     if background_file is not None:
-        background = imread(background_file)
+        background = cv2.imread(background_file, 0).T.astype(np.int16)
         mot_image -= background
-    #mot_image = mot_image[:, :, 2] #extracting "blue" channel of png (though I think RGB all identical for this camera)
-
+	
     y_pix, x_pix = mot_image.shape
-    print(y_pix)
     y_grid = np.linspace(0, y_pix, y_pix)
     x_grid = np.linspace(0, x_pix, x_pix)
     x, y = np.meshgrid(x_grid, y_grid)
     
+    x0_guess = np.argmax(np.sum(mot_image, axis = 0))
+    y0_guess = np.argmax(np.sum(mot_image, axis = 1))
+    A_guess = mot_image[y0_guess, x0_guess]
+    p0 = [A_guess, x0_guess, y0_guess, 100, 100, -.2, 0]
     if show_guess:
         plt.figure()
-        plt.imshow(mot_image, cmap = 'magma')
-        plt.contour(gaussian_2D(x, y, *p0), cmap = 'gray')
-    vals, pcov = curve_fit(fit_gaussian_form, (x, y), mot_image.flatten(), p0)
-
-    #clear_output(wait=True)
-    if show_plot:
-        plt.figure()
-        plt.imshow(mot_image, cmap = 'magma')
-        if c_max is not None:
-            plt.clim(0, c_max)
+        plt.imshow(mot_image, cmap = 'magma', origin = 'lower')
         plt.colorbar()
-        plt.contour(gaussian_2D(x, y, *vals), cmap = 'gray', levels = 1)
-        plt.title('A = {:.4f} +/- {:.4f}'.format(vals[0], np.sqrt(pcov[0, 0])), fontsize = 20)
-    
-    if contour_figure_ix is not None:
-        plt.figure(contour_figure_ix)
-        plt.contour(gaussian_2D(x, y, *vals), cmap = 'gray', levels = 1)
-    
+        plt.contour(gaussian_2D(x, y, *p0), cmap = 'gray', levels = 3)
+    vals, pcov = curve_fit(fit_gaussian_form, (x, y), mot_image.flatten(), p0)
+    if show_plot:
+        axImshow = visualize_mot_image(mot_image, show_plot = False)
+        A, x0, y0, sigma_x, sigma_y, p, offset = vals
+        #NOTE: plotted sigma curves don't take into account covariance!! These are a diagnostic tool ONLY
+        sig1 = gaussian_2D(x0, y0 + sigma_y, A, x0, y0, sigma_x, sigma_y, p, offset)
+        sig2 = gaussian_2D(x0, y0 + 2*sigma_y, A, x0, y0, sigma_x, sigma_y, p, offset)
+        print(sig1, sig2)
+        axImshow.contour(gaussian_2D(x, y, *vals), colors = 'gray', levels = (sig2, sig1))
+        plt.show()
+        #plt.title('A = {:.4f} +/- {:.4f}'.format(vals[0], np.sqrt(pcov[0, 0])), fontsize = 20)
     return vals, np.sqrt(np.diag(pcov))
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
