@@ -26,10 +26,12 @@ class CameraServer(LabradServer):
 
             with cam:
                 cam.TriggerSource.set('Line1')
+                cam.TriggerActivation.set('RisingEdge')
                 cam.TriggerSelector.set('FrameStart')
                 cam.TriggerMode.set('On')
                 cam.AcquisitionMode.set('Continuous')
-
+                cam.ExposureMode.set('TriggerWidth')
+                cam.Gain.set(30)
     @setting(1)
     def get_frame(self, c, camera_save_path):
         with Vimba.get_instance() as vimba:
@@ -37,11 +39,19 @@ class CameraServer(LabradServer):
             with cam:
                 frame = cam.get_frame(5000)
                 print('Frame acquired: ' + camera_save_path)
-                img = frame.as_opencv_image()[:,:, 0]
+                img = frame.as_opencv_image()
                 print(np.sum(img))
+                print(np.max(img))
                 cv2.imwrite(camera_save_path, frame.as_opencv_image())
                 #np.savetxt(camera_save_path, img)
+
     @setting(2)
+    def set_gain(self, c, gain_val):
+        with Vimba.get_instance() as vimba:
+            cam = self.this_camera
+            with cam:
+                cam.Gain.set(gain_val)
+    @setting(3)
     def say_hello(self, c):
         print('hizukohere')
 

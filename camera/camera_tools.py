@@ -8,7 +8,7 @@ most_recent_file_time = 'start'
 
 def get_today_path():
     time_string = time.strftime('%Y%m%d')
-    return 'C:/Users/srgang/data/images/' + time_string + '/**'
+    return 'K:data/data/' + time_string + '/**'
 
 
 def get_most_recent_file(directory, ext = '.png'):
@@ -18,27 +18,23 @@ def get_most_recent_file(directory, ext = '.png'):
     except:
         pass
 
-def auto_refresh_dir(script, ext = '.png'):
+def auto_refresh_dir(script, ext = ['.png']):
     while True:
         try:
             this_dir = get_today_path()
-            img = get_most_recent_file(this_dir, ext)
-            script(img)
+            files = []
+            for ending in ext:
+                files.append(get_most_recent_file(this_dir, ending))
+            script(files)
             cv2.waitKey(1)
         except (TypeError, SyntaxError, ValueError, IndexError) as e:
             pass
         except KeyboardInterrupt:
             break
 
-def test_png(img):
-    mot_image = cv2.imread(img, 0)
-    print('start')
-    print(np.sum(mot_image))
-    img_old = cv2.imread(img)
-    print(np.sum(img_old))
-    
+
 def align_mot(img, background_file = None):
-    mot_image = cv2.imread(img, 0)
+    mot_image = cv2.imread(img[0], 0)
     if background_file is not None:
         background = imread(background_file)
         mot_image -= background
@@ -56,14 +52,14 @@ def extract_ROI(img, background_file = None):
     return mot_image, mot_image[x0:xf, y0:yf]
 
 def align_mot_ROI(mot_img, background_file = None):
-    mot_image, ROI = extract_ROI(mot_img, background_file)
+    mot_image, ROI = extract_ROI(mot_img[0], background_file)
     show_text = "{:.2f}*1e+5".format(np.sum(ROI)*1e-5)
     cv2.rectangle(mot_image, ROI_start, ROI_end, (255, 105, 180), 5)
     cv2.putText(mot_image, show_text, (200, 150), cv2.FONT_HERSHEY_SIMPLEX, 5, (255, 255, 255), 3)
     cv2.imshow('align', mot_image)
 
 def live_plot_ROI(mot_img, background_file = None):
-    mot_image, ROI = extract_ROI(mot_img, background_file)
+    mot_image, ROI = extract_ROI(mot_img[0], background_file)
     empty_data = np.where(live_data == None)
     this_shot = np.sum(ROI)*1e-3
     if len(empty_data[0]) == 0:
@@ -83,10 +79,9 @@ def live_plot_ROI(mot_img, background_file = None):
     cv2.imshow('align_plot', img)
     plt.close()
 
-
 def live_plot_ROI_shot(mot_img, background_file = None):
     global most_recent_file_time
-    this_time = os.path.getmtime(mot_img)
+    this_time = os.path.getmtime(mot_img[0])
     if not(this_time == most_recent_file_time):
         live_plot_ROI(mot_img, background_file = None)
         most_recent_file_time = this_time
@@ -167,7 +162,7 @@ def fast_fit_gaussian(mot_img):
     '''
     Fit x, y axes independently, binning along each axis. From Toby's script
     '''
-    mot_image = cv2.imread(mot_img, 0)
+    mot_image = cv2.imread(mot_img[0], 0)
     y_data = np.sum(mot_image, axis = 1)
     x_data = np.sum(mot_image, axis = 0)
     y_pix, x_pix = mot_image.shape
@@ -205,12 +200,12 @@ def fast_fit_gaussian(mot_img):
 
 n_show = 30
 #rough red mot
-#ROI_start = (200, 350)
-#ROI_end = (700, 600)
+ROI_start = (400, 350)
+ROI_end = (700, 600)
 
 #rough blue mot
-ROI_start = (600, 250)
-ROI_end = (1000, 900) 
+#ROI_start = (600, 250)
+#ROI_end = (1000, 900) 
 #ROI_start = (0, 0)
 #sROI_end = (1200, 1200) 
 live_data = np.full(n_show, None)
