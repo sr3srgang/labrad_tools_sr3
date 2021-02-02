@@ -76,12 +76,12 @@ def visualize_mot_image(mot_array, show_plot = True, c_max = 200, ylim = 20e+3, 
     if show_plot:
     	plt.show()
     	
-    return axImshow
+    return fig, axImshow
     
     
     
 
-def fit_gaussian_2D_real(mot_img, background_file = None, show_plot = False, show_guess = False):
+def fit_gaussian_2D_real(mot_img, background_file = None, show_plot = False):
     mot_image = cv2.imread(mot_img, 0).T.astype(np.int16)
     
     if background_file is not None:
@@ -97,12 +97,6 @@ def fit_gaussian_2D_real(mot_img, background_file = None, show_plot = False, sho
     y0_guess = np.argmax(np.sum(mot_image, axis = 1))
     A_guess = mot_image[y0_guess, x0_guess]
     p0 = [A_guess, x0_guess, y0_guess, 100, 100, -.2, 0]
-    if show_guess:
-        plt.figure()
-        plt.imshow(mot_image, cmap = 'magma', origin = 'lower')
-        plt.colorbar()
-        plt.contour(gaussian_2D(x, y, *p0), cmap = 'gray', levels = 3)
-    vals, pcov = curve_fit(fit_gaussian_form, (x, y), mot_image.flatten(), p0)
     if show_plot:
         axImshow = visualize_mot_image(mot_image, show_plot = False)
         A, x0, y0, sigma_x, sigma_y, p, offset = vals
@@ -117,6 +111,10 @@ def fit_gaussian_2D_real(mot_img, background_file = None, show_plot = False, sho
     
     
     
+def show_MOT_image(mot_img):
+    mot_image = cv2.imread(mot_img, 0).T.astype(np.int16)
+    fig, _ = visualize_mot_image(mot_img)
+    return fig
     
     
     
