@@ -2,7 +2,7 @@ from conductor.parameter import ConductorParameter
 
 class CameraGain(ConductorParameter):
     priority = 1
-    autostart = True
+    autostart = False
     call_in_thread = True
     value = 30
 
@@ -13,6 +13,6 @@ class CameraGain(ConductorParameter):
 
     def update(self):
         if self.value is not None:
-            self.cxn.zuko_camera.set_gain(self.value)
-
+            #self.cxn.zuko_camera.set_gain(self.value)
+            pass
 Parameter = CameraGain 

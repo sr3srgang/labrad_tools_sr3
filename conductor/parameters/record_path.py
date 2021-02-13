@@ -5,61 +5,63 @@ import time
 
 class SetRecordPath(ConductorParameter):
     autostart = True
-    priority = 2
+    priority = -1
+    
+    #Keywords to determine if/where we save the pictures
     record_keyword = 'savePictures'
-    align_keyword = 'align'
     fluorescence_keyword = 'fluor'
     absorption_keyword = 'absorption'
-    data_filename = '{}_mako'
-    camera_data_path = "K:/data/data"
-    data_path = os.path.join(os.getenv('PROJECT_DATA_PATH'), 'data')
-    align_name = 'align'
+
+    #Keywords to set which camera we're using
+    cameras = ['horizontal_mot', 'vertical_mot']
+
+    camera_data_path = "K:/data/data" #Path to data folders on zuko, which runs the camera servers
+    data_path = os.path.join(os.getenv('PROJECT_DATA_PATH'), 'data') #Path to data folders on appa (conductor)
+    data_filename = "{}_{}"
 
     def initialize(self, config):
         self.connect_to_labrad()
-        print(self.cxn)
-        self.cxn.zuko_camera.init_camera()
 
     def do_absorption_imaging(self, path):
-        self.cxn.zuko_camera.get_frame(path + '_image.png')
-        self.cxn.zuko_camera.get_frame(path + '_bright.png')
-        self.cxn.zuko_camera.get_frame(path + '_dark.png')
+        return [path + '_image.png', path + '_bright.png', path + '_dark.png']
 
     def do_fluorescence_imaging(self, path):
-        self.cxn.zuko_camera.get_frame(path + '_fluorescence.png')
+        return [path + '_fluorescence.png']
 
     def update(self):
+        for cam in self.cameras:
+            if self.is_active_cam(cam):
+                paths = self.get_paths(cam)
+                self.server._send_update({cam: paths})
+    
+    def safe_in(self, str1, str2):
+        return str2 is not None and str1 in str2
+   
+    def is_active_cam(self, cam):
+        sequence = self.server.parameters.get('sequencer.sequence')
+        return cam in str(sequence.value)
+
+    def get_paths(self, cam):
+        sequence = self.server.parameters.get('sequencer.sequence')
         experiment_name = self.server.experiment.get('name')
         shot_number = self.server.experiment.get('shot_number')
-        sequence = self.server.parameters.get('sequencer.sequence')
-        if (experiment_name is not None) and (sequence is not None):
-            if (self.record_keyword in str(experiment_name)) and ((self.fluorescence_keyword in str(sequence.value)) or (self.absorption_keyword in str(sequence.value))):
-                point_filename = self.data_filename.format(shot_number)
-                rel_point_path = os.path.join(self.camera_data_path, experiment_name, point_filename)
-                #check if directory already exists; if not, make it
-                experiment_directory = os.path.join(self.data_path, experiment_name)
-                print(experiment_directory)
-                if not os.path.isdir(experiment_directory):
-                    os.makedirs(experiment_directory) 
-                if self.absorption_keyword in str(sequence.value):
-                    self.do_absorption_imaging(rel_point_path)
-                else:
-                    self.do_fluorescence_imaging(rel_point_path)
- 
-        elif sequence is not None:
-            if self.align_keyword in str(sequence.value):
-                time_string = time.strftime('%Y%m%d')
-                today_path = os.path.join(self.camera_data_path, time_string, self.align_name)
-               
-               #check if today's data folder already exists; if not, make it
-                today_data_dir = os.path.join(self.data_path, time_string)
-                if not os.path.isdir(today_data_dir):
-                    os.makedirs(today_data_dir)
-                if self.absorption_keyword in str(sequence.value):
-                    self.do_absorption_imaging(today_path)
-                else:
-                    self.do_fluorescence_imaging(today_path)
-
+        if self.safe_in(self.record_keyword, experiment_name):
+            point_filename = self.data_filename.format(cam, shot_number)
+            dir_path = os.path.join(self.data_path, experiment_name)
+            rel_point_path = os.path.join(self.camera_data_path, experiment_name, self.data_filename.format(cam, shot_number))
+        else:
+            time_string = time.strftime('%Y%m%d')
+            dir_path = os.path.join(self.data_path, time_string)
+            rel_point_path = os.path.join(self.camera_data_path, time_string, cam)
+        #Check if directory already exists; if not, make it
+        if not os.path.isdir(dir_path):
+            os.makedirs(dir_path)
+        #Do fluorescence or absorption imaging:
+        if self.absorption_keyword in str(sequence.value):
+            return self.do_absorption_imaging(rel_point_path)
+        elif self.fluorescence_keyword in str(sequence.value):
+            return self.do_fluorescence_imaging(rel_point_path)
+            
 Parameter = SetRecordPath
 
 
