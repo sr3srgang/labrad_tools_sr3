@@ -4,7 +4,10 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     import qt5reactor
     qt5reactor.install()
-    from camera.camera_device import Camera
-    w = Camera()
+
+    camera = 'horizontal_mot'
+    camera_id = 'DEV_000F315CEBAB'
+    from camera.servers.camera_device import Camera
+    w = Camera(camera, camera_id)
     #w.show()
     sys.exit(app.exec_())

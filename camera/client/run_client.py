@@ -4,7 +4,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     import qt5reactor
     qt5reactor.install()
-    from camera.camera_client import CameraGui
+    from camera.client.camera_client import CameraGui
     w = CameraGui()
     w.show()
     sys.exit(app.exec_())
