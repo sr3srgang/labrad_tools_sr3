@@ -10,16 +10,15 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QLabel, QToolBar, QMenu, 
 from PyQt5.QtCore import QTimer, QDateTime, QObject, QThread, pyqtSlot
 import data_analysis.imaging_tools as it
 import warnings
-from camera.live_plotter_client import LivePlotter
 from twisted.internet.defer import inlineCallbacks
 from queue import Queue
 
 class Stream(QObject):
-    def __init__(self, cam):
+    def __init__(self, cam, cam_name):
         super(Stream, self).__init__()
         self.cam = cam
+        self.cam_name = cam_name
         self.paths = Queue()
-        self.waiting = False
         
     @pyqtSlot()
     def start_stream(self):
@@ -34,25 +33,28 @@ class Stream(QObject):
                     cam.stop_streaming()
                     
     def handler(self, cam, frame):
-        print('Frame acquired')
+        print('Frame acquired: ' + self.cam_name)
         cam.queue_frame(frame)
-        this_path = self.paths.get_nowait()
-        cv2.imwrite(this_path, frame.as_opencv_image())
-        print(this_path)
+        if not self.paths.empty():
+            this_path = self.paths.get_nowait()
+            print(frame.as_opencv_image().shape)
+            cv2.imwrite(this_path, frame.as_opencv_image())
+            print(this_path)
 
         
 
 class Camera(QMainWindow):
     
-    def __init__(self):
+    def __init__(self, cam_name, cam_id):
         super(Camera, self).__init__()
-        self.camera_names = ['horizontal_mot', 'vertical_mot']
-        self.init_cameras()
+        self.cam_name = cam_name
+        self.cam_id = cam_id
+        self.init_camera()
         self.update_id = np.random.randint(0, 2**31 - 1)
         self.connect_to_labrad()
 
         #Starting async thread for camera stream
-        self.stream = self.start_streaming(self.this_camera)
+        self.stream = self.start_streaming()
             
     #Labrad connection:
     @inlineCallbacks    
@@ -67,15 +69,22 @@ class Camera(QMainWindow):
     def receive_update(self, c, update_json):
         update = json.loads(update_json)
         for key, value in update.items():
-            if key == 'horizontal_mot':
+            if key == self.cam_name:
                 for path in value:
                     self.stream.paths.put_nowait(path)
-
-    def init_cameras(self):
+        
+    def init_camera(self):
         with Vimba.get_instance() as vimba:
             all_cam = vimba.get_all_cameras()
-            cam = all_cam[0]
+            found_cam = False
+            for cam in all_cam:
+                if cam.get_id() == self.cam_id:
+                    found_cam = True
+                    break
+            if not found_cam:
+                raise ValueError('Camera not found!!')
             self.this_camera = cam
+            print(self.this_camera.get_id())
             
             with cam:
                 cam.TriggerSource.set('Line1')
@@ -86,8 +95,8 @@ class Camera(QMainWindow):
                 cam.ExposureMode.set('TriggerWidth')
                 cam.Gain.set(30)
 
-    def start_streaming(self, cam):
-        stream = Stream(self.this_camera)
+    def start_streaming(self):
+        stream = Stream(self.this_camera, self.cam_name)
         self.thread = QThread(self)
         stream.moveToThread(self.thread)
         self.thread.started.connect(stream.start_stream)

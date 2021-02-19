@@ -18,7 +18,7 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QLabel, QToolBar, QMenu, 
 from PyQt5.QtCore import QTimer, QDateTime
 import data_analysis.imaging_tools as it
 import warnings
-from camera.live_plotter_client import LivePlotter
+from camera.client.live_plotter_client import LivePlotter
 from twisted.internet.defer import inlineCallbacks
 
 
@@ -27,8 +27,8 @@ class CameraGui(QMainWindow):
         self.name = 'camera_gui'
         self.camera = 'horizontal_mot'
         self.file_to_show = None
-        self.default_window_loc = 'C:/Users/srgang/labrad_tools/camera/default_window.png'
-        self.current_window_loc = 'C:/Users/srgang/labrad_tools/camera/current_window.png'
+        self.default_window_loc = 'C:/Users/srgang/labrad_tools/camera/client/default_window.png'
+        self.current_window_loc = 'C:/Users/srgang/labrad_tools/camera/client/current_window.png'
         self.script = it.save_gui_window
         self.start_opt_widgets = 275
         self.ROI = [300, 400, 100, 100]
