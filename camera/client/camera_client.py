@@ -25,19 +25,18 @@ from twisted.internet.defer import inlineCallbacks
 class CameraGui(QMainWindow):
     def set_class_vars(self):
         self.name = 'camera_gui'
-        self.camera = 'horizontal_mot'
+        self.camera = 'No camera selected'
         self.file_to_show = None
         self.default_window_loc = 'C:/Users/srgang/labrad_tools/camera/client/default_window.png'
         self.current_window_loc = 'C:/Users/srgang/labrad_tools/camera/client/current_window.png'
         self.script = it.save_gui_window
-        self.start_opt_widgets = 275
+        self.start_opt_widgets = 180
         self.ROI = [300, 400, 100, 100]
 
         #For click events on image plot
         self.img_xlim = [100, 530]
         self.img_ylim = [120, 710]
-        self.x_scale = 964/(self.img_xlim[1] - self.img_xlim[0])
-        self.y_scale = 1292/(self.img_ylim[1] - self.img_xlim[0])
+        self.pix = [964, 1292]
 
         #For handling setting ROI with mouse
         self.listen_ROI = False
@@ -65,7 +64,6 @@ class CameraGui(QMainWindow):
     def _create_toolbar(self):
         tools = self.menuBar()
         tools.addAction('Launch optimizer', self.launch)
-        tools.addAction('Load file', self.show_window)
 
         opts = tools.addMenu("&Options")
         fitting = opts.addMenu('&Fitting options')
@@ -73,9 +71,21 @@ class CameraGui(QMainWindow):
         fitting.addAction('ROI', self.ROI_action)
         fitting.addAction('2D Gaussian fit')
         cameras = opts.addMenu('&Camera')
-        cameras.addAction('Horizontal MOT')
-        cameras.addAction('Vertical MOT')
+        cameras.addAction('Horizontal MOT', self.set_horizontal_MOT)
+        cameras.addAction('Vertical MOT', self.set_vertical_MOT)
+        cameras.addAction('Load file')
 
+#Selecting camera
+    def set_horizontal_MOT(self):
+        self.camera = 'horizontal_mot'
+        self.pix = [964, 1292]
+        self.show_window()
+
+    def set_vertical_MOT(self):
+        self.camera = 'vertical_mot'
+        self.pix = [1216, 1936]
+        self.show_window()
+        
 #Everything ROI-related     
     def add_invisible_ROI_widgets(self):
         self.xROI = QLineEdit(self)
@@ -116,6 +126,8 @@ class CameraGui(QMainWindow):
 
     def handle_click(self, event):
         if self.listen_ROI:
+            self.x_scale = self.pix[0]/(self.img_xlim[1] - self.img_xlim[0])
+            self.y_scale = self.pix[1]/(self.img_ylim[1] - self.img_xlim[0])
             x_img = int((event.pos().x() - self.img_xlim[0])*self.x_scale)
             y_img = int((self.img_ylim[1] - event.pos().y())*self.y_scale)
             if self.first_click:
@@ -183,7 +195,7 @@ class CameraGui(QMainWindow):
     def receive_update(self, c, update_json):
         update = json.loads(update_json)
         for key, value in update.items():
-            if key == 'horizontal_mot':
+            if key == self.camera:
                 if self.fluorescence_mode:
                     self.file_to_show = value[0]
                     time.sleep(.1)
