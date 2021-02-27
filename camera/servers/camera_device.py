@@ -37,7 +37,6 @@ class Stream(QObject):
         cam.queue_frame(frame)
         if not self.paths.empty():
             this_path = self.paths.get_nowait()
-            print(frame.as_opencv_image().shape)
             cv2.imwrite(this_path, frame.as_opencv_image())
             print(this_path)
 
@@ -71,7 +70,6 @@ class Camera(QMainWindow):
         
     def receive_update(self, c, update_json):
         update = json.loads(update_json)
-        print(update)
         for key, value in update.items():
             if key == self.cam_name:
                 for path in value:
