@@ -33,7 +33,7 @@ def fit_gaussian_form(X, A, x0, y0, sigma_x, sigma_y, p, offset):
     return gaussian_2D(x, y, A, x0, y0, sigma_x, sigma_y, p, offset).flatten() 
     
 
-def visualize_mot_image(mot_array, show_plot = True, c_max = 200, ylim = 50e+3, xlim = 50e+3):
+def visualize_mot_image(mot_array, show_plot = True, c_max = 200, show_title = False, title = None):
     #From example here: https://matplotlib.org/examples/pylab_examples/scatter_hist.html
     nullfmt = NullFormatter()
     
@@ -45,10 +45,13 @@ def visualize_mot_image(mot_array, show_plot = True, c_max = 200, ylim = 50e+3, 
     bottom_h = left + height + .02
     
     rect_imshow = [left, bottom, width, height]
-    rect_histx = [left, bottom_h, width, .1]
+    rect_histx = [left + .03, bottom_h, width - .06, .1*x_len/y_len]
     rect_histy = [left_h, bottom, .1, height]
-    
-    fig = plt.figure(1, figsize=(8*x_len/y_len+ .5 , 8))
+
+    emp_width = 6.5
+    spacer= .5
+    emp_height = (emp_width - spacer)*y_len/x_len - spacer
+    fig = plt.figure(1, figsize=(emp_width, emp_height))
     fig.patch.set_facecolor('k')
 
     
@@ -66,21 +69,23 @@ def visualize_mot_image(mot_array, show_plot = True, c_max = 200, ylim = 50e+3, 
     im = axImshow.imshow(mot_array, cmap = 'magma', origin = 'lower', aspect = 'equal')
     axImshow.tick_params(color='white', labelcolor='white', labelsize=12)
     im.set_clim(0, c_max)
+    if show_title:
+        axImshow.set_title("{:.3e}".format(title), color = 'w', y = .85, size = 48)
+        
     #side histograms:
     xs = np.sum(mot_array, axis = 0)
     ys = np.sum(mot_array, axis = 1)
     axHistx.plot(xs, 'white')
     axHistx.set_xlim(axImshow.get_xlim())
-    axHistx.set_ylim(0, ylim)
+    #axHistx.set_ylim(0, ylim)
     axHisty.plot(ys, np.arange(len(ys)), 'white')
     axHisty.set_ylim(axImshow.get_ylim())
-    axHisty.set_xlim(0, xlim)
+    #axHisty.set_xlim(0, xlim)
     
     if show_plot:
     	plt.show()
     	
-    return fig, axImshow
-    
+    return fig, axImshow, [x_len, y_len, emp_width*100, emp_height*100]
     
     
 
@@ -112,21 +117,35 @@ def fit_gaussian_2D_real(mot_img, background_file = None, show_plot = False):
         #plt.title('A = {:.4f} +/- {:.4f}'.format(vals[0], np.sqrt(pcov[0, 0])), fontsize = 20)
     return vals, np.sqrt(np.diag(pcov))
     
-    
-    
-def save_gui_window(mot_img, save_loc):
+def process_file(mot_img, zoom = False, ROI = None, background = None):
     mot_image = cv2.imread(mot_img, 0).T.astype(np.int16)
-    fig, _ = visualize_mot_image(mot_image, show_plot = False)
-    fig.savefig(save_loc)
-    plt.close()
+    if background is not None:
+        background = cv2.imread(background, 0).T.astype(np.int16)
+        mot_image = mot_image - background
+    if zoom:
+        mot_image = mot_image[ROI[1]:ROI[1]+ROI[3], ROI[0]:ROI[0]+ROI[2]]
+    return mot_image
 
-def save_gui_window_ROI(mot_img, save_loc, ROI):
-    mot_image = cv2.imread(mot_img, 0).T.astype(np.int16)
-    fig, axImshow = visualize_mot_image(mot_image, show_plot = False)
-    rect = patches.Rectangle((ROI[0], ROI[1]),ROI[2],ROI[3],linewidth=1,edgecolor='pink',facecolor='none')
-    axImshow.add_patch(rect)
+def default_window(mot_img, show_title = False, title = None, zoom = False, ROI = None, background = None):
+    mot_image = process_file(mot_img, zoom, ROI, background)
+    fig, axImshow, dims = visualize_mot_image(mot_image, show_plot = False, show_title = show_title, title = title)
+    return fig, axImshow, dims
+    
+def save_gui_window(mot_img, save_loc, ROI, show_title = False, title = None, zoom = False, background = None):
+    fig, _ , dims= default_window(mot_img, show_title = show_title, title = title, zoom = zoom, ROI = ROI, background = background)
     fig.savefig(save_loc)
     plt.close()
+    return dims
+
+def save_gui_window_ROI(mot_img, save_loc, ROI, show_title = False, title = None,zoom = False, background = None):
+    fig, axImshow, dims = default_window(mot_img, show_title = show_title, title = title, zoom = zoom, ROI = ROI, background = background)
+    if not zoom:
+        rect = patches.Rectangle((ROI[0], ROI[1]),ROI[2],ROI[3],linewidth=1,edgecolor='pink',facecolor='none')
+        axImshow.add_patch(rect)
+    fig.savefig(save_loc)
+    plt.close()
+    return dims
+    
 
     
     

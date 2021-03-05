@@ -13,19 +13,28 @@ class LivePlotter(QMainWindow):
         self.script = self.total_counts
         self.n_show = 30
         self.live_data = np.full(self.n_show, None)
-        self.current_window_loc = 'C:/Users/srgang/labrad_tools/camera/current_plotter_window.png'
+        self.current_window_loc = 'C:/Users/srgang/labrad_tools/camera/client/windows/current_plotter_window.png'
 
         
     def __init__(self, parent):
         super(LivePlotter, self).__init__()
         self.parent = parent
         self.set_class_vars()
+        self.add_menu()
+
+    def add_menu(self):
+        tools = self.menuBar()
+        tools.addAction('Reset optimizer', self.reset_opt)
+
+    def reset_opt(self):
+        self.live_data = np.full(self.n_show, None)
 
     def total_counts(self):
-        mot_image = cv2.imread(self.parent.file_to_show, 0).T.astype(np.int16)
+        mot_image = it.process_file(self.parent.file_to_show, background = self.parent.background_file)
         return np.sum(mot_image)
 
     def ROI_counts(self):
+        mot_image = it.process_file(self.parent.file_to_show, zoom = True, ROI = self.parent.ROI, background = self.parent.background_file)
         mot_image = cv2.imread(self.parent.file_to_show, 0).T.astype(np.int16)
         x0 = self.parent.ROI[0]
         y0 = self.parent.ROI[1]

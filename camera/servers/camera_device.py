@@ -37,7 +37,6 @@ class Stream(QObject):
         cam.queue_frame(frame)
         if not self.paths.empty():
             this_path = self.paths.get_nowait()
-            print(frame.as_opencv_image().shape)
             cv2.imwrite(this_path, frame.as_opencv_image())
             print(this_path)
 
@@ -62,9 +61,12 @@ class Camera(QMainWindow):
         #self.cxn = connect(name=self.name)
         self.cxn = connection()
         yield self.cxn.connect(name = 'camera')
+        print('connected to labrad')
         server = yield self.cxn.get_server('conductor')
+        print('got conductor')
         yield server.signal__update(self.update_id)
         yield server.addListener(listener = self.receive_update, source=None, ID=self.update_id)
+        print('connected!')
         
     def receive_update(self, c, update_json):
         update = json.loads(update_json)
@@ -76,6 +78,7 @@ class Camera(QMainWindow):
     def init_camera(self):
         with Vimba.get_instance() as vimba:
             all_cam = vimba.get_all_cameras()
+            print(all_cam)
             found_cam = False
             for cam in all_cam:
                 if cam.get_id() == self.cam_id:
