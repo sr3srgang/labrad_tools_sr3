@@ -71,8 +71,27 @@ class YeSrSequencerBoard(DefaultDevice):
             print(sequencename)
             raise Exception(sequencepath)
         
-        with open(sequencepath, 'r') as infile:
-            sequence = json.load(infile)
+        try:
+            with open(sequencepath, 'r') as infile:
+                sequence = json.load(infile)
+        except:
+            n_tries_init = 10
+            n_tries = n_tries_init
+            time_step = .1
+            success = False
+            while n_tries > 0:
+                try:
+                    with open(sequencepath, 'r') as infile:
+                        sequence = json.load(infile)
+                    success = True
+                    break
+                except:
+                    n_tries-=1
+            if success:
+                print('Delay loading sequence of ' + str((n_tries_init - n_tries+ 1)*time_step) + ' s')
+            else:
+                print('FAILED')
+                raise Exception(sequencepath)
         return sequence
 
     def save_sequence(self, sequence, sequence_name, tmpdir=True):
@@ -146,6 +165,7 @@ class YeSrSequencerBoard(DefaultDevice):
 
     def fix_sequence_keys(self, subsequence_names):
         for subsequence_name in set(subsequence_names):
+            print(subsequence_name)
             subsequence = self.load_sequence(subsequence_name)
             master_channel_subsequence = subsequence[self.master_channel]
             

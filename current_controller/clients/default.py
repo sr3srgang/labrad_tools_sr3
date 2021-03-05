@@ -11,7 +11,7 @@ class CurrentControllerClient(QtGui.QGroupBox):
     name = None
     DeviceProxy = None
     currentStepsize = 0.0001
-    lockedColor = '#80ff80'
+    lockedColor = '#326332' #'#80ff80'
     unlockedColor = '#ff8080'
     updateID = np.random.randint(0, 2**31 - 1)
     
