@@ -70,7 +70,9 @@ class YeSrSequencerBoard(DefaultDevice):
             print(date.today())
             print(sequencename)
             raise Exception(sequencepath)
-        
+        with open(sequencepath, 'r') as infile:
+            sequence = json.load(infile)
+            '''
         try:
             with open(sequencepath, 'r') as infile:
                 sequence = json.load(infile)
@@ -92,6 +94,7 @@ class YeSrSequencerBoard(DefaultDevice):
             else:
                 print('FAILED')
                 raise Exception(sequencepath)
+        '''
         return sequence
 
     def save_sequence(self, sequence, sequence_name, tmpdir=True):

@@ -13,7 +13,7 @@ class SetRecordPath(ConductorParameter):
     absorption_keyword = 'absorption'
 
     #Keywords to set which camera we're using
-    cameras = ['horizontal_mot', 'vertical_mot', 'cavity']
+    cameras = ['horizontal_mot', 'vertical_mot', 'cavity', 'cav_perp']
 
     camera_data_path = "K:/data/data" #Path to data folders on zuko, which runs the camera servers
     data_path = os.path.join(os.getenv('PROJECT_DATA_PATH'), 'data') #Path to data folders on appa (conductor)
