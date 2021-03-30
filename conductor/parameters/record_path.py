@@ -13,7 +13,7 @@ class SetRecordPath(ConductorParameter):
     absorption_keyword = 'absorption'
 
     #Keywords to set which camera we're using
-    cameras = ['horizontal_mot', 'vertical_mot']
+    cameras = ['horizontal_mot', 'vertical_mot', 'cavity', 'cav_perp']
 
     camera_data_path = "K:/data/data" #Path to data folders on zuko, which runs the camera servers
     data_path = os.path.join(os.getenv('PROJECT_DATA_PATH'), 'data') #Path to data folders on appa (conductor)
@@ -32,6 +32,7 @@ class SetRecordPath(ConductorParameter):
         for cam in self.cameras:
             if self.is_active_cam(cam):
                 paths = self.get_paths(cam)
+                print(paths)
                 self.server._send_update({cam: paths})
     
     def safe_in(self, str1, str2):

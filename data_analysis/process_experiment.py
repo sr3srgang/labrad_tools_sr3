@@ -21,9 +21,10 @@ def get_files(folder, first_file, n_files, key_params):
 				param_vals[i, n] = c_json[key_params[n]]
 		camera_file = os.path.join(path_to_data, folder, camera_file_format.format(f_ixs[i]))
 		matching_files = glob.glob(camera_file)
-		if len(matching_files) > 1:
-			print('Improper data formatting!!')
-			print(matching_files)
+		#print(matching_files)
+                if len(matching_files) > 1:
+                    print('Improper data formatting!!')
+		    print(matching_files)
 		file_names.append(matching_files[0])
 	return file_names, param_vals
 	
@@ -63,7 +64,5 @@ def red_TOF(folder, first_file, n_files, show_plot = False):
 		return(popts, perrs)
 	
 
-def show_MOT_image(file_name):
-			
-		
+
 		
