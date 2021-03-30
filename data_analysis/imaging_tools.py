@@ -126,19 +126,20 @@ def process_file(mot_img, zoom = False, ROI = None, background = None):
         mot_image = mot_image[ROI[1]:ROI[1]+ROI[3], ROI[0]:ROI[0]+ROI[2]]
     return mot_image
 
-def default_window(mot_img, show_title = False, title = None, zoom = False, ROI = None, background = None):
+def default_window(mot_img, rot = 0, show_title = False, title = None, zoom = False, ROI = None, background = None):
     mot_image = process_file(mot_img, zoom, ROI, background)
+    mot_image = np.rot90(mot_image, rot)
     fig, axImshow, dims = visualize_mot_image(mot_image, show_plot = False, show_title = show_title, title = title)
     return fig, axImshow, dims
     
-def save_gui_window(mot_img, save_loc, ROI, show_title = False, title = None, zoom = False, background = None):
-    fig, _ , dims= default_window(mot_img, show_title = show_title, title = title, zoom = zoom, ROI = ROI, background = background)
+def save_gui_window(mot_img, save_loc, ROI, rot = 0, show_title = False, title = None, zoom = False, background = None):
+    fig, _ , dims= default_window(mot_img, rot = rot, show_title = show_title, title = title, zoom = zoom, ROI = ROI, background = background)
     fig.savefig(save_loc)
     plt.close()
     return dims
 
-def save_gui_window_ROI(mot_img, save_loc, ROI, show_title = False, title = None,zoom = False, background = None):
-    fig, axImshow, dims = default_window(mot_img, show_title = show_title, title = title, zoom = zoom, ROI = ROI, background = background)
+def save_gui_window_ROI(mot_img, save_loc, ROI, rot = 0, show_title = False, title = None,zoom = False, background = None):
+    fig, axImshow, dims = default_window(mot_img, rot = rot, show_title = show_title, title = title, zoom = zoom, ROI = ROI, background = background)
     if not zoom:
         rect = patches.Rectangle((ROI[0], ROI[1]),ROI[2],ROI[3],linewidth=1,edgecolor='pink',facecolor='none')
         axImshow.add_patch(rect)
@@ -146,8 +147,7 @@ def save_gui_window_ROI(mot_img, save_loc, ROI, show_title = False, title = None
     plt.close()
     return dims
     
-
-    
+   
     
     
     

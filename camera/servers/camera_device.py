@@ -47,11 +47,17 @@ class Camera(QMainWindow):
     def __init__(self, cam_name, cam_id):
         super(Camera, self).__init__()
         self.cam_name = cam_name
+        #Used to set camera to whatever gain should be when it comes online:
+        self.gain_name = cam_name + '_gain'
+        self.at_init = True
+        self.default_gain = 40
+        
+        self.update_gain_name = 'update_' + cam_name + '_gain'
         self.cam_id = cam_id
-        self.init_camera()
         self.update_id = np.random.randint(0, 2**31 - 1)
         self.connect_to_labrad()
-
+        self.init_camera()
+        
         #Starting async thread for camera stream
         self.stream = self.start_streaming()
             
@@ -74,6 +80,17 @@ class Camera(QMainWindow):
             if key == self.cam_name:
                 for path in value:
                     self.stream.paths.put_nowait(path)
+            if key == self.update_gain_name:
+                print('UPDATE')
+                print(key, value)
+                self.set_gain(int(value))
+            if key == self.gain_name:
+                if self.at_init:
+                    print(key, value)
+                    if value is None:
+                        value = 40
+                    self.set_gain(int(value))
+                    self.at_init = False
         
     def init_camera(self):
         with Vimba.get_instance() as vimba:
@@ -96,7 +113,6 @@ class Camera(QMainWindow):
                 cam.TriggerMode.set('On')
                 cam.AcquisitionMode.set('Continuous')
                 cam.ExposureMode.set('TriggerWidth')
-                cam.Gain.set(30)
 
     def start_streaming(self):
         stream = Stream(self.this_camera, self.cam_name)
@@ -106,7 +122,7 @@ class Camera(QMainWindow):
         self.thread.start()
         return stream
         
-    def set_gain(self, c, gain_val):
+    def set_gain(self, gain_val):
         with Vimba.get_instance() as vimba:
             cam = self.this_camera
             with cam:

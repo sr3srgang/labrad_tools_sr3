@@ -41,13 +41,16 @@ class LivePlotter(QMainWindow):
         return np.sum(mot_image[y0:y0+self.parent.ROI[3], x0:x0 + self.parent.ROI[2]])
                       
     def live_plot(self):
-        this_shot = self.script()
-        empty_data = np.where(self.live_data == None)
-        if len(empty_data[0]) == 0:
-            self.live_data[0:self.n_show - 1] = self.live_data[1:self.n_show]
-            self.live_data[-1] = this_shot
-        else:
-            self.live_data[empty_data[0][0]] = this_shot
+        try:
+            this_shot = self.script()
+            empty_data = np.where(self.live_data == None)
+            if len(empty_data[0]) == 0:
+                self.live_data[0:self.n_show - 1] = self.live_data[1:self.n_show]
+                self.live_data[-1] = this_shot
+            else:
+                self.live_data[empty_data[0][0]] = this_shot
+        except AttributeError:
+            print('Not loaded')
 
     def make_plot(self):
         fig = plt.figure()
