@@ -26,7 +26,6 @@ class Picoscope(DefaultDevice):
         self.picoscope_server = self.cxn[self.picoscope_servername]
         ps3000a = PicoscopeProxy(self.picoscope_server)
         ps = ps3000a.PS3000a(self.picoscope_serialnumber)
-
         for channel_name, channel_settings in self.picoscope_channel_settings.items():
             ps.setChannel(channel_name, **channel_settings)
         response = ps.setSamplingInterval(self.picoscope_sampling_interval, 
@@ -35,8 +34,10 @@ class Picoscope(DefaultDevice):
         print 'sampling interval:', response[0]
         print 'number of samples:', response[1]
         print 'max samples:', response[2]
-        ps.setSimpleTrigger('External', self.picoscope_trigger_threshold,
-                            timeout_ms=self.picoscope_timeout)
+        print 'pre_test'
+       # ps.setSimpleTrigger('External', self.picoscope_trigger_threshold,
+       #                     timeout_ms=self.picoscope_timeout)
+        print('post test')
         ps.memorySegments(self.picoscope_n_capture)
         ps.setNoOfCaptures(self.picoscope_n_capture)
         

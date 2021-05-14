@@ -10,9 +10,8 @@ class PS3000aProxy(object):
     def __init__(self, server, serial_number):
         self.server = server
         self.serial_number = serial_number
-        print 1
         self.server.open_interface(self.serial_number)
-        print 2
+        print 'Opened pico interface'
 
     def enumerateUnits(self):
         return self.server.get_available_interfaces()

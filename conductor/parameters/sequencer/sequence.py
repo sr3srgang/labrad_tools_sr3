@@ -11,7 +11,7 @@ from ok_server.proxy import OKProxy
 
 class Sequence(ConductorParameter):
     autostart = True
-    priority = 10
+    priority = -1
     value_type = 'list'
     value = ['all_off'] * 1
 

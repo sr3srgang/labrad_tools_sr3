@@ -13,7 +13,7 @@ TAU = 2.3e4
 def fit_function(x, a):
     return a * np.exp(-x / TAU)
 
-class BluePMT(Picoscope):
+class CavityPico(Picoscope):
     raw_data_path = '/home/srgang/K/data/pmt_data' #Single data file is overwritten every cycle to save HD space
     autostart = True
     picoscope_servername = 'appa_picoscope'
@@ -23,7 +23,7 @@ class BluePMT(Picoscope):
     picoscope_frequency = 100e6
     picoscope_n_capture = 3
     picoscope_trigger_threshold = 2 # [V]
-    picoscope_timeout = -1 # [ms]
+    picoscope_timeout = 100 #-1 # [ms]
     verbose = True
     recording = False
 
@@ -143,4 +143,4 @@ class BluePMT(Picoscope):
         message = {'record': {self.name: rel_data_path}}
         self.server._send_update(message)
 
-Device = BluePMT
+Device = CavityPico

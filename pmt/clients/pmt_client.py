@@ -32,6 +32,7 @@ class PMTViewer(QtGui.QDialog):
         super(PMTViewer, self).__init__(None)
         self.reactor = reactor
         self.cxn = cxn
+        print 'Directory:'
         print self.data_dir
 
         self.update_id = np.random.randint(0, 2**31 - 1)
