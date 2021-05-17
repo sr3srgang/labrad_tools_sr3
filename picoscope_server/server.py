@@ -82,8 +82,8 @@ class PicoscopeServer(HardwareInterfaceServer):
                            direction='Rising', delay=0, timeout_ms=100, 
                            enabled=True):
         ps = self._get_interface(serial_number)
-        ps.setSimpleTrigger(trigSrc, threshold_V, direction, delay, timeout_ms, 
-                            enabled)
+        ps.setSimpleTrigger(trigSrc, threshold_V, direction, delay, timeout_ms,enabled)
+        print('device set to trigger')
 
     @setting(13, serial_number='s', noSegments='i')
     def memory_segments(self, c, serial_number, noSegments):

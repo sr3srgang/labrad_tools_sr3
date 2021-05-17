@@ -14,6 +14,7 @@ class Recorder(ConductorParameter):
     nondata_filename = '{}/cavity_pico'
     pmt_name = 'cavity_pico'
     record_sequences = [
+        'all_off',
         'dynamic_red_image_horizontal_mot_vertical_mot_fluor_cav_perp_cavity'
         ]
 

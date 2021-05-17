@@ -7,7 +7,7 @@ class Picoscope(DefaultDevice):
     picoscope_servername = None
     picoscope_serialnumber = None
     picoscope_duration = None
-    picoscope_frequency = None
+    #picoscope_frequency = None
     picoscope_n_capture = None
     picoscope_trigger_threshold = None # [V]
     picoscope_timeout = None # [ms]
@@ -34,10 +34,8 @@ class Picoscope(DefaultDevice):
         print 'sampling interval:', response[0]
         print 'number of samples:', response[1]
         print 'max samples:', response[2]
-        print 'pre_test'
-       # ps.setSimpleTrigger('External', self.picoscope_trigger_threshold,
-       #                     timeout_ms=self.picoscope_timeout)
-        print('post test')
+        ps.setSimpleTrigger('External', self.picoscope_trigger_threshold, timeout_ms=self.picoscope_timeout)
+        print('set to trigger')
         ps.memorySegments(self.picoscope_n_capture)
         ps.setNoOfCaptures(self.picoscope_n_capture)
         

@@ -5,7 +5,7 @@ class ABCD(YeSrDigitalBoard):
     autostart = True
     conductor_servername = 'conductor'
     ok_servername = 'appa_ok'
-    ok_interface = '2047000UVN'
+    ok_interface = '2047000UY2'#VN'
 
     is_master = True
     channels = [

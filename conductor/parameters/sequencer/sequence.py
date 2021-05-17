@@ -20,10 +20,10 @@ class Sequence(ConductorParameter):
     #call_in_thread = True
 
     ok_master_servername = 'appa_ok'
-    ok_master_interfacename = '2047000UVN'
+    ok_master_interfacename = '2047000UY2'#VN'
 
     sequencer_servername = 'sequencer'
-    sequencer_devices = ['abcd', 'e']
+    sequencer_devices = ['abcd']# 'e']
     sequencer_master_device = 'abcd'
     
     def initialize(self, config):
