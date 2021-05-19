@@ -13,9 +13,9 @@ from pmt.devices.picoscope.device import Picoscope
 class CavityPico(Picoscope):
     autostart = True
     picoscope_servername = 'appa_picoscope'
-    picoscope_serialnumber = 'DU009/008'#'IU888/0102'
-    picoscope_duration = 20e-3 #20 ms interval
-    picoscope_sampling_interval = 20e-9
+    picoscope_serialnumber = 'IU888/0102'#'DU009/008'#'IU888/0102'
+    picoscope_duration = 2*20e-3 #20 ms interval
+    picoscope_sampling_interval = 56e-9
     picoscope_frequency = 100e6
     picoscope_n_capture = 1
     picoscope_trigger_threshold = .5 # [V]
@@ -90,15 +90,19 @@ class CavityPico(Picoscope):
         dir_path = os.path.join(self.data_path, time_string)
         if not os.path.isdir(dir_path):
             os.makedirs(dir_path)
-
+	print('about to save data')
         #Save data
         raw_data = data['A']
 	h5py_path = os.path.join(self.data_path, rel_data_path + '.hdf5')
-        h5f = h5py.File(h5py_path, 'w')
-        for k, v in raw_data.items():
-            h5f.create_dataset(k, data=np.array(v), compression='gzip')
-        h5f.close()
-        
+	try:
+        	h5f = h5py.File(h5py_path, 'w')
+        	for k, v in raw_data.items():
+            		h5f.create_dataset(k, data=np.array(v), compression='gzip')
+        	h5f.close()
+        except:
+        	print('Unable to save pico file!')
+        	
+        print('data saved')
         #Send the file path out to the client, so it can redraw
         message = {'record': {self.name: h5py_path}}
         self.server._send_update(message)

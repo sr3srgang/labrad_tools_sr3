@@ -14,8 +14,7 @@ class Recorder(ConductorParameter):
     nondata_filename = '{}/cavity_pico'
     pmt_name = 'cavity_pico'
     record_sequences = [
-        'all_off',
-        'dynamic_red_image_horizontal_mot_vertical_mot_fluor_cav_perp_cavity'
+        'vrs_horizontal_mot_fluor_cav_perp'
         ]
 
     def initialize(self, config):
@@ -29,6 +28,7 @@ class Recorder(ConductorParameter):
     def get_value(self):
         experiment_name = self.server.experiment.get('name')
         shot_number = self.server.experiment.get('shot_number')
+        
         sequence = self.server.parameters.get('sequencer.sequence')
         previous_sequence = self.server.parameters.get('sequencer.previous_sequence')
         value = None
@@ -43,7 +43,8 @@ class Recorder(ConductorParameter):
                 value = rel_point_path
         elif np.intersect1d(sequence.value, self.record_sequences):
             value = rel_point_path
-
+        
+        #value = self.nondata_filename.format(time.strftime('%Y%m%d'))
         return value
     '''
     @value.setter

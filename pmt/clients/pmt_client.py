@@ -63,7 +63,8 @@ class PMTViewer(QtGui.QDialog):
         self.layout.addWidget(self.canvas)
 
         self.setLayout(self.layout)
-       
+        self.canvas.ax.set_ylim((0, 1e-9))
+        self.canvas.ax.set_xlim((0, .04))
         width = self.canvas.width()
         height = self.nav.height() + self.canvas.height() + 20
         self.setFixedSize(width, height)
@@ -83,17 +84,28 @@ class PMTViewer(QtGui.QDialog):
             device_message = message.get(self.pmt_name)
             if (message_type == 'record') and (device_message is not None):
                 #Will only look at file specified by device message
-                self.replot(device_message)
+                self.get_data(device_message)
+                self.replot()
 
-    def replot(self, abs_data_path):
-        #abs_data_path = os.path.join(self.data_dir, rel_data_path) + '.hdf5'
-        with h5py.File(abs_data_path) as h5f:
+    def get_data(self, abs_data_path):
+	with h5py.File(abs_data_path) as h5f:
             trig = h5f['trigger']
-            #Apply function as specified in child class
-            x, y = (self.data_fxn)(trig)
-            self.canvas.ax.clear()
-            self.canvas.ax.plot(x, y, label='Time domain')
-            self.canvas.ax.legend()
+            self.data = np.array(trig)
+    def replot(self):
+        #abs_data_path = os.path.join(self.data_dir, rel_data_path) + '.hdf5'
+        #with h5py.File(abs_data_path) as h5f:
+         #   trig = h5f['trigger']
+        trig = self.data
+        #Apply function as specified in child class
+        x, y = (self.data_fxn)(trig)
+        #keep zoomed in view on repaint
+        xlim = self.canvas.ax.get_xlim()
+        ylim = self.canvas.ax.get_ylim()
+        self.canvas.ax.clear()
+        self.canvas.ax.plot(x, y, label='Time domain')
+        self.canvas.ax.set_xlim(xlim)
+        self.canvas.ax.set_ylim(ylim)
+        self.canvas.ax.legend()
         self.canvas.draw()
     
     def closeEvent(self, x):

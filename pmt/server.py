@@ -28,9 +28,11 @@ class PMTServer(DeviceServer):
     def record(self, c, request_json='{}'):
         """ record """
         request = json.loads(request_json)
+        print('starting record')
         response = self._record(request)
         response_json = json.dumps(response)
-        return response_json
+     	
+        #return response_json
         
     def _record(self, request):
         response = {}
@@ -38,11 +40,13 @@ class PMTServer(DeviceServer):
             device_response = None
             try:
                 device_response = self._record_device(device_name, device_request)
+                print('success')
             except:
                 self._reload_device(device_name, {})
                 device_response = self._record_device(device_name, device_request)
-            response.update({device_name: device_response})
-        self._send_update({'record': response})
+                print('Error!!')
+#            response.update({device_name: device_response})
+ #       self._send_update({'record': response})
         return response
 
     def _record_device(self, name, request):
@@ -51,7 +55,7 @@ class PMTServer(DeviceServer):
         if request is not None:
             response = device.record(request)
         return response
-    
+    '''   
     @setting(11)
     def retrive_records(self, c, request_json='{}'):
         """ retrive records """
@@ -77,7 +81,7 @@ class PMTServer(DeviceServer):
         device = self._get_device(name)
         response = device.retrive_records(request)
         return response
-    
+    '''
 Server = PMTServer
 
 if __name__ == "__main__":
