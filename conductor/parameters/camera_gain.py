@@ -2,7 +2,7 @@ from conductor.parameter import ConductorParameter
 import numpy as np
 class CameraGain(ConductorParameter):
     priority = 1
-    autostart = True
+    autostart = False#True
     call_in_thread = True
     cameras = ['horizontal_mot', 'vertical_mot', 'cavity', 'cav_perp']
     current_vals = [None, None, None, None]

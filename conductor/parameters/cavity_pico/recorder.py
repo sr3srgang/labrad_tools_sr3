@@ -8,29 +8,29 @@ from twisted.internet.defer import inlineCallbacks
 from conductor.parameter import ConductorParameter
 
 class Recorder(ConductorParameter):
-    autostart = False
+    autostart = True
     priority = -1
     data_filename = '{}.cavity_pico'
     nondata_filename = '{}/cavity_pico'
-    pmt_name = 'cavity_pico'
+    pico_name  = 'cavity_pico'
     record_sequences = [
-        'dynamic_red_image_horizontal_mot_vertical_mot_fluor_cav_perp_cavity'
+        'vrs_horizontal_mot_fluor_cav_perp'
         ]
 
     def initialize(self, config):
         super(Recorder, self).initialize(config)
         self.connect_to_labrad()
-        request = {self.pmt_name: {}}
-        self.cxn.pmt.initialize_devices(json.dumps(request))
+        request = {self.pico_name: {}}
+        self.cxn.pico.initialize_devices(json.dumps(request))
         print('Cavity pico initialized')
 
 
     def get_value(self):
         experiment_name = self.server.experiment.get('name')
         shot_number = self.server.experiment.get('shot_number')
+        
         sequence = self.server.parameters.get('sequencer.sequence')
         previous_sequence = self.server.parameters.get('sequencer.previous_sequence')
-
         value = None
         if (experiment_name is not None) and (sequence is not None):
             point_filename = self.data_filename.format(shot_number)
@@ -43,7 +43,8 @@ class Recorder(ConductorParameter):
                 value = rel_point_path
         elif np.intersect1d(sequence.value, self.record_sequences):
             value = rel_point_path
-
+        
+        #value = self.nondata_filename.format(time.strftime('%Y%m%d'))
         return value
     '''
     @value.setter
@@ -53,8 +54,8 @@ class Recorder(ConductorParameter):
     def update(self):
         val = self.get_value()
         if val is not None:
-            request = {self.pmt_name: val}
-            self.cxn.pmt.record(json.dumps(request))
+            request = {self.pico_name: val}
+            self.cxn.pico.record(json.dumps(request))
 
 Parameter = Recorder
 

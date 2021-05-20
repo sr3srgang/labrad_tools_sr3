@@ -4,7 +4,7 @@ from conductor.parameter import ConductorParameter
 import time
 
 class SetRecordPath(ConductorParameter):
-    autostart = True
+    autostart = False#True
     priority = -1
     
     #Keywords to determine if/where we save the pictures
