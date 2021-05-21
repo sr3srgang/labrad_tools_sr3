@@ -19,7 +19,7 @@ class DataRecorder(ConductorParameter):
         experiment_name = self.server.experiment.get('name')
         shot_number = self.server.experiment.get('shot_number')
 
-        if experiment_name is not None:
+        if (experiment_name is not None) and ('end_expt' not in experiment_name):
             experiment_directory = os.path.join(self.data_directory, experiment_name)
             if not os.path.isdir(experiment_directory):
                 os.makedirs(experiment_directory)

@@ -10,10 +10,13 @@ from conductor.parameter import ConductorParameter
 class Recorder(ConductorParameter):
     autostart = True
     priority = -1
+    call_in_thread = False
+    
     data_filename = '{}.cavity_pico'
     nondata_filename = '{}/cavity_pico'
     pico_name  = 'cavity_pico'
     record_sequences = [
+    	'all_off_pico',
         'vrs_horizontal_mot_fluor_cav_perp'
         ]
 
@@ -36,12 +39,13 @@ class Recorder(ConductorParameter):
             point_filename = self.data_filename.format(shot_number)
             rel_point_path = os.path.join(experiment_name, point_filename)
         elif sequence is not None:
-            rel_point_path = self.nondata_filename.format(time.strftime('%Y%m%d'))
-            
+            rel_point_path  = self.nondata_filename.format(time.strftime('%Y%m%d'))
+        ''' 
         if sequence.loop:
             if np.intersect1d(previous_sequence.value, self.record_sequences):
                 value = rel_point_path
-        elif np.intersect1d(sequence.value, self.record_sequences):
+        '''
+        if np.intersect1d(sequence.value, self.record_sequences):
             value = rel_point_path
         
         #value = self.nondata_filename.format(time.strftime('%Y%m%d'))
@@ -55,7 +59,11 @@ class Recorder(ConductorParameter):
         val = self.get_value()
         if val is not None:
             request = {self.pico_name: val}
+            print(request)
+            self.connect_to_labrad()
+            print(self.cxn.pico.record)
+            print(request)
             self.cxn.pico.record(json.dumps(request))
-
+            print('requested')
 Parameter = Recorder
 
