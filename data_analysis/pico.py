@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
+from scipy.stats import mode
 
 def do_binned_fft(data, dt):
 	'''
@@ -31,18 +32,23 @@ def do_binned_fft(data, dt):
 		t_avg[i] = np.mean(t_split[i])
 	
 	return t_avg, max_fs
-	
-def do_two_tone(data, dt):
+
+def show_fft(data, ts, t):
+	Pxx, freqs = mlab.psd(split[i], NFFT = len(split[i]), Fs = 1.0/dt, pad_to = 2**12)
+		
+def do_two_tone(data, ts):
 	'''
 	From John's jupyter notebooks
 	'''
+	dt = mode(np.diff(ts))[0][0]
+	print(dt)
 	n_split =500#this shouldn't be permanently hard-coded in!!
-	cutoff = 4233878.186334917 #or this!!
+	cutoff = 3833878.186334917 #or this!!
 	split = np.array_split(data, n_split)
 	max_fs = np.zeros((n_split, 2))
 	f_vals = np.zeros((n_split, 2))
 	n_points = len(data)
-	ts = np.arange(n_points)*dt
+	#ts = np.arange(n_points)*dt
 	t_split = np.array_split(ts, n_split)
 	t_avg = np.zeros(n_split)
 	
