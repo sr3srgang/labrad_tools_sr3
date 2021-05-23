@@ -1,12 +1,13 @@
 import os
 from data_analysis.pico import time_domain
-from pico.clients.pico_client import PicoViewer
+from pico.clients.pico_clients.pico_client import PicoViewer
 
 
 class MyViewer(PicoViewer):
-    pico_name = 'cavity_pico'
+    #raw_data_path = '/home/srgang/K/data/pmt_data' #Single data file is overwritten every cycle to save HD space
+    name = 'cavity_pico'
     data_dir = os.path.join(os.getenv('PROJECT_DATA_PATH'), 'data')
-    data_fxn = lambda _, x: time_domain(x, 1.6e-8) #number is sampling interval
+    data_fxn = lambda _, x, ts: time_domain(x, ts)# 5.6e-8) #number is sampling interval
 
 if __name__ == '__main__':
     from PyQt4 import QtGui

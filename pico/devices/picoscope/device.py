@@ -1,74 +1,89 @@
-from collections import deque
-
 from device_server.device import DefaultDevice
-from picoscope_server.proxy import PicoscopeProxy
-
+from picoscope import ps3000a
+import os
+import json
+import h5py
+import time
+import numpy as np
 class Picoscope(DefaultDevice):
-    picoscope_servername = None
-    picoscope_serialnumber = None
-    picoscope_duration = None
-    #picoscope_frequency = None
-    picoscope_n_capture = None
-    picoscope_trigger_threshold = None # [V]
-    picoscope_timeout = None # [ms]
-    picoscope_channel_settings = {}
-
-    n_samples = None
-
-    records = {}
-    record_names = deque([])
-    max_records = 100
-    
-    
-    def initialize(self, config):
-        super(Picoscope, self).initialize(config)
-        self.connect_to_labrad()
-        self.picoscope_server = self.cxn[self.picoscope_servername]
-        ps3000a = PicoscopeProxy(self.picoscope_server)
-        ps = ps3000a.PS3000a(self.picoscope_serialnumber)
-        for channel_name, channel_settings in self.picoscope_channel_settings.items():
-            ps.setChannel(channel_name, **channel_settings)
-        response = ps.setSamplingInterval(self.picoscope_sampling_interval, 
+	picoscope_severname = None #what labrad will look for this device as
+	picoscope_serialnumber = None
+	#Data format (see cavity_pico for examples):
+	picoscope_channel_settings = None 
+	data_format = None
+	#Properties for data recording:
+	picoscope_trigger_threshold = None #V
+	picoscope_timeout = None #ms
+	picoscope_duration = None #s
+	picoscope_sampling_interval = None #s
+	picoscope_n_capture = None #How many triggers to listen for/how many sequential timeseries will be saved
+	
+	data_path = os.path.join(os.getenv('PROJECT_DATA_PATH'), 'data')
+	
+	
+	
+	def initialize(self, config):
+		super(Picoscope, self).initialize(config)
+		self.connect_to_labrad()
+		self.init_pico()
+		
+	def init_pico(self):
+		try:
+			ps = ps3000a.PS3000a(self.picoscope_serialnumber)
+		except:
+			DeviceInitializationFailed(serial_number)
+		
+		for channel_name, channel_settings in self.picoscope_channel_settings.items():
+            		ps.setChannel(channel_name, **channel_settings)
+            	
+            	response = ps.setSamplingInterval(self.picoscope_sampling_interval, 
                                           self.picoscope_duration)
-        self.n_samples = response[1]
-        print 'sampling interval:', response[0]
-        print 'number of samples:', response[1]
-        print 'max samples:', response[2]
-        ps.setSimpleTrigger('External', self.picoscope_trigger_threshold, timeout_ms=self.picoscope_timeout)
-        print('set to trigger')
-        ps.memorySegments(self.picoscope_n_capture)
-        ps.setNoOfCaptures(self.picoscope_n_capture)
+		self.n_samples = response[1]
+        	print 'sampling interval:', response[0]
+        	print 'number of samples:', response[1]
+        	print 'max samples:', response[2]
         
-        self.ps = ps
+        	ps.setSimpleTrigger('External', self.picoscope_trigger_threshold, timeout_ms=self.picoscope_timeout)
+        	print('set to trigger')
+        	ps.memorySegments(self.picoscope_n_capture)
+        	ps.setNoOfCaptures(self.picoscope_n_capture)
+        	self.ps = ps
+			
+	def record(self, rel_data_path):
+		self.ps.runBlock(pretrig=0.0, segmentIndex=0)
+		self.ps.waitReady()
+		
+		data = {}
+        	for channel, segments in self.data_format.items():
+            		data[channel] = {}
+            		for label, i in segments.items():
+                		data[channel][label] = self.ps.getDataV(channel, self.n_samples, segmentIndex=i)
+		
+		#Save data. Data file path comes from conductor parameter, where condition for temporarily or permanently saving data is set. 
 
-#        self.picoscope_server.reopen_interface(self.picoscope_serialnumber)
-#        for channel, settings in self.picoscope_channel_settings.items():
-#            self.picoscope_server.set_channel(self.picoscope_serialnumber, 
-#                                              channel, settings['coupling'], 
-#                                              settings['voltage_range'], 
-#                                              settings['attenuation'], 
-#                                              settings['enabled'])
-#        self.picoscope_server.set_sampling_frequency(self.picoscope_serialnumber, 
-#                                                     self.picoscope_duration, 
-#                                                     self.picoscope_frequency)
-#        self.picoscope_server.set_simple_trigger(self.picoscope_serialnumber, 
-#                                                 'External', 
-#                                                 self.picoscope_trigger_threshold, 
-#                                                 self.picoscope_timeout)
-#        self.picoscope_server.memory_segments(self.picoscope_serialnumber,
-#                                              self.picoscope_n_capture)
-#        self.picoscope_server.set_no_of_captures(self.picoscope_serialnumber,
-#                                                 self.picoscope_n_capture)
-
-    def record(self, data_path):
-        pass
-
-    def retrive_records(self, record_name):
-        if type(record_name).__name__ == 'int':
-            record_name = self.record_names[record_name]
-        if record_name not in self.records:
-            message = 'cannot locate record: {}'.format(record_name)
-            raise Exception(message)
-        record = self.records[record_name]
-        record['record_name'] = record_name
-        return record
+		#Check if today's data folder already exists; if not, make it
+		time_string = time.strftime('%Y%m%d')
+		dir_path = os.path.join(self.data_path, time_string)
+		if not os.path.isdir(dir_path):
+		    os.makedirs(dir_path)
+		
+		#Save data
+		raw_data = data['A']
+		ts = np.arange(self.n_samples)*self.picoscope_sampling_interval
+		h5py_path = os.path.join(self.data_path, rel_data_path + '.hdf5')
+		try:
+			h5f = h5py.File(h5py_path, 'w')
+			for k, v in raw_data.items():
+		    		h5f.create_dataset(k, data=np.array(v), compression='gzip')
+		    	h5f.create_dataset('time', data = np.array(ts), compression = 'gzip')
+			h5f.close()
+		except:
+			print('Unable to save pico file!')
+        	
+        	print('data saved')
+		
+		message = {'record': {self.name: h5py_path}}
+		self.server._send_update(message)
+		print('recorded')
+		
+		

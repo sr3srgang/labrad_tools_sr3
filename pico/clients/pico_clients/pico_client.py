@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
-from pico.clients.plotter_client import PicoPlotter
-from pico.clients.fft_client import FFTPlotter
+from pico.clients.pico_clients.plotter_client import PicoPlotter
+from pico.clients.pico_clients.fft_client import FFTPlotter
 from client_tools.connection import connection
 
 class MplCanvas(FigureCanvas):

@@ -1,6 +1,6 @@
 import os
 from data_analysis.pico import do_two_tone
-from pico.clients.pico_client import PicoViewer
+from pico.clients.pico_clients.pico_client import PicoViewer
 
 
 class MyViewer(PicoViewer):
