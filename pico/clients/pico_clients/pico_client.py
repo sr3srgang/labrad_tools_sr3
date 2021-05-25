@@ -30,7 +30,7 @@ class PicoViewer(QtGui.QDialog):
     data_dir = None
     data_fxn = None
 
-    def __init__(self, reactor, cxn=None):
+    def __init__(self, reactor, cxn=None, ylim = 2e-9):
         super(PicoViewer, self).__init__(None)
         self.reactor = reactor
         self.cxn = cxn
@@ -82,7 +82,7 @@ class PicoViewer(QtGui.QDialog):
         self.layout.addWidget(self.canvas)
 
         self.setLayout(self.layout)
-        self.canvas.ax.set_ylim((0, 2e-9))
+        self.canvas.ax.set_ylim((0, self.ylim))
         self.canvas.ax.set_xlim((0, .04))
         width = self.canvas.width()
         height = self.nav.height() + self.canvas.height() + 20

@@ -59,10 +59,6 @@ class Recorder(ConductorParameter):
         val = self.get_value()
         if val is not None:
             request = {self.pico_name: val}
-            print(request)
-            self.connect_to_labrad()
-            print(self.cxn.pico.record)
-            print(request)
             self.cxn.pico.record(json.dumps(request))
             print('requested')
 Parameter = Recorder

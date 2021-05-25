@@ -71,9 +71,9 @@ def do_two_tone(data, ts):
 	print(t_avg[ixs_lower])
 	print(t_avg[ixs_upper])
 	return t_avg, max_fs #f_vals
-def time_domain(data, dt):
-	n_points = len(data)
-	ts = np.arange(n_points)*dt
+def time_domain(data, ts):
+	#n_points = len(data)
+	#ts = np.arange(n_points)*dt
 	return ts, data
     
    
