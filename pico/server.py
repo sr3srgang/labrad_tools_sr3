@@ -13,6 +13,12 @@ class PicoServer(DeviceServer):
 		for device_name, device_request in request.items():
 			device = self._get_device(device_name)
 			device.record(device_request)
+	@setting(11)
+	def set_max_V(self, c, request_json = '{}'):
+		request = json.loads(request_json)
+		for device_name, device_request in request.items():
+			device = self._get_device(device_name)
+			device.set_max_V(device_request)
 			
 			
 Server = PicoServer

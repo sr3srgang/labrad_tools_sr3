@@ -38,17 +38,22 @@ class Picoscope(DefaultDevice):
             	
             	response = ps.setSamplingInterval(self.picoscope_sampling_interval, 
                                           self.picoscope_duration)
-		self.n_samples = response[1]
         	print 'sampling interval:', response[0]
         	print 'number of samples:', response[1]
         	print 'max samples:', response[2]
+        	self.n_samples = response[1]
         
         	ps.setSimpleTrigger('External', self.picoscope_trigger_threshold, timeout_ms=self.picoscope_timeout)
         	print('set to trigger')
         	ps.memorySegments(self.picoscope_n_capture)
         	ps.setNoOfCaptures(self.picoscope_n_capture)
         	self.ps = ps
-			
+	
+	def set_max_V(self, V_new):
+		self.picoscope_channel_settings['A']['VRange'] = V_new
+		self.ps.setChannel('A', **self.picoscope_channel_settings['A'])
+		print('Pico channel A max voltage set to {} V'.format(V_new))	
+		
 	def record(self, rel_data_path):
 		self.ps.runBlock(pretrig=0.0, segmentIndex=0)
 		self.ps.waitReady()

@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
+from data_analysis.pico import show_fft
 
 from client_tools.connection import connection
 
@@ -54,6 +55,7 @@ class FFTPlotter(QtGui.QDialog):
 
 		
 	def show_plot(self, data):
+		
 		self.canvas.ax.clear()
 		self.canvas.ax.plot(data)
 		self.canvas.draw()

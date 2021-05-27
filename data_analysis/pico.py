@@ -4,37 +4,23 @@ import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from scipy.stats import mode
 
-def do_binned_fft(data, dt):
+n_split = 500
+
+def bin_data(data, ts, n_split):
 	'''
 	From John's jupyter notebooks
 	'''
-	n_split = 500 #this shouldn't be permanently hard-coded in!!
+	dt = mode(np.diff(ts))[0][0]
 	split = np.array_split(data, n_split)
-	max_fs = np.zeros(n_split)
-	
-	n_points = len(data)
-	ts = np.arange(n_points)*dt
 	t_split = np.array_split(ts, n_split)
-	t_avg = np.zeros(n_split)
+	return dt, split, t_split
 	
-	for i in np.arange(n_split):
-		Pxx, freqs = mlab.psd(split[i], NFFT = len(split[i]), Fs = 1.0/dt, pad_to = 2**12)
-
-		'''
-		plt.figure()
-		plt.plot(freqs, Pxx)
-		plt.show()
-'''
-		max_fs[i] = np.max(Pxx)
-		arg = np.argmax(Pxx)
-		print("Max freq: {}".format(freqs[arg]))
-		
-		t_avg[i] = np.mean(t_split[i])
-	
-	return t_avg, max_fs
 
 def show_fft(data, ts, t):
-	Pxx, freqs = mlab.psd(split[i], NFFT = len(split[i]), Fs = 1.0/dt, pad_to = 2**12)
+	dt, split, t_split = bin_data(data, ts, n_split)
+	this_bin = np.argmin(np.abs(t_split - t))
+	Pxx, freqs = mlab.psd(split[this_bin], NFFT = len(split[this_bin]), Fs = 1.0/dt, pad_to = 2**12)
+	return Pxx, freqs, t_split[this_bin]
 		
 def do_two_tone(data, ts):
 	'''
@@ -47,7 +33,6 @@ def do_two_tone(data, ts):
 	split = np.array_split(data, n_split)
 	max_fs = np.zeros((n_split, 2))
 	f_vals = np.zeros((n_split, 2))
-	n_points = len(data)
 	#ts = np.arange(n_points)*dt
 	t_split = np.array_split(ts, n_split)
 	t_avg = np.zeros(n_split)

@@ -59,7 +59,7 @@ class PicoViewer(QtGui.QDialog):
     def process_click(self, event):
     	t_click = event.xdata
     	self.canvas.mpl_disconnect(self.mouse_listener)
-    	self.FFTPlot = FFTPlotter(np.arange(5), t_click)
+    	self.FFTPlot = FFTPlotter(self.data, t_click)
     	self.FFTPlot.show()
 
     def launch_plotter(self):
