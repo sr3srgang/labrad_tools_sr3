@@ -59,7 +59,7 @@ class PicoViewer(QtGui.QDialog):
     def process_click(self, event):
     	t_click = event.xdata
     	self.canvas.mpl_disconnect(self.mouse_listener)
-    	self.FFTPlot = FFTPlotter(self.data, t_click)
+    	self.FFTPlot = FFTPlotter(self.data, self.ts, t_click)
     	self.FFTPlot.show()
 
     def launch_plotter(self):
@@ -96,7 +96,6 @@ class PicoViewer(QtGui.QDialog):
         yield pico_server.addListener(listener=self.receive_update, source=None, ID=self.update_id)
 
     def receive_update(self, c, signal_json):
-        print('got update')
         signal = json.loads(signal_json)
         for message_type, message in signal.items():
             print message_type, message
@@ -106,18 +105,18 @@ class PicoViewer(QtGui.QDialog):
                 self.get_data(device_message)
                 self.replot()
                 self.Plotter.show_window()
+                
 
     def get_data(self, abs_data_path):
-    	print('getting data')
 	with h5py.File(abs_data_path) as h5f:
             self.data = np.array(h5f['trigger'])
+            #self.test = np.array(h5f['test_new_trig'])
+            #print(self.test)
             self.ts = np.array(h5f['time'])
+            
     def replot(self):
-        #abs_data_path = os.path.join(self.data_dir, rel_data_path) + '.hdf5'
-        #with h5py.File(abs_data_path) as h5f:
-         #   trig = h5f['trigger']
-        print('replotting')
         #Apply function as specified in child class
+        print('called')
         x, y = (self.data_fxn)(self.data, self.ts)#, self.ts)
         #keep zoomed in view on repaint
         xlim = self.canvas.ax.get_xlim()
@@ -128,6 +127,7 @@ class PicoViewer(QtGui.QDialog):
         self.canvas.ax.set_ylim(ylim)
         self.canvas.ax.legend()
         self.canvas.draw()
+        print('redrawn')
     
     def closeEvent(self, x):
         self.reactor.stop()

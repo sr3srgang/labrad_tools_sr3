@@ -28,13 +28,12 @@ class MplCanvas(FigureCanvas):
 class FFTPlotter(QtGui.QDialog):
 	
 	
-	def __init__(self, data, t):
+	def __init__(self, data, ts, t):
 		super(FFTPlotter, self).__init__()
-		self.populate(t)
-		self.show_plot(data)
+		self.populate()
+		self.show_plot(data, ts, t)
 		
-    	def populate(self, t):
-		self.setWindowTitle('FFT at time {} s'.format(t))
+    	def populate(self):
 		self.canvas = MplCanvas()
 		self.nav = NavigationToolbar(self.canvas, self)
 		'''Changed nav toolbar'''
@@ -54,8 +53,17 @@ class FFTPlotter(QtGui.QDialog):
 		self.setFixedSize(width, height)
 
 		
-	def show_plot(self, data):
-		
+	def show_plot(self, data, ts,t):
+		Pxx, freqs, t0 = show_fft(data, ts, t)
+		self.setWindowTitle('FFT at time {} s'.format(t0))
 		self.canvas.ax.clear()
-		self.canvas.ax.plot(data)
+		self.canvas.ax.plot(freqs, Pxx)
 		self.canvas.draw()
+		
+		
+		
+		
+		
+		
+		
+		

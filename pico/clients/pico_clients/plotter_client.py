@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
-
+from data_analysis.pico import ones
 from client_tools.connection import connection
 
 class MplCanvas(FigureCanvas):
@@ -27,7 +27,7 @@ class MplCanvas(FigureCanvas):
 class PicoPlotter(QtGui.QDialog):
 	
 	def set_class_vars(self):
-		self.script = self.ones
+		self.script = ones
 		self.n_show = 30
 		self.live_data = np.full(self.n_show, None)
 	
@@ -65,7 +65,7 @@ class PicoPlotter(QtGui.QDialog):
 	
 	def live_plot(self):
 		try:
-		    this_shot = self.script()
+		    this_shot = self.script(self.parent.data)
 		    empty_data = np.where(self.live_data == None)
 		    if len(empty_data[0]) == 0:
 		        self.live_data[0:self.n_show - 1] = self.live_data[1:self.n_show]
@@ -75,9 +75,9 @@ class PicoPlotter(QtGui.QDialog):
 		except AttributeError:
 		    print('Not loaded')
 		    
-	def ones(self):
+	'''def ones(self):
 		return 1
-		
+	'''	
 	def show_window(self):
 		self.live_plot()
 		self.canvas.ax.clear()

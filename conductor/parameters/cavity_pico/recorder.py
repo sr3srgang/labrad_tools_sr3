@@ -60,6 +60,6 @@ class Recorder(ConductorParameter):
         if val is not None:
             request = {self.pico_name: val}
             self.cxn.pico.record(json.dumps(request))
-            print('requested')
+            print('picoscope requested')
 Parameter = Recorder
 

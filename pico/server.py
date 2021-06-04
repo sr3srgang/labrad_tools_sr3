@@ -3,16 +3,23 @@ from labrad.server import setting, LabradServer
 
 from device_server.server import DeviceServer
 from twisted.internet import defer, reactor
+import time
 
 class PicoServer(DeviceServer):
 	name = 'pico'
 	
 	@setting(10)
 	def record(self, c, request_json = '{}'):
+		start = time.time()
+		print('Pico server called')
 		request = json.loads(request_json)
 		for device_name, device_request in request.items():
 			device = self._get_device(device_name)
 			device.record(device_request)
+		end = time.time()
+		print(end - start)
+			
+			
 	@setting(11)
 	def set_max_V(self, c, request_json = '{}'):
 		request = json.loads(request_json)

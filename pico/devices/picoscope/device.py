@@ -48,6 +48,8 @@ class Picoscope(DefaultDevice):
         	ps.memorySegments(self.picoscope_n_capture)
         	ps.setNoOfCaptures(self.picoscope_n_capture)
         	self.ps = ps
+        	self.ps.runBlock(pretrig=0.0, segmentIndex=0)
+		self.ps.waitReady()
 	
 	def set_max_V(self, V_new):
 		self.picoscope_channel_settings['A']['VRange'] = V_new
@@ -55,15 +57,18 @@ class Picoscope(DefaultDevice):
 		print('Pico channel A max voltage set to {} V'.format(V_new))	
 		
 	def record(self, rel_data_path):
-		self.ps.runBlock(pretrig=0.0, segmentIndex=0)
-		self.ps.waitReady()
+		timers = np.zeros(5)
+		timers[0] = time.time()
+		#self.ps.runBlock(pretrig=0.0, segmentIndex=0)
+		#self.ps.waitReady()
+		timers[1] = time.time()
 		
 		data = {}
         	for channel, segments in self.data_format.items():
             		data[channel] = {}
             		for label, i in segments.items():
                 		data[channel][label] = self.ps.getDataV(channel, self.n_samples, segmentIndex=i)
-		
+		timers[2] = time.time()
 		#Save data. Data file path comes from conductor parameter, where condition for temporarily or permanently saving data is set. 
 
 		#Check if today's data folder already exists; if not, make it
@@ -86,9 +91,13 @@ class Picoscope(DefaultDevice):
 			print('Unable to save pico file!')
         	
         	print('data saved')
-		
+		timers[3] = time.time()
 		message = {'record': {self.name: h5py_path}}
 		self.server._send_update(message)
-		print('recorded')
 		
+		self.ps.runBlock(pretrig=0.0, segmentIndex=0)
+		#self.ps.waitReady()
+		timers[4]= time.time()
+		print(np.diff(timers))
+		print(timers[4] - timers[0])
 		
