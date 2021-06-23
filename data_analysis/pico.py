@@ -72,7 +72,7 @@ def time_domain(data, ts):
     
 def ones(data):
 	#print(data)
-	return 2
+	return 1
     
     
     
