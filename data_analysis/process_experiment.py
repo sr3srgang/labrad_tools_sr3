@@ -22,9 +22,9 @@ def get_files(folder, first_file, n_files, key_params):
 		camera_file = os.path.join(path_to_data, folder, camera_file_format.format(f_ixs[i]))
 		matching_files = glob.glob(camera_file)
 		#print(matching_files)
-                if len(matching_files) > 1:
-                    print('Improper data formatting!!')
-		    print(matching_files)
+		if len(matching_files) > 1:
+			print('Improper data formatting!!')
+			print(matching_files)
 		file_names.append(matching_files[0])
 	return file_names, param_vals
 	

@@ -11,7 +11,7 @@ from ok_server.proxy import OKProxy
 
 class Sequence(ConductorParameter):
     autostart = True
-    priority = 10
+    priority = -1
     value_type = 'list'
     value = ['all_off'] * 1
 
@@ -20,7 +20,7 @@ class Sequence(ConductorParameter):
     #call_in_thread = True
 
     ok_master_servername = 'appa_ok'
-    ok_master_interfacename = '2047000UVN'
+    ok_master_interfacename = '2047000UVN'#Y2'#VN'
 
     sequencer_servername = 'sequencer'
     sequencer_devices = ['abcd', 'e']
