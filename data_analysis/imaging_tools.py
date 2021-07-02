@@ -125,6 +125,16 @@ def process_file(mot_img, zoom = False, ROI = None, background = None):
     if zoom:
         mot_image = mot_image[ROI[1]:ROI[1]+ROI[3], ROI[0]:ROI[0]+ROI[2]]
     return mot_image
+    
+def process_file_return_background(mot_img, zoom = False, ROI = None, background = None):
+    mot_image = cv2.imread(mot_img, 0).T.astype(np.int16)
+    
+    if background is not None:
+        background = cv2.imread(background, 0).T.astype(np.int16)
+        mot_image = mot_image - background
+    if zoom:
+        mot_image = background[ROI[1]:ROI[1]+ROI[3], ROI[0]:ROI[0]+ROI[2]]
+    return mot_image
 
 def default_window(mot_img, show_title = False, title = None, zoom = False, ROI = None, background = None):
     mot_image = process_file(mot_img, zoom, ROI, background)
