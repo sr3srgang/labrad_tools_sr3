@@ -20,7 +20,8 @@ class SG380Frequency(ConductorParameter):
 
     def update(self):
         if self.value is not None:
-           self.dev.frequency = self.value
+           print(self.value)
+           #self.dev.frequency = self.value
         #print(self.value)
         #print("SG380Frequency is " + str(self.dev.frequency))
 

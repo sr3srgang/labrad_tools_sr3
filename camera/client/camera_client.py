@@ -42,7 +42,9 @@ class CameraGui(QMainWindow):
         self.img_xlim = None
         self.img_ylim = None
 
-
+        #Rotation:
+        self.rot = 0
+        
         #For handling setting ROI with mouse
         self.listen_ROI = False
         self.first_click = True
@@ -78,6 +80,8 @@ class CameraGui(QMainWindow):
         file_opts.addAction('Save current screen', self.save_window)
         file_opts.addAction('Save current raw file', self.save_raw)
         view_opts = opts.addMenu('&View options')
+        view_opts.addAction('Rotate counter-clockwise', self.rotate)
+        view_opts.addAction('Reset rotation',  self.default_rot)
         view_opts.addAction('Toggle show title', self.toggle_title)
         view_opts.addAction('Background options', self.click_background_button)
         fitting = opts.addMenu('&Fitting options')
@@ -87,10 +91,31 @@ class CameraGui(QMainWindow):
         cameras = opts.addMenu('&Camera')
         cameras.addAction('Horizontal MOT', self.set_horizontal_MOT)
         cameras.addAction('Vertical MOT', self.set_vertical_MOT)
+        cameras.addAction('Cavity', self.set_cavity)
+        cameras.addAction('Cavity perp', self.set_cavity_perp)
         
         
 
 #View options
+    def rotate(self):
+        self.rot = (self.rot + 1)%4
+        if self.rot != 0:
+            self.ROI_zoom.setEnabled(False)
+            for w in self.ROI_widgets[:-1]:
+                w.setEnabled(False)
+        else:
+            self.ROI_zoom.setEnabled(True)
+            for w in self.ROI_widgets[:-1]:
+                w.setEnabled(True)
+        self.show_window()
+        
+    def default_rot(self):
+        self.rot = 0
+        self.ROI_zoom.setEnabled(True)
+        for w in self.ROI_widgets[:-1]:
+            w.setEnabled(True)
+        self.show_window()
+        
     def toggle_title(self):
         self.show_title = not(self.show_title)
         self.show_window()
@@ -191,7 +216,23 @@ class CameraGui(QMainWindow):
         self.img_ylim = [80, 770]
         self.sketchy_subtract = 100 #mysterious fudge factor to make clicks align with reality ...
         self.show_window()
-        
+
+    def set_cavity(self):
+        self.camera = 'cavity'
+        self.pix = [1216, 1936]
+        self.img_xlim = [90, 520]
+        self.img_ylim = [80, 770]
+        self.sketchy_subtract = 100 #mysterious fudge factor to make clicks align with reality ...
+        self.show_window()
+
+    def set_cavity_perp(self):
+        self.camera = 'cav_perp'
+        self.pix = [964, 1292]
+        self.img_xlim = [100, 515]
+        self.img_ylim = [75, 635]
+        self.sketchy_subtract = 0
+        self.show_window()
+
 #Everything ROI-related     
     def add_invisible_ROI_widgets(self):
         self.xROI = QLineEdit(self)
@@ -285,7 +326,7 @@ class CameraGui(QMainWindow):
     def call_visualization_fxn(self, title):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
-            _ = self.script(self.file_to_show, self.get_current_window_loc(), self.ROI, self.show_title, title, self.zoom, self.background_file)
+            _ = self.script(self.file_to_show, self.get_current_window_loc(), self.ROI, self.rot, self.show_title, title, self.zoom, self.background_file)
 
 #Launch live_plotter
     def launch(self):
