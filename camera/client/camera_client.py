@@ -174,7 +174,7 @@ class CameraGui(QMainWindow):
             self.camera = 'Load file'
             self.file_to_show = path
             if "horizontal_mot" in path:
-                self.pix = [964, 1292]
+                self.pix = [964, 1292]#[68, 160]
                 self.img_xlim = [100, 515]
                 self.img_ylim = [75, 635]
                 self.sketchy_subtract = 0
@@ -203,7 +203,7 @@ class CameraGui(QMainWindow):
 #Selecting camera
     def set_horizontal_MOT(self):
         self.camera = 'horizontal_mot'
-        self.pix = [964, 1292]
+        self.pix = [964, 1292]#[68, 160]## #
         self.img_xlim = [100, 515]
         self.img_ylim = [75, 635]
         self.sketchy_subtract = 0
@@ -357,19 +357,21 @@ class CameraGui(QMainWindow):
         #self.cxn = connect(name=self.name)
         self.cxn = connection()
         yield self.cxn.connect(name = 'camera viewer')
-        server = yield self.cxn.get_server('conductor')
+        server = yield self.cxn.get_server('camera')
         yield server.signal__update(self.update_id)
         yield server.addListener(listener = self.receive_update, source=None, ID=self.update_id)
+        print('connected')
         
     def receive_update(self, c, update_json):
         update = json.loads(update_json)
         for key, value in update.items():
             if key == self.camera:
                 if self.fluorescence_mode:
-                    self.file_to_show = value[0]
-                    time.sleep(.1)
-                    self.show_window()
-                    self.Plotter.show_window()
+                    if not (('gnd' in value[0]) or ('background' in value[0])):
+                        print(value)
+                        self.file_to_show = value[0]
+                        self.show_window()
+                        self.Plotter.show_window()
                     
 
 
