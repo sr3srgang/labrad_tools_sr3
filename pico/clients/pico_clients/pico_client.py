@@ -109,7 +109,7 @@ class PicoViewer(QtGui.QDialog):
 
     def get_data(self, abs_data_path):
 	with h5py.File(abs_data_path) as h5f:
-            self.data = np.array(h5f['trigger'])
+            self.data = np.array(h5f['gnd'])
             #self.test = np.array(h5f['test_new_trig'])
             #print(self.test)
             self.ts = np.array(h5f['time'])

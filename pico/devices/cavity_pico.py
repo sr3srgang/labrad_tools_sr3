@@ -7,13 +7,13 @@ class CavityPico(Picoscope):
 	#Properties for data recording:
 	picoscope_trigger_threshold = 2
 	picoscope_timeout = 5000
-	picoscope_duration = 2*20e-3
-	picoscope_sampling_interval = 56e-9
-	picoscope_n_capture = 1 #2
+	picoscope_duration = 2e-3
+	picoscope_sampling_interval = 25e-6
+	picoscope_n_capture = 3 #2
 	picoscope_channel_settings = {
 		'A': {
 		    'coupling': 'DC',
-		    'VRange': .1,
+		    'VRange': 2.0,
 		    'probeAttenuation': 1.0,
 		    'enabled': True,
 		    },
@@ -36,8 +36,8 @@ class CavityPico(Picoscope):
 		    'enabled': False,
 		    },
 	}
-	data_format = {'A': {'trigger':0, },}#'test_new_trig': 1
-
+	#data_format = {'A': {'trigger':0, },}#'test_new_trig': 1
+	data_format = {'A': {'gnd':0, 'exc':1, 'bgd':2,},}
 
 
 Device = CavityPico

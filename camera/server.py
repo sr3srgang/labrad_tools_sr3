@@ -1,5 +1,5 @@
 
-import json
+import json, time
 from labrad.server import setting
 
 from device_server.server import DeviceServer
@@ -12,7 +12,12 @@ class CameraServer(DeviceServer):
     def record(self, c, cam, paths):
         """ Sends message out to camera clients to tell them to record"""
         self._send_update({cam: paths})
-        print(paths)
+        #print(paths)
+        
+    @setting(11)
+    def reset(self, c, cam):
+    	print("RESET CALLED")
+    	self._send_update({'reset': None})
     
 Server = CameraServer
 

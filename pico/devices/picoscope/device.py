@@ -50,6 +50,7 @@ class Picoscope(DefaultDevice):
         	self.ps = ps
         	self.ps.runBlock(pretrig=0.0, segmentIndex=0)
 		self.ps.waitReady()
+		self.at_init = True
 	
 	def set_max_V(self, V_new):
 		self.picoscope_channel_settings['A']['VRange'] = V_new
@@ -57,20 +58,31 @@ class Picoscope(DefaultDevice):
 		print('Pico channel A max voltage set to {} V'.format(V_new))	
 		
 	def record(self, rel_data_path):
-		timers = np.zeros(5)
-		timers[0] = time.time()
-		#self.ps.runBlock(pretrig=0.0, segmentIndex=0)
-		#self.ps.waitReady()
-		timers[1] = time.time()
 		
+		t0 = time.time()
+		#self.ps.stop()
+		#self.ps.runBlock(pretrig=0.0, segmentIndex=0)
+		self.ps.waitReady()
+		'''
+		if not self.at_init:
+			self.ps.waitReady()
+		else:
+			self.at_init = False
+		'''
+		tf = time.time()
+		print("Elapsed time waiting: {}".format(tf - t0))
+		
+		t0 = time.time()
 		data = {}
         	for channel, segments in self.data_format.items():
+        		print(segments.items())
             		data[channel] = {}
             		for label, i in segments.items():
                 		data[channel][label] = self.ps.getDataV(channel, self.n_samples, segmentIndex=i)
-		timers[2] = time.time()
-		#Save data. Data file path comes from conductor parameter, where condition for temporarily or permanently saving data is set. 
 
+             
+		#Save data. Data file path comes from conductor parameter, where condition for temporarily or permanently saving data is set. 
+		#print("Time acquiring: {}".format(tf - t0))
 		#Check if today's data folder already exists; if not, make it
 		time_string = time.strftime('%Y%m%d')
 		dir_path = os.path.join(self.data_path, time_string)
@@ -91,13 +103,16 @@ class Picoscope(DefaultDevice):
 			print('Unable to save pico file!')
         	
         	print('data saved')
-		timers[3] = time.time()
+        	tf = time.time()
+        	print("Elapsed time recording: {}".format(tf - t0))
 		message = {'record': {self.name: h5py_path}}
 		self.server._send_update(message)
 		
+		t0 = time.time()
+		self.ps.stop()
 		self.ps.runBlock(pretrig=0.0, segmentIndex=0)
-		#self.ps.waitReady()
-		timers[4]= time.time()
-		print(np.diff(timers))
-		print(timers[4] - timers[0])
+		tf = time.time()
+		print("Elapsed time arming: {}".format(tf - t0))
+		
+
 		

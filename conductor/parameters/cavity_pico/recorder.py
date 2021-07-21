@@ -17,7 +17,8 @@ class Recorder(ConductorParameter):
     pico_name  = 'cavity_pico'
     record_sequences = [
     	'all_off_pico',
-        'vrs_horizontal_mot_fluor_cav_perp'
+        'vrs_horizontal_mot_fluor_cav_perp',
+        'gnd_horizontal_mot_fluor_vertical_mot'
         ]
 
     def initialize(self, config):

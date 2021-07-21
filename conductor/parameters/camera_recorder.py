@@ -4,8 +4,8 @@ from conductor.parameter import ConductorParameter
 import time
 
 class CameraRecorder(ConductorParameter):
-    autostart = True
-    priority = -1
+    autostart = True #False
+    priority = 10
     
     #Keywords to determine if/where we save the pictures
     record_keyword = 'savePictures'
@@ -22,6 +22,7 @@ class CameraRecorder(ConductorParameter):
     def initialize(self, config):
         super(CameraRecorder, self).initialize(config)
         self.connect_to_labrad()
+        self.cxn.camera.reset('vertical_mot')
         
     def do_absorption_imaging(self, path):
         return [path + '_image.png', path + '_bright.png', path + '_dark.png']
@@ -35,7 +36,7 @@ class CameraRecorder(ConductorParameter):
 		for cam in self.cameras:
 		    if  cam in s: #check if camera is in this sequence name
 		        paths = self.get_paths(cam, s)
-		        print(paths)
+		        #print(paths)
 		        self.cxn.camera.record(cam, paths)
     
     def safe_in(self, str1, str2):
