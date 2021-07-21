@@ -125,6 +125,16 @@ def process_file(mot_img, zoom = False, ROI = None, background = None):
     if zoom:
         mot_image = mot_image[ROI[1]:ROI[1]+ROI[3], ROI[0]:ROI[0]+ROI[2]]
     return mot_image
+    
+def process_file_return_background(mot_img, zoom = False, ROI = None, background = None):
+    mot_image = cv2.imread(mot_img, 0).T.astype(np.int16)
+    
+    if background is not None:
+        background = cv2.imread(background, 0).T.astype(np.int16)
+        mot_image = mot_image - background
+    if zoom:
+        mot_image = background[ROI[1]:ROI[1]+ROI[3], ROI[0]:ROI[0]+ROI[2]]
+    return mot_image
 
 def default_window(mot_img, rot = 0, show_title = False, title = None, zoom = False, ROI = None, background = None):
     mot_image = process_file(mot_img, zoom, ROI, background)
@@ -139,6 +149,7 @@ def save_gui_window(mot_img, save_loc, ROI, rot = 0, show_title = False, title =
     return dims
 
 def save_gui_window_ROI(mot_img, save_loc, ROI, rot = 0, show_title = False, title = None,zoom = False, background = None):
+    print(mot_img)
     fig, axImshow, dims = default_window(mot_img, rot = rot, show_title = show_title, title = title, zoom = zoom, ROI = ROI, background = background)
     if not zoom:
         rect = patches.Rectangle((ROI[0], ROI[1]),ROI[2],ROI[3],linewidth=1,edgecolor='pink',facecolor='none')
@@ -146,11 +157,36 @@ def save_gui_window_ROI(mot_img, save_loc, ROI, rot = 0, show_title = False, tit
     fig.savefig(save_loc)
     plt.close()
     return dims
-    
+
+'''
+MM Modified 070221 for new camera gui from here on:
+'''
    
+def fig_gui_window_ROI(mot_img, ax, ROI, rot = 0, show_title = False, title = None, zoom = False, background = None):
+    print(mot_img)
+    mot_image = process_file(mot_img, zoom, ROI, background)
+    mot_image = np.rot90(mot_image, rot)
+    fig_visualize_mot_image(mot_image, ax, show_title = show_title, title = 'testing')
+    '''
+    fig, axImshow, dims = default_window(mot_img, rot = rot, show_title = show_title, title = title, zoom = zoom, ROI = ROI, background = background)
+    if not zoom:
+        rect = patches.Rectangle((ROI[0], ROI[1]),ROI[2],ROI[3],linewidth=1,edgecolor='pink',facecolor='none')
+        axImshow.add_patch(rect)
+    fig.savefig(save_loc)
+    plt.close()
+    return dims    
+    '''
     
-    
-    
-    
-    
+def fig_visualize_mot_image(mot_array, axImshow, c_max = 100, show_title = False, title = None):
+    #center imshow:
+    im = axImshow.imshow(mot_array, cmap = 'magma', origin = 'lower', aspect = 'equal')
+    axImshow.tick_params(color='white', labelcolor='white', labelsize=12)
+    im.set_clim(0, c_max)
+    if show_title:
+        axImshow.set_title("{:.3e}".format(title), color = 'w', y = .85, size = 48)
+
+       
+def fig_plotter(mot_img, ROI):
+    mot_image = process_file(mot_img, ROI = ROI, zoom = True)
+    return np.sum(mot_image)
     

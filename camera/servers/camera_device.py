@@ -14,11 +14,12 @@ from twisted.internet.defer import inlineCallbacks
 from queue import Queue
 
 class Stream(QObject):
-    def __init__(self, cam, cam_name):
+    def __init__(self, cam, cam_name, cxn):
         super(Stream, self).__init__()
         self.cam = cam
         self.cam_name = cam_name
         self.paths = Queue()
+        self.cxn = cxn
         
     @pyqtSlot()
     def start_stream(self):
@@ -39,6 +40,8 @@ class Stream(QObject):
             this_path = self.paths.get_nowait()
             cv2.imwrite(this_path, frame.as_opencv_image())
             print(this_path)
+            #self.cxn.camera._send_update({self.cam + '_display': [this_path]})
+
 
         
 
@@ -68,14 +71,15 @@ class Camera(QMainWindow):
         self.cxn = connection()
         yield self.cxn.connect(name = 'camera')
         print('connected to labrad')
-        server = yield self.cxn.get_server('conductor')
-        print('got conductor')
+        server = yield self.cxn.get_server('camera')
+        print('got camera server')
         yield server.signal__update(self.update_id)
         yield server.addListener(listener = self.receive_update, source=None, ID=self.update_id)
         print('connected!')
         
     def receive_update(self, c, update_json):
         update = json.loads(update_json)
+        print(update)
         for key, value in update.items():
             if key == self.cam_name:
                 for path in value:
@@ -115,7 +119,7 @@ class Camera(QMainWindow):
                 cam.ExposureMode.set('TriggerWidth')
 
     def start_streaming(self):
-        stream = Stream(self.this_camera, self.cam_name)
+        stream = Stream(self.this_camera, self.cam_name, self.cxn)
         self.thread = QThread(self)
         stream.moveToThread(self.thread)
         self.thread.started.connect(stream.start_stream)

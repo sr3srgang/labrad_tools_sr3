@@ -1,15 +1,3 @@
-'''
-if __name__ == '__main__':
-    from PyQt5.QtWidgets import QApplication
-    import sys
-    app = QApplication(sys.argv)
-    import qt5reactor
-    qt5reactor.install()
-    w = CameraGui()
-    w.show()
-    sys.exit(app.exec_())
-'''
-
 import sys, json, time, os
 from shutil import copyfile
 import numpy as np
@@ -22,8 +10,24 @@ import warnings
 from camera.client.live_plotter_client import LivePlotter
 from twisted.internet.defer import inlineCallbacks
 
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.figure import Figure
 
-class CameraGui(QMainWindow):
+#from client_tools.connection import connection
+
+class MplCanvas(FigureCanvas):
+    def __init__(self):
+        fig, ax = plt.subplots(1)
+        self.fig = fig
+        self.ax = ax
+
+        self.fig.set_tight_layout(True)
+
+        FigureCanvas.__init__(self, self.fig)
+        self.setFixedSize(1200, 600)
+        
+class CameraGui(QtGui.QDialog):
     def set_class_vars(self):
         self.name = 'camera_gui'
         self.camera = 'No camera selected'
@@ -367,9 +371,20 @@ class CameraGui(QMainWindow):
         for key, value in update.items():
             if key == self.camera:
                 if self.fluorescence_mode:
-                    if not (('gnd' in value[0]) or ('background' in value[0])):
+                    if not (('exc' in value[0]) or ('background' in value[0])):
+                        str_end = '_fluorescence.png'
+                        keyword = 'fluor_'
+                        split_str = value[0].partition(str_end)
+                        parse_name = split_str[0].partition(keyword)
+                        beginning = parse_name[0]
+                        shot_num = int(parse_name[-1])
+                        offset = 3
+                        mod_shot = shot_num - offset
+                        new_path = beginning + keyword + str(mod_shot) + str_end
                         print(value)
-                        self.file_to_show = value[0]
+                        print(new_path)
+                        
+                        self.file_to_show = new_path#value[0]
                         self.show_window()
                         self.Plotter.show_window()
                     
