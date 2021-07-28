@@ -29,7 +29,9 @@ class Picoscope(DefaultDevice):
 		
 	def init_pico(self):
 		#try:
+		
 		ps = ps5000a.PS5000a(self.picoscope_serialnumber)
+		ps.resolution = ps.ADC_RESOLUTIONS["16"]
 		#except:
 		#	DeviceInitializationFailed(self.picoscope_serial_number)
 		
@@ -41,12 +43,17 @@ class Picoscope(DefaultDevice):
         	print 'sampling interval:', response[0]
         	print 'number of samples:', response[1]
         	print 'max samples:', response[2]
+        	print 'time', response[0]*response[1]
         	self.n_samples = response[1]
         
         	ps.setSimpleTrigger('External', self.picoscope_trigger_threshold, timeout_ms=self.picoscope_timeout)
         	print('set to trigger')
         	ps.memorySegments(self.picoscope_n_capture)
         	ps.setNoOfCaptures(self.picoscope_n_capture)
+        	
+        	#Set Device Resolution
+        	#ps.SetResolution(self.picoscope_resolution)
+        	
         	self.ps = ps
         	self.ps.runBlock(pretrig=0.0, segmentIndex=0)
 		self.ps.waitReady()

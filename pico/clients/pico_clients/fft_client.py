@@ -46,8 +46,8 @@ class FFTPlotter(QtGui.QDialog):
 		self.layout.addWidget(self.canvas)
 
 		self.setLayout(self.layout)
-		self.canvas.ax.set_ylim((0, 5e-5))
-		self.canvas.ax.set_xlim((0, .04))
+		#self.canvas.ax.set_ylim((0, 5e-5))
+		#self.canvas.ax.set_xlim((0, .04))
 		width = self.canvas.width()
 		height = self.nav.height() + self.canvas.height() + 20
 		self.setFixedSize(width, height)
@@ -57,7 +57,9 @@ class FFTPlotter(QtGui.QDialog):
 		Pxx, freqs, t0 = show_fft(data, ts, t)
 		self.setWindowTitle('FFT at time {} s'.format(t0))
 		self.canvas.ax.clear()
-		self.canvas.ax.plot(freqs, Pxx)
+		self.canvas.ax.plot(freqs*1e-6, Pxx)
+		self.canvas.ax.set_xlim((0, 5))
+		self.canvas.ax.set_xlabel("Freq (MHz)")
 		self.canvas.draw()
 		
 		

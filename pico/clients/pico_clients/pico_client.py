@@ -82,8 +82,8 @@ class PicoViewer(QtGui.QDialog):
         self.layout.addWidget(self.canvas)
 
         self.setLayout(self.layout)
-        self.canvas.ax.set_ylim((0, self.ylim))
-        self.canvas.ax.set_xlim((0, .04))
+        self.canvas.ax.set_ylim(self.ylim)
+        self.canvas.ax.set_xlim((-.005, .045))
         width = self.canvas.width()
         height = self.nav.height() + self.canvas.height() + 20
         self.setFixedSize(width, height)
@@ -109,7 +109,7 @@ class PicoViewer(QtGui.QDialog):
 
     def get_data(self, abs_data_path):
 	with h5py.File(abs_data_path) as h5f:
-            self.data = np.array(h5f['gnd'])
+            self.data = np.array(h5f['trigger'])
             #self.test = np.array(h5f['test_new_trig'])
             #print(self.test)
             self.ts = np.array(h5f['time'])

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from scipy.stats import mode
 
-n_split = 250
+n_split = 500
 
 def bin_data(data, ts, n_split):
 	'''
@@ -42,7 +42,8 @@ def find_cutoff(Pxx, freqs):
 	
 		
 def do_two_tone(data, ts):
-	dt, split, t_split, t_avg = bin_data(data, ts, 250)#n_bins hard-coded in rn!!
+	print(np.max(ts))
+	dt, split, t_split, t_avg = bin_data(data, ts, n_split)#n_bins hard-coded in rn!!
 	
 	cutoff = 0
 	max_fs = np.zeros((n_split, 2))
