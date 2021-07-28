@@ -5,8 +5,8 @@ from pico.clients.pico_clients.pico_client import PicoViewer
 
 class MyViewer(PicoViewer):
     #raw_data_path = '/home/srgang/K/data/pmt_data' #Single data file is overwritten every cycle to save HD space
-    name = 'cavity_pico'
-    ylim = .1
+    name = 'cavity_probe_pico'
+    ylim = .5
     data_dir = os.path.join(os.getenv('PROJECT_DATA_PATH'), 'data')
     data_fxn = lambda _, x, ts: time_domain(x, ts)# 5.6e-8) #number is sampling interval
 
