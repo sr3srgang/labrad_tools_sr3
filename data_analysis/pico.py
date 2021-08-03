@@ -48,12 +48,14 @@ def do_two_tone(data, ts):
 	cutoff = 0
 	max_fs = np.zeros((n_split, 2))
 	f_vals = np.zeros((n_split, 2))
+	ixs = np.insert(np.arange(n_split), 0, 0)
 		
-	for i in np.arange(n_split):
+	for j in np.arange(len(ixs)):
+		i = ixs[j]
 		Pxx, freqs = mlab.psd(split[i], NFFT = len(split[i]), Fs = 1.0/dt, pad_to = 2**12)
-		if i ==0:
+		if j ==0:
 			cutoff = find_cutoff(Pxx, freqs)
-		lower = (freqs < cutoff) #& (freqs > 1e+6)
+		lower = (freqs < cutoff) & (freqs > 1e+6)
 		upper = freqs > cutoff
 		max_fs[i, 0] = np.max(Pxx[lower])
 		max_fs[i, 1] = np.max(Pxx[upper])

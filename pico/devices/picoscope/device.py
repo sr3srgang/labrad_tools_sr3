@@ -1,10 +1,11 @@
 from device_server.device import DefaultDevice
-from picoscope import ps3000a
+from picoscope import ps5000a
 import os
 import json
 import h5py
 import time
 import numpy as np
+import matplotlib.pyplot as plt
 class Picoscope(DefaultDevice):
 	picoscope_severname = None #what labrad will look for this device as
 	picoscope_serialnumber = None
@@ -28,10 +29,9 @@ class Picoscope(DefaultDevice):
 		self.init_pico()
 		
 	def init_pico(self):
-		try:
-			ps = ps3000a.PS3000a(self.picoscope_serialnumber)
-		except:
-			DeviceInitializationFailed(serial_number)
+		ps = ps5000a.PS5000a(self.picoscope_serialnumber)
+		#except:
+		#	DeviceInitializationFailed(serial_number)
 		
 		for channel_name, channel_settings in self.picoscope_channel_settings.items():
             		ps.setChannel(channel_name, **channel_settings)
@@ -48,39 +48,50 @@ class Picoscope(DefaultDevice):
         	ps.memorySegments(self.picoscope_n_capture)
         	ps.setNoOfCaptures(self.picoscope_n_capture)
         	self.ps = ps
-        	self.ps.runBlock(pretrig=0.0, segmentIndex=0)
-		self.ps.waitReady()
-		self.at_init = True
-	
+        	#self.ps.runBlock(pretrig=0.0, segmentIndex=0)
+		#self.ps.waitReady()
+		
+	def reset(self):
+		self.ps.stop()
+		self.ps.runBlock(pretrig=0.0, segmentIndex=0)	
+		#self.ps.waitReady()
+	'''
 	def set_max_V(self, V_new):
 		self.picoscope_channel_settings['A']['VRange'] = V_new
 		self.ps.setChannel('A', **self.picoscope_channel_settings['A'])
 		print('Pico channel A max voltage set to {} V'.format(V_new))	
-		
+	'''	
 	def record(self, rel_data_path):
-		
-		t0 = time.time()
-		#self.ps.stop()
-		#self.ps.runBlock(pretrig=0.0, segmentIndex=0)
 		self.ps.waitReady()
-		'''
-		if not self.at_init:
-			self.ps.waitReady()
-		else:
-			self.at_init = False
-		'''
-		tf = time.time()
-		print("Elapsed time waiting: {}".format(tf - t0))
-		
 		t0 = time.time()
+		'''
 		data = {}
         	for channel, segments in self.data_format.items():
-        		print(segments.items())
             		data[channel] = {}
-            		for label, i in segments.items():
+            		
+            		for i in np.arange(3):
+            			label = segments[i]
+            			print(label)
                 		data[channel][label] = self.ps.getDataV(channel, self.n_samples, segmentIndex=i)
-
-             
+                		print(data[channel][label])
+				print('acquired')
+		'''       
+		(data_raw, numSamples, overflow) = self.ps.getDataRawBulk('A')
+		dataV = self.ps.rawToV('A', data_raw)
+		print(np.shape(dataV))
+		data = {}
+		data['A'] = {}
+		data['A']['gnd'] = dataV[0, :]
+		data['A']['exc'] = dataV[1, :]
+		data['A']['bgd'] = dataV[2, :]
+		
+		'''
+		plt.figure()
+		plt.plot(dataV[0, :])
+		plt.plot(dataV[1, :])
+		plt.plot(dataV[2, :])
+		plt.show()
+		'''
 		#Save data. Data file path comes from conductor parameter, where condition for temporarily or permanently saving data is set. 
 		#print("Time acquiring: {}".format(tf - t0))
 		#Check if today's data folder already exists; if not, make it
@@ -108,11 +119,12 @@ class Picoscope(DefaultDevice):
 		message = {'record': {self.name: h5py_path}}
 		self.server._send_update(message)
 		
-		t0 = time.time()
 		self.ps.stop()
-		self.ps.runBlock(pretrig=0.0, segmentIndex=0)
-		tf = time.time()
-		print("Elapsed time arming: {}".format(tf - t0))
+		self.ps.runBlock()
+		
+		
+		
+		
 		
 
 		
