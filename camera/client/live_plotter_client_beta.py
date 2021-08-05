@@ -64,7 +64,7 @@ class LivePlotter(QDialog):
 		self.live_data = np.full(self.n_show, None)
 	
 	def live_plot(self):
-		try:
+		#try:
 		    roi = self.get_ROI()
 		    this_shot = self.script(self.parent.file_to_show, roi)
 		    self.title = this_shot
@@ -74,8 +74,8 @@ class LivePlotter(QDialog):
 		        self.live_data[-1] = this_shot
 		    else:
 		        self.live_data[empty_data[0][0]] = this_shot
-		except AttributeError:
-		    print('Not loaded')
+		#except AttributeError:
+		 #   print('Not loaded')
 
 	def get_ROI(self):
             xlim = self.parent.canvas.ax.get_xlim()

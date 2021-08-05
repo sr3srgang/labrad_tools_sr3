@@ -5,6 +5,7 @@ from scipy.optimize import curve_fit
 import pylab
 from matplotlib.ticker import NullFormatter
 import matplotlib.patches as patches
+#import data_analysis.live_plotter as lp
 
 
 path_to_data = '/home/srgang/K/data/data'
@@ -179,6 +180,7 @@ def fig_gui_window_ROI(mot_img, ax, ROI, rot = 0, show_title = False, title = No
     '''
     
 def fig_visualize_mot_image(mot_array, axImshow, c_max = 100, show_title = False, title = None):
+    axImshow.clear()
     #center imshow:
     im = axImshow.imshow(mot_array, cmap = 'magma', origin = 'lower', aspect = 'equal')
     axImshow.tick_params(color='white', labelcolor='white', labelsize=12)
@@ -190,4 +192,28 @@ def fig_visualize_mot_image(mot_array, axImshow, c_max = 100, show_title = False
 def fig_plotter(mot_img, ROI):
     mot_image = process_file(mot_img, ROI = ROI, zoom = True)
     return np.sum(mot_image)
+
+def fig_exc(gnd_path, ROI):
+    #It gets sent the gnd image; also find and read in exc and background
+    exc_path = gnd_path.replace('gnd', 'exc')
+    background_path = gnd_path.replace('gnd', 'background')
+
+    gnd_sub = process_file(gnd_path, ROI = ROI, zoom = True, background = background_path)
+    exc_sub = process_file(gnd_path, ROI = ROI, zoom = True, background = background_path)
+
+    #Get conductor file
+    str_end = '_fluorescence.png'
+    keyword = 'fluor_'
+    split_str = gnd_path.partition(str_end)
+    parse_name = split_str[0].partition(keyword)
+    beginning = parse_name[0]
+    shot_num = int(parse_name[-1])
+    f_name = "{}.conductor.json".format(shot_num)
+    #path = os.path.join(settings['data_path'], settings['exp_name'], f_name)
+    #f = open(path)
+    #c_json = json.load(f)
+    #freq = c_json['clock_sg380']
+    
+    return lp.calc_excitation(np.sum(gnd_sub), np.sum(exc_sub))
+    
     
