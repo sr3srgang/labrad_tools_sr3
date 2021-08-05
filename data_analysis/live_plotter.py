@@ -8,6 +8,8 @@ import allantools
 import cv2
 import os,sys,inspect
 import json
+
+import data_analysis.simple_clock as sc
 from data_analysis.imaging_tools import process_file
 from data_analysis.imaging_tools import process_file_return_background
 
@@ -64,7 +66,13 @@ def calc_excitation(gnd, exc):
 	frac = float(exc)/(exc + gnd)
 	return frac
 	
-
+def return_f_e_pico(settings, fig, ax):
+	freq = sc.load_freq(settings)
+	gnd, exc, background, freq = sc.import_pico_scan(settings['data_path'], settings['exp_name'], settings['shot_number'])
+	gnd_sub = gnd - background
+	exc_sub = exc - background
+	frac = sc.calc_excitation(np.sum(gnd_sub[sc.pico_shot_range]), np.sum(exc_sub[sc.pico_shot_range]))
+	return freq, frac
 	
 def add_to_plot(settings, freq, exc, fig, ax):
 	fig.set_size_inches(12, 6)
@@ -79,6 +87,7 @@ def add_to_plot(settings, freq, exc, fig, ax):
 	ax[1].set_xlabel('Shot Number')
 	ax[1].set_title('Excitation Fraction')
 	print(exc)
+
 	
 def rfe(settings, fig, ax):
 	gnd_sub, exc_sub = load_clock_images(settings)

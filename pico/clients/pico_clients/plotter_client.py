@@ -82,6 +82,6 @@ class PicoPlotter(QtGui.QDialog):
 		self.live_plot()
 		self.canvas.ax.clear()
 		self.canvas.ax.plot(self.live_data)
-		self.canvas.ax.title(np.std(self.live_data))
+#		self.canvas.ax.title(np.std(self.live_data))
 		self.canvas.draw()
 		

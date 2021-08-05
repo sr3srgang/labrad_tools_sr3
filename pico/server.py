@@ -33,3 +33,6 @@ Server = PicoServer
 if __name__ == "__main__":
     from labrad import util
     util.runServer(Server())
+
+    #Server.initialize_devices(json.dumps({'cavity_pico': {}}))
+    #print('test')
