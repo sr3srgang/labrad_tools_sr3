@@ -43,17 +43,17 @@ def find_cutoff(Pxx, freqs):
 		
 def do_two_tone(data, ts):
 	print(np.max(ts))
-	dt, split, t_split, t_avg = bin_data(data, ts, n_split)#n_bins hard-coded in rn!!
+	dt, split, t_split, _= bin_data(data, ts, n_split)#n_bins hard-coded in rn!!
 	
 	cutoff = 0
 	max_fs = np.zeros((n_split, 2))
 	f_vals = np.zeros((n_split, 2))
-		
+	t_avg = np.zeros(n_split)	
 	for i in np.arange(n_split):
 		Pxx, freqs = mlab.psd(split[i], NFFT = len(split[i]), Fs = 1.0/dt, pad_to = 2**12)
 		if i ==0:
 			cutoff = find_cutoff(Pxx, freqs)
-		lower = (freqs < cutoff) #& (freqs > 1e+6)
+		lower = (freqs < cutoff) & (freqs > 1e+6)
 		upper = freqs > cutoff
 		max_fs[i, 0] = np.max(Pxx[lower])
 		max_fs[i, 1] = np.max(Pxx[upper])

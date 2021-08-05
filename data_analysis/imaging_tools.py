@@ -25,6 +25,7 @@ def bin_reps(data_folder, first_file, n_reps, per_rep, global_path = False):
     return np.reshape(files_sorted, (n_reps, per_rep))
 
 def gaussian_2D(x, y, A, x0, y0, sigma_x, sigma_y, p, offset):
+    #astropy
     exp_val = ((sigma_y*(x - x0))**2 - 2*p*sigma_x*sigma_y*(x - x0)*(y - y0) + (sigma_x*(y - y0))**2)/((1 - p**2)*(sigma_x*sigma_y)**2)
     return A * np.exp(-exp_val/2) + offset
     
