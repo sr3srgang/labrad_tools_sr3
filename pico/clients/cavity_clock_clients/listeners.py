@@ -19,6 +19,21 @@ def get_cavity_data(abs_data_path, trace = 'gnd'):
         ts = np.array(h5f['time'])
     return data, ts
 
+def get_cav_axis(update, name):
+    for message_type, message in update.items():
+        value = message.get('cavity_probe_pico')
+        if message_type == 'record' and value is not None:
+            shot_num, folder_path = get_shot_num(value, '.cavity_probe_pico.hdf5')
+            if shot_num is not None:
+                print(name)
+                f_name = "{}.conductor.json".format(shot_num)
+                path = os.path.join(folder_path, f_name)
+                f = open(path)
+                c_json = json.load(f)
+                val = c_json[name]
+                print(val)
+                return val
+            
 def cavity_probe_time_trace(update, ax):
     ax.set_facecolor('xkcd:pinkish grey')
     for message_type, message in update.items():
@@ -38,32 +53,56 @@ def get_res_dips(t_avg, max_fs, t_range):
    ix_1, _ = find_peaks(-max_fs[in_range, 1], distance = n_points)
    print('found peaks:')
    print(t_avg[in_range][ix_0], t_avg[in_range][ix_1])
-   return t_avg[in_range][ix_0], t_avg[in_range][ix_1]
+   return t_avg[in_range][ix_0][0], t_avg[in_range][ix_1][0]
     
 def get_vrs(t_avg, max_fs, t_range = t_range_emp, scan_rate = scan_rate_emp, t_cross = crossing_emp):
     t0, t1 = get_res_dips(t_avg, max_fs, t_range = t_range)
     t_elapsed = (t0 + t1)/2 - t_cross
     return t_elapsed*scan_rate*2
     
-def cavity_probe_two_tone(update, ax, trace = 'gnd'):
+def cavity_probe_two_tone(update, ax, trace = 'gnd', val = False):
     ax.set_facecolor('xkcd:pinkish grey')
     for message_type, message in update.items():
         value = message.get('cavity_probe_pico')
         if message_type == 'record' and value is not None:
             ax.clear()
             data, ts = get_cavity_data(value, trace)
+            print('hello')
             t_avg, max_fs = do_two_tone(data, ts)
             ax.plot(t_avg*1e3, max_fs[:, 0], color = 'k')
             ax.plot(t_avg*1e3, max_fs[:, 1], color = 'white')
             ax.set_xlabel('Cavity probe time (ms)')
-            ax.set_ylabel('Het. tone power (arb)')
+            ax.set_ylabel('Power (arb)')
             try:
                 vrs = get_vrs(t_avg, max_fs)
                 print("vrs: " + str(vrs*1e-6))
             except:
                 print("No vrs found")
-            return True
+                vrs = None
+            print('returning')
+            return True, vrs
+        else:
+            return False, None
 
+def exc_frac_cavity(update, ax, data_x, data_y, vrs_gnd, vrs_exc, x_ax):
+    n_down = np.sqrt(vrs_gnd)
+    n_up = np.sqrt(vrs_exc)
+    exc_frac = n_up/(n_up + n_down)
+    x_val = get_cav_axis(update, x_ax)
+    print(x_val)
+    print("Exc_frac: " + str(exc_frac))
+    ax.plot(x_val, exc_frac, 'ok')
+    ax.set_facecolor('xkcd:pinkish grey')
+
+'''           
+def get_exc_frac_cavity(update, gnd_ax, exc_ax, vrs_ax, vrs_x, vrs_y):
+    vrs_gnd = cavity_probe_two_tone(update, gnd_ax, val = True)
+    vrs_exc = cavity_probe_two_tone(update, exc_ax, trace = 'exc', val = True)
+    n_up = np.sqrt(vrs_gnd)
+    n_down = np.sqrt(vrs_exc)
+    exc_frac = n_up/(n_up + n_down)
+    print(exc_frac)
+    '''
 #CLOCK LISTENERS
 def get_expt(update):
     for message_type, message in update.items():
@@ -87,6 +126,7 @@ def pmt_trace(update, ax):
             ax.fill_between(ts[pico_shot_range],0, gnd[pico_shot_range], alpha = .4, color = 'grey')
             ax.set_xlabel('Exposure time (ms)')
             ax.set_ylabel('PMT Voltage')
+            #ax.set_ylim((0, .2))
             #f = h5py.File(value)
             return True
             
@@ -182,8 +222,8 @@ def get_clock_data(path, time_name = 'sequencer.t_dark'):
     shot_num, folder_path = get_shot_num(path)
     f = h5py.File(path)
     gnd = np.array(f['gnd'])
-    exc = np.array(f['bgd'])
-    background = np.array(f['exc'])
+    exc = np.array(f['exc'])
+    background = np.array(f['bgd'])
     ts = np.array(f['time'])
     if shot_num is not None:
         f_name = "{}.conductor.json".format(shot_num)
@@ -201,8 +241,8 @@ def get_clock_data(path, time_name = 'sequencer.t_dark'):
         t_dark = None
     return gnd, exc, background, freq, ts, shot_num, t_dark  
                
-def get_shot_num(path):
-    str_end = '.clock_pico.hdf5'
+def get_shot_num(path, str_end = '.clock_pico.hdf5'):
+    #str_end = '.clock_pico.hdf5'
     head, tail = os.path.split(path)
     split_str = tail.partition(str_end)
     try:

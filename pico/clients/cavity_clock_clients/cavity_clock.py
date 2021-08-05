@@ -29,11 +29,11 @@ class MplCanvas(FigureCanvas):
         plt.rcParams.update({'font.size': 16, 'text.color': 'white'})
         # Set up subplots
         self.n_data_plots = 2
-        gs = gridspec.GridSpec(ncols=self.n_data_plots, nrows=5)
+        gs = gridspec.GridSpec(ncols=self.n_data_plots*3, nrows=6)
         fig.patch.set_facecolor('black')
         self.trace_axes = [fig.add_subplot(
-            gs[0, :]), fig.add_subplot(gs[1, :]), fig.add_subplot(gs[2, :])]
-        self.data_axes = [fig.add_subplot(gs[3:, i])
+            gs[0:2, 1:5]), fig.add_subplot(gs[2:4, 0:3]), fig.add_subplot(gs[2:4, 3:6])]
+        self.data_axes = [fig.add_subplot(gs[4:, i*3:(i + 1)*3])
                           for i in np.arange(self.n_data_plots)]
         self.lim_default = [False, False, False, False, False, False]
         self.lim_set = self.lim_default
@@ -145,7 +145,7 @@ class CavityClockGui(QDialog):
         #except:
             #print('ERROR')
     
-    def phase_fringe_config(self, update, preset):
+    def phase_domain_config(self, update, preset):
         self.canvas.lim_set[0] = listeners.pmt_trace(update, self.canvas.trace_axes[0]) or preset[0]
         try:
             exc_called = listeners.exc_frac(update, self.canvas.data_axes[0], self.canvas.data_x[0], self.canvas.data_y[0], add_fit = self.add_fit, time_domain = True, time_name = 'sequencer.clock_phase')
@@ -167,7 +167,7 @@ class CavityClockGui(QDialog):
                     
     def receive_update(self, c, update_json):
         update = json.loads(update_json)
-        #print(update)
+        print(update)
         this_expt = listeners.get_expt(update)
         if this_expt is not None and self.expt != this_expt:
             if this_expt.isnumeric():
@@ -185,14 +185,22 @@ class CavityClockGui(QDialog):
         
         #Specify listeners for diff axes
         #if 'sideband_scan' in this_expt:
-        self.freq_domain_config(update, preset)
+        self.phase_domain_config(update, preset)
         #self.rabi_flop_config(update, preset)
         #self.phase_fringe_config(update, preset)
         #self.canvas.lim_set[0] = listeners.pmt_trace(update, self.canvas.trace_axes[0]) or preset[0]
         
         #try:
-        #self.canvas.lim_set[1] = listeners.cavity_probe_two_tone(update, self.canvas.trace_axes[1]) or preset[1]
-        #self.canvas.lim_set[2] = listeners.cavity_probe_two_tone(update, self.canvas.trace_axes[2], 'exc') or preset[2]
+        #returned, vrs_gnd = listeners.cavity_probe_two_tone(update, self.canvas.trace_axes[1]) 
+        try:
+            returned, vrs_gnd = listeners.cavity_probe_two_tone(update, self.canvas.trace_axes[1]) 
+            self.canvas.lim_set[1] = returned or preset[1]
+            returned, vrs_exc = listeners.cavity_probe_two_tone(update, self.canvas.trace_axes[2], 'exc') 
+            self.canvas.lim_set[2] = returned or preset[2]
+            listeners.exc_frac_cavity(update, self.canvas.data_axes[1], self.canvas.data_x[1], self.canvas.data_y[1], vrs_gnd, vrs_exc, 'sequencer.clock_phase')
+        except:
+            print('cannot extract tones')
+        
         #except:
         #    print('hellooo')
             #self.canvas.lim_set[1] = False

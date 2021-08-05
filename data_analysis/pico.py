@@ -48,7 +48,7 @@ def do_two_tone(data, ts):
 	max_fs = np.zeros((n_split, 2))
 	f_vals = np.zeros((n_split, 2))
 	ixs = np.insert(np.arange(n_split), 0, 0)
-		
+	t_avg = np.zeros(n_split)	
 	for j in np.arange(len(ixs)):
 		i = ixs[j]
 		Pxx, freqs = mlab.psd(split[i], NFFT = len(split[i]), Fs = 1.0/dt, pad_to = 2**12)
