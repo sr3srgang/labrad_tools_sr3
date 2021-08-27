@@ -68,7 +68,7 @@ class CameraGui(QMainWindow):
         self.add_invisible_background_widgets()
         self.Plotter = LivePlotter(self)
         
-        
+s        
         
 #Main toolbar        
     def _create_toolbar(self):

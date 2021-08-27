@@ -37,6 +37,13 @@ class Stream(QObject):
         print('Frame acquired: ' + self.cam_name)
         cam.queue_frame(frame)
         if not self.paths.empty():
+            print("{} shots in queue".format(self.paths.qsize()))
+            '''
+            if self.paths.qsize() > 10:
+                print("QUEUE OVERFULL!! DUMPING")
+                while not self.paths.empty():
+                    print("Dumping " + self.paths.get_nowait())
+            '''
             this_path = self.paths.get_nowait()
             cv2.imwrite(this_path, frame.as_opencv_image())
             print(this_path)
@@ -84,6 +91,9 @@ class Camera(QMainWindow):
             if key == self.cam_name:
                 for path in value:
                     self.stream.paths.put_nowait(path)
+            '''
+            #Rough draft for setting gain:
+            
             if key == self.update_gain_name:
                 print('UPDATE')
                 print(key, value)
@@ -95,6 +105,11 @@ class Camera(QMainWindow):
                         value = 40
                     self.set_gain(int(value))
                     self.at_init = False
+            '''
+            if key == 'reset':
+                print('RESET CALLED')
+                self.stream.paths = Queue()
+                print('CAM RESET')
         
     def init_camera(self):
         with Vimba.get_instance() as vimba:

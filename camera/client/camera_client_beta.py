@@ -26,11 +26,11 @@ class MplCanvas(FigureCanvas):
         self.fig.set_tight_layout(True)
 
         FigureCanvas.__init__(self, self.fig)
-        self.setFixedSize(600, 800)
+        self.setFixedSize(1200, 800)
 
 class CameraGui(QDialog):
     def set_vars(self):
-        self.camera = 'horizontal_mot'
+        self.camera = 'vertical_mot'
         self.name = self.camera
         self.fluorescence_mode = True
         self.update_id = np.random.randint(0, 2**31 - 1)
@@ -50,7 +50,9 @@ class CameraGui(QDialog):
         self.canvas = MplCanvas()
         
         self.nav = NavigationToolbar(self.canvas, self)
-        self.nav.addAction('Select analysis method')
+        #select_cam = self.nav.addAction('&Select camera')
+        #select_cam.addAction('horizontal mot')
+        #select_cam.addAction('vertical mot (cavity)')
         self.nav.addAction('Launch live plotter', self.launch_plotter)
           
         self.layout = QGridLayout()
@@ -84,10 +86,12 @@ class CameraGui(QDialog):
                     if not (('exc' in value[0]) or ('background' in value[0])):
                         print(value)
                         if 'gnd' in value[0]:
+                            print(value[0])
                             str_end = '_fluorescence.png'
-                            keyword = 'fluor_'
+                            keyword = 'mot_cavity_'
                             split_str = value[0].partition(str_end)
                             parse_name = split_str[0].partition(keyword)
+                            print(parse_name)
                             beginning = parse_name[0]
                             shot_num = int(parse_name[-1])
                             offset = 3
@@ -97,26 +101,33 @@ class CameraGui(QDialog):
                             self.file_to_show = new_path#value[0]
                         else:
                             self.file_to_show = value[0]
+                        print(self.file_to_show)
+                        
 
+                        time.sleep(.1)
                         self.Plotter.show_window()
                         self.show_window()
                         
 
     def show_window(self):
-        if not self.no_lim:
-            xlim = self.canvas.ax.get_xlim()
-            ylim = self.canvas.ax.get_ylim()    
-        self.canvas.ax.clear()
-        it.fig_gui_window_ROI(self.file_to_show, self.canvas.ax, self.ROI)
-        if not self.no_lim:
-            self.canvas.ax.set_xlim(xlim)
-            self.canvas.ax.set_ylim(ylim)
-        else:
-            self.no_lim = False
-        print(self.canvas.ax.get_xlim())
-        self.canvas.ax.set_title("{:.3e}".format(self.Plotter.title), color = 'w', y = .85, size = 42)
-        self.canvas.draw()
-        print('redrawn')
+        try:
+            if not self.no_lim:
+                xlim = self.canvas.ax.get_xlim()
+                ylim = self.canvas.ax.get_ylim()    
+            #self.canvas.ax.clear() #MOVED to after attempt to load fig
+            it.fig_gui_window_ROI(self.file_to_show, self.canvas.ax, self.ROI)
+            if not self.no_lim:
+                self.canvas.ax.set_xlim(xlim)
+                self.canvas.ax.set_ylim(ylim)
+            else:
+                self.no_lim = False
+            print(self.canvas.ax.get_xlim())
+            self.canvas.ax.set_title("{:.3e}".format(self.Plotter.title), color = 'w', y = .85, size = 42)
+            self.canvas.draw()
+            print('redrawn')
+        except:
+            #self.no_lim = True
+            print('Error loading file: not refreshed')
         
     def launch_plotter(self):
         self.Plotter.show()
