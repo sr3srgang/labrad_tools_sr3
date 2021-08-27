@@ -1,39 +1,21 @@
-import os
+#Standard imports
 import numpy as np
-import json, h5py
-from data_analysis.pico import do_two_tone
-import data_analysis.simple_clock as sc
-from data_analysis.sr1_fit import processAxialTemp, fit, axialTemp 
-pico_shot_range = np.arange(10, 25)
-freq_offset = 116.1e6
+import os, json, h5py
 from scipy.signal import find_peaks
+from scipy.optimize import curve_fit
 
-crossing_emp = .00154
-t_range_emp = [.007, .017]
-scan_rate_emp = 1e6/(20e-3) #1MHz/20 ms
-def get_cavity_data(abs_data_path, trace = 'gnd'):
-    with h5py.File(abs_data_path) as h5f:
-        data = np.array(h5f[trace])
-        #self.test = np.array(h5f['test_new_trig'])
-        #print(self.test)
-        ts = np.array(h5f['time'])
-    return data, ts
+#Importing analysis code from data_analysis folder
+import data_analysis.simple_clock as sc
+from data_analysis.pico import do_two_tone
+from data_analysis.MM_analysis.ramsey import process_ramsey_data as ramsey
+from data_analysis.cavity_clock.read_data import *
+from data_analysis.cavity_clock.cavity_sweep_min import *
+from data_analysis.cavity_clock.helpers import *
+from data_analysis.sr1_fit import processAxialTemp, fit, axialTemp 
 
-def get_cav_axis(update, name):
-    for message_type, message in update.items():
-        value = message.get('cavity_probe_pico')
-        if message_type == 'record' and value is not None:
-            shot_num, folder_path = get_shot_num(value, '.cavity_probe_pico.hdf5')
-            if shot_num is not None:
-                print(name)
-                f_name = "{}.conductor.json".format(shot_num)
-                path = os.path.join(folder_path, f_name)
-                f = open(path)
-                c_json = json.load(f)
-                val = c_json[name]
-                print(val)
-                return val
-            
+from pico.clients.cavity_clock_clients.params import *
+
+#CAVITY LISTENERS            
 def cavity_probe_time_trace(update, ax):
     ax.set_facecolor('xkcd:pinkish grey')
     for message_type, message in update.items():
@@ -45,48 +27,34 @@ def cavity_probe_time_trace(update, ax):
             ax.plot(ts, data, 'o', color = 'k')
             ax.set_xlabel('Exposure time (ms)')
             return True
-   
-def get_res_dips(t_avg, max_fs, t_range):
-   in_range = (t_avg > t_range[0]) & (t_avg < t_range[1])
-   n_points = len(t_avg[in_range])
-   ix_0, _ = find_peaks(-max_fs[in_range, 0], distance = n_points)
-   ix_1, _ = find_peaks(-max_fs[in_range, 1], distance = n_points)
-   print('found peaks:')
-   print(t_avg[in_range][ix_0], t_avg[in_range][ix_1])
-   return t_avg[in_range][ix_0][0], t_avg[in_range][ix_1][0]
-    
-def get_vrs(t_avg, max_fs, t_range = t_range_emp, scan_rate = scan_rate_emp, t_cross = crossing_emp):
-    t0, t1 = get_res_dips(t_avg, max_fs, t_range = t_range)
-    t_elapsed = (t0 + t1)/2 - t_cross
-    return t_elapsed*scan_rate*2
     
 def cavity_probe_two_tone(update, ax, trace = 'gnd', val = False):
     ax.set_facecolor('xkcd:pinkish grey')
     for message_type, message in update.items():
         value = message.get('cavity_probe_pico')
         if message_type == 'record' and value is not None:
-            ax.clear()
             data, ts = get_cavity_data(value, trace)
-            print('hello')
             t_avg, max_fs = do_two_tone(data, ts)
+            ax.clear()
             ax.plot(t_avg*1e3, max_fs[:, 0], color = 'k')
             ax.plot(t_avg*1e3, max_fs[:, 1], color = 'white')
             ax.set_xlabel('Cavity probe time (ms)')
             ax.set_ylabel('Power (arb)')
+            ax.set_ylim((0, 2e-9))
             try:
-                vrs = get_vrs(t_avg, max_fs)
+                vrs = get_vrs(t_avg, max_fs, ax)
                 print("vrs: " + str(vrs*1e-6))
             except:
                 print("No vrs found")
                 vrs = None
-            print('returning')
+            #print('returning')
             return True, vrs
         else:
             return False, None
 
 def exc_frac_cavity(update, ax, data_x, data_y, vrs_gnd, vrs_exc, x_ax):
-    n_down = np.sqrt(vrs_gnd)
-    n_up = np.sqrt(vrs_exc)
+    n_down = vrs_gnd**2
+    n_up = vrs_exc**2
     exc_frac = n_up/(n_up + n_down)
     x_val = get_cav_axis(update, x_ax)
     print(x_val)
@@ -94,24 +62,8 @@ def exc_frac_cavity(update, ax, data_x, data_y, vrs_gnd, vrs_exc, x_ax):
     ax.plot(x_val, exc_frac, 'ok')
     ax.set_facecolor('xkcd:pinkish grey')
 
-'''           
-def get_exc_frac_cavity(update, gnd_ax, exc_ax, vrs_ax, vrs_x, vrs_y):
-    vrs_gnd = cavity_probe_two_tone(update, gnd_ax, val = True)
-    vrs_exc = cavity_probe_two_tone(update, exc_ax, trace = 'exc', val = True)
-    n_up = np.sqrt(vrs_gnd)
-    n_down = np.sqrt(vrs_exc)
-    exc_frac = n_up/(n_up + n_down)
-    print(exc_frac)
-    '''
-#CLOCK LISTENERS
-def get_expt(update):
-    for message_type, message in update.items():
-        value = message.get('clock_pico')
-        if message_type == 'record' and value is not None:
-            head, _ = os.path.split(value)
-            _, expt = os.path.split(head)
-            return expt
 
+#CLOCK LISTENERS                           	
 def pmt_trace(update, ax):
     ax.set_facecolor('xkcd:pinkish grey')
     for message_type, message in update.items():
@@ -130,9 +82,6 @@ def pmt_trace(update, ax):
             #f = h5py.File(value)
             return True
             
-def calc_excitation(gnd, exc):
-	frac = float(exc)/(exc + gnd)
-	return frac
 	
 def atom_number(update, ax, data_x, data_y, time_domain = False, time_name = 'sequencer.t_dark', freq_domain = True, add_fit= False):
     ax.set_facecolor('xkcd:pinkish grey')
@@ -164,15 +113,7 @@ def atom_number(update, ax, data_x, data_y, time_domain = False, time_name = 'se
             ax.set_ylabel('Total atom number')
             return True
 
-def do_gaussian_fit(ax, data_x, data_y):
-    if len(data_y) > 5:
-        ax.clear()
-        ax.plot(data_x, data_y, 'o', color = 'k')
-        sc.add_gaussian(data_x, data_y, ax, offset = False)
-    else:
-        print("Too few points to fit")
-            
-def exc_frac(update, ax, data_x, data_y, time_domain = False, time_name = 'sequencer.t_pi', freq_domain = True, add_fit= False):
+def exc_frac(update, ax, data_x, data_y, time_domain = False, time_name = 'sequencer.clock_phase', freq_domain = True, add_fit= False, n_avg = 1):
     ax.set_facecolor('xkcd:pinkish grey')
     for message_type, message in update.items():
         value = message.get('clock_pico')
@@ -186,98 +127,30 @@ def exc_frac(update, ax, data_x, data_y, time_domain = False, time_name = 'seque
                ax.set_xlabel(time_name)
             elif freq_domain:
             	x_ax = (freq - freq_offset)
-            	'''
-            	if add_fit:
-            	    if len(data_y) > 5:
-            	        ax.clear()
-            	        ax.plot(data_x, data_y, 'o', color = 'k')
-            	        sc.add_gaussian(data_x, data_y, ax, offset = False)
-            	    else:
-            	        print('Too few points to fit')
-            	 '''
-            	ax.set_xlabel('Frequency (-116.1 MHz)')
-            	    
+            	ax.set_xlabel('Frequency (-116.1 MHz)')            	    
             else:
                 x_ax = shot_num
                 ax.set_xlabel('Shot number')
             data_x.append(x_ax)
             data_y.append(exc_frac)
-            ax.plot(x_ax, exc_frac, 'o', color = 'k')
+
+            if (n_avg > 1) and (len(data_y) > n_avg):
+                binned_x, binned_data = do_moving_avg(data_x, data_y, n_avg)
+                ax.clear()
+                ax.plot(binned_x, binned_data, 'ok')
+            else:
+                ax.plot(x_ax, exc_frac, 'o', color = 'k')
             ax.set_ylabel('Excitation Fraction')
             return True
+            
 
-'''            
-tempZ, p0, p1, p2,p3, p4, nzBar = processAxialTemp((-1*np.array(freq_cut[0::1])+ np.mean(freq))/1e3, soln) # frequency input needs to be in kHz
-    
-print('Temperature in the lattice: '+str(np.round(tempZ, 2))+' uK')
-print('Probability in the ground band: '+str(np.round(p0, 3)))
-print('Probability in the 1st excited band: '+str(np.round(p1, 3)))
-print('Probability in the 2nd excited band: '+str(np.round(p2, 3)))
-print('Probability in the 3rd excited band: '+str(np.round(p3, 3)))
-print('Probability in the 4th excited band: '+str(np.round(p4, 3)))
 
-print('<n_z> = '+str(np.round(nzBar,3)))         
-''' 
-def get_clock_data(path, time_name = 'sequencer.t_dark'):
-    shot_num, folder_path = get_shot_num(path)
-    f = h5py.File(path)
-    gnd = np.array(f['gnd'])
-    exc = np.array(f['exc'])
-    background = np.array(f['bgd'])
-    ts = np.array(f['time'])
-    if shot_num is not None:
-        f_name = "{}.conductor.json".format(shot_num)
-        path = os.path.join(folder_path, f_name)
-        f = open(path)
-        c_json = json.load(f)
-        freq = c_json['clock_sg380']
-        try:
-            t_dark = c_json[time_name]
-        except:
-            t_dark = None
-            print('dark time not specified')
-    else:
-        freq = None
-        t_dark = None
-    return gnd, exc, background, freq, ts, shot_num, t_dark  
-               
-def get_shot_num(path, str_end = '.clock_pico.hdf5'):
-    #str_end = '.clock_pico.hdf5'
-    head, tail = os.path.split(path)
-    split_str = tail.partition(str_end)
-    try:
-        shot_num = int(split_str[0])
-    except:
-        shot_num = None
-    return shot_num, head
 
-def get_clock_paths(path):
-    str_end = '.clock_pico.hdf5'
-    head, tail = os.path.split(path)
-    split_str = tail.partition(str_end)
-    shot_num = int(split_str[0])
-    path_last = os.path.join(head, str(shot_num - 1)+ str_end)
-    return path_last, shot_num, head
 
-def get_clock_data_old(path, time_name = 'sequencer.t_dark'):
-    path_last, shot_num, folder_path= get_clock_paths(path)
-    if shot_num > 0:
-        f = h5py.File(path)
-        f_last = h5py.File(path_last)
-        gnd = np.array(f_last['exc'])
-        exc = np.array(f_last['gnd'])#MM 080221 keeping up with ever- changing fun lol
-        background = np.array(f['bgd'])
-        ts = np.array(f['time'])
-        
-        f_name = "{}.conductor.json".format(shot_num)
-        path = os.path.join(folder_path, f_name)
-        f = open(path)
-        c_json = json.load(f)
-        freq = c_json['clock_sg380']
-        try:
-            t_dark = c_json[time_name]
-        except:
-            t_dark = None
-            print('dark time not specified')
-    return gnd, exc, background, freq, ts, shot_num, t_dark
+
+   
+
+
+
+
         
