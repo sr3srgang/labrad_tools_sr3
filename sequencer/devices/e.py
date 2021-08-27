@@ -11,14 +11,14 @@ class E(YeSrAnalogBoard):
     is_master = False
 
     channels = [
-        YeSrAnalogChannel(loc=0, name='Alpha Intensity', mode='auto', manual_output=0.0),
-        YeSrAnalogChannel(loc=1, name='Beta Intensity', mode='auto', manual_output=0.0),
-        YeSrAnalogChannel(loc=2, name='X Comp. Coil', mode='auto', manual_output=0.0),
-        YeSrAnalogChannel(loc=3, name='Y Comp. Coil', mode='auto', manual_output=0.0),
-        YeSrAnalogChannel(loc=4, name='Z Comp. Coil', mode='auto', manual_output=0.0),
+        YeSrAnalogChannel(loc=0, name='Clock phase', mode='auto', manual_output=0.0),
+        YeSrAnalogChannel(loc=1, name='Clock int ext cont', mode='auto', manual_output=0.0),
+        YeSrAnalogChannel(loc=2, name='Bias X', mode='auto', manual_output=0.0),
+        YeSrAnalogChannel(loc=3, name='Bias Y', mode='auto', manual_output=0.0),
+        YeSrAnalogChannel(loc=4, name='Bias Z', mode='auto', manual_output=0.0),
         YeSrAnalogChannel(loc=5, name='MOT Coil', mode='auto', manual_output=0.0),
-        YeSrAnalogChannel(loc=6, name='HODT Intensity', mode='auto', manual_output=0.0),
-        YeSrAnalogChannel(loc=7, name='VODT Intensity', mode='auto', manual_output=0.0),
+        YeSrAnalogChannel(loc=6, name='11/2 Intensity', mode='auto', manual_output=0.0),
+        YeSrAnalogChannel(loc=7, name='9/2 Intensity', mode='auto', manual_output=0.0),
         ]
 
 

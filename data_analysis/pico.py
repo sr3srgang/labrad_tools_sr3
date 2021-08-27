@@ -41,6 +41,31 @@ def find_cutoff(Pxx, freqs):
 	return center
 	
 		
+def do_single_tone(data, ts):
+	print(np.max(ts))
+	dt, split, t_split, t_avg = bin_data(data, ts, n_split)#n_bins hard-coded in rn!!
+	
+	cutoff = 0
+	max_fs = np.zeros((n_split, 2))
+	f_vals = np.zeros((n_split, 2))
+	ixs = np.insert(np.arange(n_split), 0, 0)
+		
+	for j in np.arange(len(ixs)):
+		i = ixs[j]
+		Pxx, freqs = mlab.psd(split[i], NFFT = len(split[i]), Fs = 1.0/dt, pad_to = 2**12)
+		#if j ==0:
+		#	cutoff = find_cutoff(Pxx, freqs)
+		choose = (freqs > 1e+6)
+		#upper = freqs > cutoff
+		max_fs[i, 0] = np.max(Pxx[choose])
+		#max_fs[i, 1] = np.max(Pxx[upper])
+		f_vals[i, 0] = freqs[choose][np.argmax(Pxx[choose])]
+		#f_vals[i, 1] = freqs[upper][np.argmax(Pxx[upper])]        
+
+		t_avg[i] = np.mean(t_split[i])
+	n_points = len(t_avg)
+	#find_VRS_peaks(max_fs, t_avg)
+	return t_avg, max_fs #f_vals
 def do_two_tone(data, ts):
 	print(np.max(ts))
 	dt, split, t_split, t_avg = bin_data(data, ts, n_split)#n_bins hard-coded in rn!!
@@ -65,8 +90,7 @@ def do_two_tone(data, ts):
 		t_avg[i] = np.mean(t_split[i])
 	n_points = len(t_avg)
 	#find_VRS_peaks(max_fs, t_avg)
-	return t_avg, max_fs #f_vals
-	
+	return t_avg, max_fs #f_vals	
 
 def time_domain(data, ts):
 	#n_points = len(data)
