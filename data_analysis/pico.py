@@ -83,11 +83,12 @@ def do_single_tone(data, ts):
 		#if j ==0:
 		#	cutoff = find_cutoff(Pxx, freqs)
 		#lower = (freqs < cutoff) & (freqs > 1e+6)
-		#upper = freqs > cutoff
+		cutoff = 1e6
+		upper = freqs > cutoff
 		lower_bound = int(1e6)
-		max_fs[i, 0] = np.max(Pxx[lower_bound:])
+		max_fs[i, 0] = np.max(Pxx[upper])
 		#max_fs[i, 1] = np.max(Pxx[upper])
-		f_vals[i, 0] = freqs[lower][np.argmax(Pxx[lower_bound:])]
+		f_vals[i, 0] = freqs[np.argmax(Pxx[upper])]
 		#f_vals[i, 1] = freqs[upper][np.argmax(Pxx[upper])]        
 		t_avg[i] = np.mean(t_split[i])
 	n_points = len(t_avg)
