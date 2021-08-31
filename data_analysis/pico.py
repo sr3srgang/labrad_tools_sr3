@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from scipy.stats import mode
 
-n_split = 200  #400
+n_split = 300  #400
 
 def bin_data(data, ts, n_split):
 	'''
@@ -84,9 +84,10 @@ def do_single_tone(data, ts):
 		#	cutoff = find_cutoff(Pxx, freqs)
 		#lower = (freqs < cutoff) & (freqs > 1e+6)
 		#upper = freqs > cutoff
-		max_fs[i, 0] = np.max(Pxx[1e6:])
+		lower_bound = int(1e6)
+		max_fs[i, 0] = np.max(Pxx[lower_bound:])
 		#max_fs[i, 1] = np.max(Pxx[upper])
-		f_vals[i, 0] = freqs[lower][np.argmax(Pxx[1e6:])]
+		f_vals[i, 0] = freqs[lower][np.argmax(Pxx[lower_bound:])]
 		#f_vals[i, 1] = freqs[upper][np.argmax(Pxx[upper])]        
 		t_avg[i] = np.mean(t_split[i])
 	n_points = len(t_avg)
