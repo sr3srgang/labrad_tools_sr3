@@ -13,7 +13,7 @@ def bin_data(data, ts, n_split):
 	dt = mode(np.diff(ts))[0][0]
 	split = np.array_split(data, n_split)
 	t_split = np.array_split(ts, n_split)
-	t_avg = map(np.mean, t_split)
+	t_avg = list(map(np.mean, t_split))
 	return dt, split, t_split, t_avg
 	
 

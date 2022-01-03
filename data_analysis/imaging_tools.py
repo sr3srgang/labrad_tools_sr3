@@ -89,7 +89,59 @@ def visualize_mot_image(mot_array, show_plot = True, c_max = 200, show_title = F
     	
     return fig, axImshow, [x_len, y_len, emp_width*100, emp_height*100]
     
+def return_cuts(mot_array, show_plot = True, c_max = 200, show_title = False, title = None):
+    #From example here: https://matplotlib.org/examples/pylab_examples/scatter_hist.html
+    nullfmt = NullFormatter()
     
+    y_len, x_len = mot_array.shape
+    
+    left, width = .1, .75
+    bottom, height = .1, .75
+    left_h = left + width + .02
+    bottom_h = left + height + .02
+    
+    rect_imshow = [left, bottom, width, height]
+    rect_histx = [left + .03, bottom_h, width - .06, .1*x_len/y_len]
+    rect_histy = [left_h, bottom, .1, height]
+
+    emp_width = 6.5
+    spacer= .5
+    emp_height = (emp_width - spacer)*y_len/x_len - spacer
+    fig = plt.figure(1, figsize=(emp_width, emp_height))
+    fig.patch.set_facecolor('k')
+
+    
+    axImshow = plt.axes(rect_imshow)
+    axHistx = plt.axes(rect_histx)
+    axHisty = plt.axes(rect_histy)
+    
+    #turn off labels
+    axHistx.xaxis.set_major_formatter(nullfmt)
+    axHisty.yaxis.set_major_formatter(nullfmt)
+    axHistx.set_facecolor('k')
+    axHisty.set_facecolor('k')
+    
+    #center imshow:
+    im = axImshow.imshow(mot_array, cmap = 'magma', origin = 'lower', aspect = 'equal')
+    axImshow.tick_params(color='white', labelcolor='white', labelsize=12)
+    im.set_clim(0, c_max)
+    if show_title:
+        axImshow.set_title("{:.3e}".format(title), color = 'w', y = .85, size = 48)
+        
+    #side histograms:
+    xs = np.sum(mot_array, axis = 0)
+    ys = np.sum(mot_array, axis = 1)
+    axHistx.plot(xs, 'white')
+    axHistx.set_xlim(axImshow.get_xlim())
+    #axHistx.set_ylim(0, ylim)
+    axHisty.plot(ys, np.arange(len(ys)), 'white')
+    axHisty.set_ylim(axImshow.get_ylim())
+    #axHisty.set_xlim(0, xlim)
+    
+    if show_plot:
+    	plt.show()
+    	
+    return xs, ys
 
 def fit_gaussian_2D_real(mot_img, background_file = None, show_plot = False):
     mot_image = cv2.imread(mot_img, 0).T.astype(np.int16)
