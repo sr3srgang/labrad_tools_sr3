@@ -58,7 +58,8 @@ class FFTPlotter(QtGui.QDialog):
 		self.setWindowTitle('FFT at time {} s'.format(t0))
 		self.canvas.ax.clear()
 		self.canvas.ax.plot(freqs*1e-6, Pxx)
-		self.canvas.ax.set_xlim((0, 5))
+		print(max(freqs*1e-6))
+		#self.canvas.ax.set_xlim((0, 20))
 		self.canvas.ax.set_xlabel("Freq (MHz)")
 		self.canvas.draw()
 		

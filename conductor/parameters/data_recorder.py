@@ -12,6 +12,7 @@ class DataRecorder(ConductorParameter):
     autostart = True
     priority = -1
     data_directory = os.path.join(os.getenv('PROJECT_DATA_PATH'), 'data')
+#    data_directory = os.path.join('/home/srgang/H/data/', 'data')
     data_filename = '{}.conductor.json'
     call_in_thread = False
 

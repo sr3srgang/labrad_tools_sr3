@@ -13,7 +13,7 @@ class MyClient(ParameterValuesClient):
     updateTime = 100 # [ms]
     boxWidth = 140
     boxHeight = 20
-    numRows = 10
+    numRows = 15
 
 if __name__ == '__main__':
     a = QtGui.QApplication([])

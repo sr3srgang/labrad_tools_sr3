@@ -41,7 +41,7 @@ class ABCD(YeSrDigitalBoard):
         YeSrDigitalChannel(loc=['B', 12], name='rad cool aom', mode='auto', manual_output=False, invert=False),
         YeSrDigitalChannel(loc=['B', 13], name='11/2 freq mod switch', mode='auto', manual_output=False, invert=False),
         YeSrDigitalChannel(loc=['B', 14], name='B14', mode='auto', manual_output=False, invert=False),
-        YeSrDigitalChannel(loc=['B', 15], name='B15', mode='auto', manual_output=False, invert=False),
+        YeSrDigitalChannel(loc=['B', 15], name='S/H lat. phase', mode='auto', manual_output=False, invert=True),
         
         YeSrDigitalChannel(loc=['C', 0], name='C0', mode='auto', manual_output=False, invert=False),
         YeSrDigitalChannel(loc=['C', 1], name='C1', mode='auto', manual_output=False, invert=False),

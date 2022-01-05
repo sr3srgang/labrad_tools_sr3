@@ -20,7 +20,7 @@ class Picoscope(DefaultDevice):
 	picoscope_n_capture = None #How many triggers to listen for/how many sequential timeseries will be saved
 	
 	data_path = os.path.join(os.getenv('PROJECT_DATA_PATH'), 'data')
-	
+	#data_path = os.path.join('/home/srgang/H/data/', 'data')
 	
 	
 	def initialize(self, config):
