@@ -2,8 +2,12 @@ import matplotlib.pyplot as plt
 import os, json
 import numpy as np
 import matplotlib.pyplot as plt
-from pico.clients.cavity_clock_clients.listeners import get_cavity_data, get_vrs, get_res_dips, do_moving_avg
+
 from data_analysis.pico import do_two_tone, n_split
+from data_analysis.cavity_clock.read_data import *
+from data_analysis.cavity_clock.helpers import *
+from pico.clients.cavity_clock_clients.params import *
+from scipy.optimize import curve_fit
 
 import numpy as np
 
@@ -12,7 +16,7 @@ def skew_L(x, x0, Gamma, A, B, C):
     #normalized s.t. max value is A, and superimposed on linear slope
     return A*(Gamma/2)**2/((x - x0)**2 + (Gamma/2)**2) + B*(x - x0) + C
 
-def fit_L(raw_fs, ax):
+def fit_L(raw_fs, t_avg, ax):
     x, fs = do_moving_avg(t_avg, raw_fs, 5)
     
     #Find region of minimum past crossing
@@ -33,21 +37,21 @@ def fit_L(raw_fs, ax):
     p0 = [t_min, .001, A_guess, 0, C_guess]
     
     popt, pcov = curve_fit(skew_L, fit_x, fit_y, p0)
-    ax.plot(fit_x*1e3, skew_L(fit_x, *popt), 'k')
+    ax.plot(fit_x*1e3, skew_L(fit_x, *popt), 'gray')
 
     
     #Visualizing:
-    ax.plot(t_avg*1e3, raw_fs, '.', alpha = .2)
-    ax.plot(x*1e3, fs, 'k', linewidth = .5, alpha = .8)
+    #ax.plot(t_avg*1e3, raw_fs, '.', alpha = .2)
+    #ax.plot(x*1e3, fs, 'k', linewidth = .5, alpha = .8)
     
     ax.set_ylim((0, 4e-10))
     
     return popt
 
-def vrs_from_L(raw_fs, ax):
-    t_avg, max_fs = do_two_tone(raw_fs, ts[ix, :], n_split = 300, show_cutoff = False, ix_cutoff = 60)    
-    popt_0 = fit_L(max_fs[:, 0], ax)    
-    popt_1 = fit_L(max_fs[:, 1], ax)
+def vrs_from_L(raw_fs, ts, ax):
+    t_avg, max_fs = do_two_tone(raw_fs, ts, show_cutoff = False, ix_cutoff = 60)    
+    popt_0 = fit_L(max_fs[:, 0], t_avg, ax)    
+    popt_1 = fit_L(max_fs[:, 1], t_avg, ax)
     t_elapsed = (popt_0[0] + popt_1[0])/2 - crossing_emp
     vrs = t_elapsed*scan_rate_emp*2
     return vrs

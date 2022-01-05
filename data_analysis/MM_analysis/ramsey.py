@@ -4,12 +4,13 @@ from scipy.optimize import curve_fit
 from data_analysis.MM_analysis import pico_expt as pe
 
 def fringe(f, A, w, phi, B):
-    return A*np.sin(np.array(f)*w - phi)**2 + B
+    return A/2*np.cos(np.array(f)*w - phi) + B
 
 def process_ramsey_data(excs, freqs, p0, ax = None, show_p0 = False):
     cen_freqs = freqs #- np.mean(freqs)
     
     popt, pcov = curve_fit(fringe, cen_freqs, excs, p0 = p0)
+    ramvar = np.var(excs)
     fringe_freq = popt[1]/(np.pi * 2)
     print("Extracted fringe freq from fit: {}".format(fringe_freq))
     print(popt)
@@ -17,8 +18,11 @@ def process_ramsey_data(excs, freqs, p0, ax = None, show_p0 = False):
     #plt.figure()
     if ax is not None:
         #ax.plot(cen_freqs, excs, '.', color='k')
+        #Tried to sort before plotting so it won't display a pink mess
+#        Z = [x for _,x in sorted(zip(cen_freqs, fringe(cen_freqs, *popt)))]
+#       ax.plot(sorted(cen_freqs), Z, '--', color = 'xkcd:dull pink')       
         ax.plot(cen_freqs, fringe(cen_freqs, *popt), '--', color = 'xkcd:dull pink')
-        ax.set_title('Contrast: {:.1f} +/- {:.1f} %'.format(popt[0]*100, unc[0]*100), color = 'white')
+        ax.set_title('Variance: {x: .5e}, '.format(x = ramvar) + 'Contrast: {:.1f} +/- {:.1f} %'.format(popt[0]*100, unc[0]*100), color = 'white')
         if show_p0:
             ax.plot(cen_freqs, fringe(cen_freqs, *p0))
     #plt.ylim((0, 1)).
@@ -49,7 +53,7 @@ def fit_phase_expt(data_path, exp_name, shots, ixs):
     fig, ax = plt.subplots()
     phases = keys[:, 0]
     plt.plot(phases, excs, 'ok')
-    return process_ramsey_data(excs, phases, p0 = [1, 2*np.pi/2, 0, 0], ax = ax)
+    return process_ramsey_data(excs, phases, p0 = [1, 2*np.pi, 0, 0], ax = ax)
     
 
 def fit_ramsey(data_path, exp_name, shots, ixs, p0, show_p0 = False):

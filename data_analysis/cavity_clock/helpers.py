@@ -1,4 +1,6 @@
 #GENERAL HELPERS
+import numpy as np
+
 def calc_excitation(gnd, exc):
 	frac = float(exc)/(exc + gnd)
 	return frac

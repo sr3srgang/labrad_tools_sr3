@@ -1,5 +1,6 @@
 #Helper functions for cavity listeners
 from pico.clients.cavity_clock_clients.params import *
+from scipy.signal import find_peaks
 
 def get_res_dips(t_avg, max_fs, t_range):
    in_range = (t_avg > t_range[0]) & (t_avg < t_range[1])

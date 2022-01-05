@@ -6,7 +6,7 @@ from shutil import copyfile
 import numpy as np
 from client_tools.connection3 import connection
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtWidgets import QDialog, QGridLayout, QMenu, QComboBox
+from PyQt5.QtWidgets import QDialog, QGridLayout, QMenu, QComboBox, QPushButton
 from PyQt5.QtCore import QTimer, QDateTime
 import data_analysis.imaging_tools as it
 import warnings
@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
 import pico.clients.cavity_clock_clients.listeners as listeners
+from pico.clients.cavity_clock_clients.fft_client import FFTPlotter
 import pico.clients.cavity_clock_clients.fits as fits
 #from client_tools.connection import connection
 
@@ -47,6 +48,7 @@ class MplCanvas(FigureCanvas):
         # Initialize live data memory
         self.data_x = [[] for _ in np.arange(self.n_data_plots)]
         self.data_y = [[] for _ in np.arange(self.n_data_plots)]
+        self.bad_data = []
         
         self.fig.set_tight_layout(True)
         FigureCanvas.__init__(self, self.fig)
@@ -66,12 +68,14 @@ class CavityClockGui(QDialog):
         self.update_id = np.random.randint(0, 2**31 - 1)
         self.expt= "Waiting for updates"
         self.data_path = None
+        self.update = None
         #Specify analysis frameworks
         self.analysis_script = fits.do_gaussian_fit
         self.mode = lambda update, preset : None
         self.connect_to_labrad_cav()
         self.connect_to_labrad_clock()
         self.populate()
+        
         
         #self.Plotter = LivePlotter(self)
 
@@ -150,6 +154,7 @@ class CavityClockGui(QDialog):
                       
     def receive_update(self, c, update_json):
         update = json.loads(update_json)
+        self.update = update
         this_expt, this_path = listeners.get_expt(update)
         if this_expt is not None and self.expt != this_expt:
             if (not self.expt.isnumeric()) and (self.data_path is not None):
@@ -164,6 +169,7 @@ class CavityClockGui(QDialog):
                 self.canvas.fig.suptitle(self.expt + " ended")
                 self.expt = this_expt
             else:
+                print(this_expt)
                 self.canvas.reset_data()
                 self.expt = this_expt
                 self.data_path = this_path
@@ -174,12 +180,18 @@ class CavityClockGui(QDialog):
         lims = self.preserve_lim()
         preset = self.canvas.lim_set.copy()
         
-        #Specify listeners for diff axes
-        self.mode(update, preset)
-        listeners.atom_number(update, self.canvas.data_axes[1], self.canvas.data_x[1], self.canvas.data_y[1], freq_domain = False)
-        #self.mode(update, preset)
+        #!!Specify listeners for diff axes:
         
+        #Comment/uncomment next lines to turn off/on pmt listeners:
+        self.mode(update, preset)
+        listeners.atom_number(update, self.canvas.data_axes[1], self.canvas.data_x[1], self.canvas.data_y[1], bad_points = self.canvas.bad_data, freq_domain = False)
 
+        #Cavity single-tone traces:
+        listeners.bare_cavity_single_tone(update, self.canvas.trace_axes[1], 'gnd')
+        listeners.bare_cavity_single_tone(update, self.canvas.trace_axes[2], 'exc')
+        
+                
+        #Cavity 2-tone probing clock operation:
         '''
         try:
             returned, vrs_gnd = listeners.cavity_probe_two_tone(update, self.canvas.trace_axes[1]) 
@@ -192,8 +204,9 @@ class CavityClockGui(QDialog):
             
         except:
             print('cannot extract tones')
+        '''  
         
-        '''      
+            
         #Add back past lims to prevent rescaling
         self.enforce_lim(lims, preset)
         self.canvas.draw()
@@ -219,13 +232,13 @@ class CavityClockGui(QDialog):
             self.canvas.lim_set[0] = listeners.pmt_trace(update, self.canvas.trace_axes[0]) or preset[0]
             exc_called = listeners.exc_frac(update, self.canvas.data_axes[0], self.canvas.data_x[0], self.canvas.data_y[0], time_domain = True, time_name = 'sequencer.clock_phase')
         return phase_update
-    
 
         
     def set_shot(self):
         def shot_update(update, preset):
+            bad_shot = self.canvas.bad_data[-1]
             self.canvas.lim_set[0] = listeners.pmt_trace(update, self.canvas.trace_axes[0]) or preset[0]
-            exc_called = listeners.exc_frac(update, self.canvas.data_axes[0], self.canvas.data_x[0], self.canvas.data_y[0], freq_domain = False, n_avg = 1)
+            exc_called = listeners.exc_frac(update, self.canvas.data_axes[0], self.canvas.data_x[0], self.canvas.data_y[0], freq_domain = False, n_avg = 1, bad_shot = bad_shot)
                 
         return shot_update
 
@@ -235,6 +248,12 @@ class CavityClockGui(QDialog):
      
     def add_subplot_buttons(self):
         self.nav.addAction('Fit', self.do_fit)
+        
+        #Add fft client option to left cavity trace
+        self.fft_left = QPushButton(self)
+        self.fft_left.setText('FFT on click')
+        self.fft_left.move(500, 380)
+        self.fft_left.clicked.connect(self.show_fft)
         
         #Add dropdown for setting data x axis
         self.dropdown = QComboBox(self)
@@ -268,5 +287,17 @@ class CavityClockGui(QDialog):
                 
     def do_fit(self):       
         self.analysis_script(self.canvas.data_axes[0], self.canvas.data_x[0], self.canvas.data_y[0])
+        
+    def show_fft(self):
+    	self.mouse_listener = self.canvas.mpl_connect('button_press_event', self.process_click)
+    
+    def process_click(self, event):
+    	t_click = event.xdata
+    	self.canvas.mpl_disconnect(self.mouse_listener)
+    	self.FFTPlot = FFTPlotter(self.update, t_click)
+    	self.FFTPlot.show()
+    	
+    def show_fft(self):
+    	self.mouse_listener = self.canvas.mpl_connect('button_press_event', self.process_click)
 
 

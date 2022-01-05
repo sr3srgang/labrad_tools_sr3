@@ -6,14 +6,16 @@ from scipy.optimize import curve_fit
 
 #Importing analysis code from data_analysis folder
 import data_analysis.simple_clock as sc
-from data_analysis.pico import do_two_tone
+from data_analysis.pico import do_two_tone, do_single_tone
 from data_analysis.MM_analysis.ramsey import process_ramsey_data as ramsey
 from data_analysis.cavity_clock.read_data import *
-from data_analysis.cavity_clock.cavity_sweep_min import *
 from data_analysis.cavity_clock.helpers import *
+from pico.clients.cavity_clock_clients.params import *
+from data_analysis.cavity_clock.cavity_sweep_min import *
+from data_analysis.cavity_clock.cavity_sweep_Lorentzian import *
 from data_analysis.sr1_fit import processAxialTemp, fit, axialTemp 
 
-from pico.clients.cavity_clock_clients.params import *
+
 
 #CAVITY LISTENERS            
 def cavity_probe_time_trace(update, ax):
@@ -28,7 +30,7 @@ def cavity_probe_time_trace(update, ax):
             ax.set_xlabel('Exposure time (ms)')
             return True
     
-def cavity_probe_two_tone(update, ax, trace = 'gnd', val = False):
+def cavity_probe_two_tone(update, ax, trace = 'gnd', val = False, do_lorentzian = True):
     ax.set_facecolor('xkcd:pinkish grey')
     for message_type, message in update.items():
         value = message.get('cavity_probe_pico')
@@ -40,15 +42,42 @@ def cavity_probe_two_tone(update, ax, trace = 'gnd', val = False):
             ax.plot(t_avg*1e3, max_fs[:, 1], color = 'white')
             ax.set_xlabel('Cavity probe time (ms)')
             ax.set_ylabel('Power (arb)')
-            ax.set_ylim((0, 2e-9))
-            try:
+            ax.set_ylim((0, 5e-10))
+            
+            #try to find vrs
+            if do_lorentzian:
+                vrs = vrs_from_L(data, ts, ax)
+            else:
                 vrs = get_vrs(t_avg, max_fs, ax)
-                print("vrs: " + str(vrs*1e-6))
-            except:
-                print("No vrs found")
-                vrs = None
-            #print('returning')
+            print("vrs: " + str(vrs*1e-6))
             return True, vrs
+        else:
+            return False, None
+
+def bare_cavity_single_tone(update, ax, trace = 'gnd', val = False, do_lorentzian = True):
+    ax.set_facecolor('xkcd:pinkish grey')
+    for message_type, message in update.items():
+        value = message.get('cavity_probe_pico')
+        if message_type == 'record' and value is not None:
+            data, ts = get_cavity_data(value, trace)
+            n, _ = get_shot_num(value, str_end = '.cavity_probe_pico.hdf5')
+            t_avg, max_fs = do_single_tone(data, ts)
+            ax.clear()
+            ax.plot(t_avg*1e3, max_fs[:, 0], color = 'k')
+            #ax.plot(t_avg*1e3, max_fs[:, 1], color = 'white')
+            ax.set_xlabel('Cavity probe time (ms)')
+            ax.set_ylabel('Power (arb)')
+            #ax.set_ylim((0, 5e-10))
+            return True, None
+            '''
+            #try to find vrs
+            if do_lorentzian:
+                vrs = vrs_from_L(data, ts, ax)
+            else:
+                vrs = get_vrs(t_avg, max_fs, ax)
+            print("vrs: " + str(vrs*1e-6))
+            return True, vrs
+            '''
         else:
             return False, None
 
@@ -83,13 +112,15 @@ def pmt_trace(update, ax):
             return True
             
 	
-def atom_number(update, ax, data_x, data_y, time_domain = False, time_name = 'sequencer.t_dark', freq_domain = True, add_fit= False):
+def atom_number(update, ax, data_x, data_y, bad_points = None, time_domain = False, time_name = 'sequencer.t_dark', freq_domain = True, add_fit= False):
     ax.set_facecolor('xkcd:pinkish grey')
     for message_type, message in update.items():
         value = message.get('clock_pico')
         if message_type == 'record' and value is not None:
             gnd, exc, background, freq, _, shot_num, t_dark = get_clock_data(value, time_name = time_name)
             atom_num = np.sum((gnd + exc - 2*background)[pico_shot_range])
+            if shot_num is None or shot_num < 1:
+               return False
             if time_domain:
                x_ax = t_dark*1e3
                ax.set_xlabel(time_name +' (ms)')
@@ -109,16 +140,27 @@ def atom_number(update, ax, data_x, data_y, time_domain = False, time_name = 'se
                 ax.set_xlabel('Shot number')
             data_x.append(x_ax)
             data_y.append(atom_num)
-            ax.plot(x_ax, atom_num, 'o', color = 'k')
+            if bad_points is not None:
+                this_bad = atom_num < no_atoms_thresh
+                bad_points.append(this_bad)
+                if this_bad:
+                    col = 'gray'
+                else:
+                    col = 'k'
+            ax.plot(x_ax, atom_num, 'o', color = col)
             ax.set_ylabel('Total atom number')
             return True
 
-def exc_frac(update, ax, data_x, data_y, time_domain = False, time_name = 'sequencer.clock_phase', freq_domain = True, add_fit= False, n_avg = 1):
+def exc_frac(update, ax, data_x, data_y, time_domain = False, time_name = 'sequencer.clock_phase', freq_domain = True, add_fit= False, n_avg = 1, bad_shot= None):
     ax.set_facecolor('xkcd:pinkish grey')
     for message_type, message in update.items():
         value = message.get('clock_pico')
         if message_type == 'record' and value is not None:
             gnd, exc, background, freq, _, shot_num, t_dark = get_clock_data(value, time_name = time_name)
+            if bad_shot:
+                col = 'gray'
+            else:
+                col = 'k'
             if shot_num is None or shot_num < 1:
                 return False
             exc_frac = calc_excitation(np.sum((gnd - background)[pico_shot_range]), np.sum((exc - background)[pico_shot_range]))
@@ -137,9 +179,11 @@ def exc_frac(update, ax, data_x, data_y, time_domain = False, time_name = 'seque
             if (n_avg > 1) and (len(data_y) > n_avg):
                 binned_x, binned_data = do_moving_avg(data_x, data_y, n_avg)
                 ax.clear()
-                ax.plot(binned_x, binned_data, 'ok')
+                ax.plot(binned_x, binned_data, 'o', color = col)
+                ax.set_xlabel('Shot number')
+                
             else:
-                ax.plot(x_ax, exc_frac, 'o', color = 'k')
+                ax.plot(x_ax, exc_frac, 'o', color = col)
             ax.set_ylabel('Excitation Fraction')
             return True
             
