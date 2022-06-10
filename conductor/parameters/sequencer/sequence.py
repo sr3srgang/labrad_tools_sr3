@@ -93,6 +93,7 @@ class Sequence(ConductorParameter):
         return sequencer_parameter_values
 
     def _wait_for_trigger(self):
+        print('Told to wait for trigger')
         # clear trigger
         self.fp.UpdateTriggerOuts()
         is_triggered = self.fp.IsTriggered(0x60)
@@ -101,6 +102,7 @@ class Sequence(ConductorParameter):
             self.fp.UpdateTriggerOuts()
             is_triggered = self.fp.IsTriggered(0x60)
             if is_triggered:
+                print('triggered!!')
                 return
             time.sleep(0.01)
 
@@ -111,6 +113,7 @@ class Sequence(ConductorParameter):
         #self.server._advance()
         conductor_server = getattr(self.cxn, 'conductor')
         conductor_server.advance(True)
+        print('advanced')
 
     def _mark_timestamp(self):
         request = {'timestamp': time.time()}

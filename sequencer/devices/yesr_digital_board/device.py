@@ -7,7 +7,9 @@ from sequencer.devices.yesr_sequencer_board.helpers import time_to_ticks
 from sequencer.devices.yesr_digital_board.helpers import get_output
 
 T_TRIGGER = 2e-3
-MAX_TICKS = 2**32 - 2**8 # last 8 bits reserverd for specifying external trigger
+MAX_TICKS = 2.9e9#MM 042122 setting clear thresh: if t = 59s, will wait for ext trigger
+SET_MAX = 2**32 - 2**8
+#Originally 2**32 - 2**8 # last 8 bits reserverd for specifying external trigger
 
 class YeSrDigitalBoard(YeSrSequencerBoard):
     sequencer_type = 'digital'
@@ -66,9 +68,13 @@ class YeSrDigitalBoard(YeSrSequencerBoard):
                 dt = time_to_ticks(self.clk, s['dt'])
                 s.update({'dt': dt, 't': total_ticks})
                 if dt > MAX_TICKS:
+                    dt = SET_MAX + 1 #don't append really long wait-for-trigger time? MM 042522
+                    s.update({'dt':dt})
                     if c.key == self.master_channel:
-                        print "trigger mask:", bin(dt)[26:]
                         s.update({'out': False})
+                        print't value implies trigger: out --> ' + str(s['out'])
+                        print "trigger mask:", bin(dt)[26:]
+
                 total_ticks += dt
             sequence[c.key].append({'dt': 1, 't': total_ticks, 'out': sequence[c.key][-1]['out']})
 

@@ -30,7 +30,7 @@ class DataRecorder(ConductorParameter):
             
             ti = time.time()
             parameter_values = self.server._get_parameter_values(request={}, all=True)
-            print time.time() - ti
+            #print time.time() - ti
             reactor.callInThread(self._save_json, point_path, copy.deepcopy(parameter_values))
     
     def _save_json(self, point_path, parameter_values):
