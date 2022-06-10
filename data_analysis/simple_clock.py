@@ -75,21 +75,32 @@ def gaussian(x, mu, sig,a, b):
   
 def fit_gaussian(freqs, exc):
 	cen_guess = np.argmax(exc)
-	fit, cov = curve_fit(gaussian,freqs, exc, p0=[freqs[cen_guess], 30, exc[cen_guess], 0.01])
+	fit, cov = curve_fit(gaussian,freqs, exc, p0=[freqs[cen_guess], 100, exc[cen_guess], 0.01])
 	FWHM = fit[1]*2*np.sqrt(2*np.log(2))
 	return fit, cov, FWHM
 	
-def add_gaussian(freqs, exc, freq_ax, offset = True):	
-	fit, cov, FWHM = fit_gaussian(freqs, exc)
-	fit_x = np.linspace(fit[0] - 3*fit[1], fit[0] + 3*fit[1], 100)
-	gauss = gaussian(fit_x, *fit)
-	if offset:
-	    x_ax = fit_x - freq_offset
-	else:
-	    x_ax = fit_x
-	freq_ax.plot(x_ax, gauss, 'gray')
-	freq_ax.set_title("Cen: {:.2f}. FWHM: {:.2f}".format(fit[0], FWHM), color = 'white')
+def add_gaussian(freqs, exc, freq_ax, offset = True, inverted = False):
+        if inverted:
+            fit, cov, FWHM = fit_inverted_gaussian(freqs, exc)
+        else:
+            fit, cov, FWHM = fit_gaussian(freqs, exc)
+        fit_x = np.linspace(fit[0] - 3*fit[1], fit[0] + 3*fit[1], 100)
+        gauss = gaussian(fit_x, *fit)
+        if offset:
+            x_ax = fit_x - freq_offset
+        else:
+            x_ax = fit_x
+        freq_ax.plot(x_ax, gauss, 'gray')
+        freq_ax.set_title("Cen: {:.2f}. FWHM: {:.2f}".format(fit[0], FWHM), color = 'white')
 
+def fit_inverted_gaussian(freqs, exc):
+	cen_guess = np.argmin(exc)
+	p0=[freqs[cen_guess], 10, exc[cen_guess] - 1, 1]
+	fit, cov = curve_fit(gaussian,freqs, exc, p0 =p0)
+	FWHM = fit[1]*2*np.sqrt(2*np.log(2))
+	
+	return fit, cov, FWHM
+	
 def import_pico_scan(data_path, exp_name, shot):
 	path = os.path.join(data_path, exp_name, '{}.clock_pico.hdf5'.format(shot))
 	path_last = os.path.join(data_path, exp_name, '{}.clock_pico.hdf5'.format(shot - 1))

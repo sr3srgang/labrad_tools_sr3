@@ -21,6 +21,7 @@ class okCFrontPanelProxy(object):
         return self.ok_server.get_wire_out_value(self.interface_id, address)
 
     def IsTriggered(self, address):
+        #print(str(self.interface_id) + " asking if triggered")
         return self.ok_server.is_triggered(self.interface_id, address)
 
     def SetWireInValue(self, address, value):

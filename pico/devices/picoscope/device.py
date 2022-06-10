@@ -20,7 +20,7 @@ class Picoscope(DefaultDevice):
 	picoscope_n_capture = None #How many triggers to listen for/how many sequential timeseries will be saved
 	
 	data_path = os.path.join(os.getenv('PROJECT_DATA_PATH'), 'data')
-	
+	#data_path = os.path.join('/home/srgang/H/data/', 'data')
 	
 	
 	def initialize(self, config):
@@ -62,7 +62,9 @@ class Picoscope(DefaultDevice):
 		print('Pico channel A max voltage set to {} V'.format(V_new))	
 	'''	
 	def record(self, rel_data_path):
+		print('called!')
 		self.ps.waitReady()
+		print('ready')
 		t0 = time.time()
 		'''
 		data = {}
@@ -75,23 +77,31 @@ class Picoscope(DefaultDevice):
                 		data[channel][label] = self.ps.getDataV(channel, self.n_samples, segmentIndex=i)
                 		print(data[channel][label])
 				print('acquired')
-		'''       
-		(data_raw, numSamples, overflow) = self.ps.getDataRawBulk('A')
+		'''      
+		print(self.data_format.items())
+		(data_raw, numSamples, overflow) = self.ps.getDataRawBulk()
 		dataV = self.ps.rawToV('A', data_raw)
 		print(np.shape(dataV))
+		data = {}
+		for channel, segments in self.data_format.items():
+			data[channel] = {}
+			for i in np.arange(len(segments)):
+				label = segments[i]
+				data[channel][label] = dataV[i, :]
+				'''
 		data = {}
 		data['A'] = {}
 		data['A']['gnd'] = dataV[0, :]
 		data['A']['exc'] = dataV[1, :]
 		data['A']['bgd'] = dataV[2, :]
-		
+		'''
 		'''
 		plt.figure()
 		plt.plot(dataV[0, :])
 		plt.plot(dataV[1, :])
-		plt.plot(dataV[2, :])
 		plt.show()
 		'''
+		
 		#Save data. Data file path comes from conductor parameter, where condition for temporarily or permanently saving data is set. 
 		#print("Time acquiring: {}".format(tf - t0))
 		#Check if today's data folder already exists; if not, make it

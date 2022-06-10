@@ -91,7 +91,7 @@ class PicoViewer(QtGui.QDialog):
 
     @inlineCallbacks
     def connect_signals(self):
-        pico_server = yield self.cxn.get_server('pico')
+        pico_server = yield self.cxn.get_server('cavity_probe_pico')
         yield pico_server.signal__update(self.update_id)
         yield pico_server.addListener(listener=self.receive_update, source=None, ID=self.update_id)
 
@@ -109,7 +109,7 @@ class PicoViewer(QtGui.QDialog):
 
     def get_data(self, abs_data_path):
 	with h5py.File(abs_data_path) as h5f:
-            self.data = np.array(h5f['trigger'])
+            self.data = np.array(h5f['gnd'])
             #self.test = np.array(h5f['test_new_trig'])
             #print(self.test)
             self.ts = np.array(h5f['time'])

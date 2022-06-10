@@ -1,6 +1,6 @@
 import os
 from data_analysis.pico import time_domain
-from pico.clients.pico_clients.pico_client import PicoViewer
+from cavity_probe_pico.clients.pico_clients.pico_client import PicoViewer
 
 
 class MyViewer(PicoViewer):

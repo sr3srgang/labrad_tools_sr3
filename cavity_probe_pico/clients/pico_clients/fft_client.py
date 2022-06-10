@@ -12,7 +12,7 @@ from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as Navigatio
 from matplotlib.figure import Figure
 from data_analysis.pico import show_fft
 
-from client_tools.connection import connection
+from client_tools.connection3 import connection
 
 class MplCanvas(FigureCanvas):
     def __init__(self):
@@ -54,11 +54,13 @@ class FFTPlotter(QtGui.QDialog):
 
 		
 	def show_plot(self, data, ts,t):
+		print('hello!!')
 		Pxx, freqs, t0 = show_fft(data, ts, t)
 		self.setWindowTitle('FFT at time {} s'.format(t0))
 		self.canvas.ax.clear()
 		self.canvas.ax.plot(freqs*1e-6, Pxx)
-		self.canvas.ax.set_xlim((0, 5))
+		print(max(freqs*1e-6))
+		#self.canvas.ax.set_xlim((0, 20))
 		self.canvas.ax.set_xlabel("Freq (MHz)")
 		self.canvas.draw()
 		
