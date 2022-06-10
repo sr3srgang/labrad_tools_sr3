@@ -10,7 +10,7 @@ from sequencer.devices.yesr_analog_board.helpers import get_ramp_bytes
 
 # max timestep for digital sequencer
 # (2**32 - 2**8) / (50 MHz)
-T_TRIGGER = 85.8993408 # [s]
+T_TRIGGER = 50#85# Updated 04/25/22 MM to match yeSrsequencer device 85.8993408 # [s]
 
 class YeSrAnalogBoard(YeSrSequencerBoard):
     sequencer_type = 'analog'

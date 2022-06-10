@@ -15,7 +15,7 @@ class CameraRecorder(ConductorParameter):
     #Keywords to set which camera we're using
     cameras = ['horizontal_mot', 'vertical_mot', 'cavity', 'cav_perp']
 
-    camera_data_path = "K:/data/data" #Path to data folders on zuko, which runs the camera servers
+    camera_data_path = "H:/data/data" #Path to data folders on zuko, which runs the camera servers
     data_path = os.path.join(os.getenv('PROJECT_DATA_PATH'), 'data') #Path to data folders on appa (conductor)
     data_filename = "{}_{}_{}"
 

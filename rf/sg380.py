@@ -26,7 +26,7 @@ class SG380(object):
     def frequency(self, frequency):
         if frequency < min(self._frequency_range) or frequency > max(self._frequency_range):
             raise FrequencyOutOfBoundsError(frequency)
-        print frequency
+        #print frequency
         command = 'FREQ {}'.format(frequency)
         self._inst.write(command)
 

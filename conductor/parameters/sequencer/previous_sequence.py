@@ -18,6 +18,7 @@ class PreviousSequence(ConductorParameter):
         self.sequencer_server = getattr(self.cxn, self.sequencer_servername)
     
     def update(self):
+        print('sequence updated at {}'.format(time.time()))
         request = {self.master_device: None}
         response = json.loads(self.sequencer_server.sequence(json.dumps(request)))
         self.value = response[self.master_device]

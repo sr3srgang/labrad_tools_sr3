@@ -6,8 +6,9 @@ from cavity_probe_pico.clients.pico_clients.pico_client import PicoViewer
 class MyViewer(PicoViewer):
     #raw_data_path = '/home/srgang/K/data/pmt_data' #Single data file is overwritten every cycle to save HD space
     name = 'cavity_probe_pico'
-    ylim = (0, 2e-9)
+    ylim = (0, 2e-6)
     data_dir = os.path.join(os.getenv('PROJECT_DATA_PATH'), 'data')
+    #data_dir = os.path.join('/home/srgang/H/data/', 'data')
     data_fxn = lambda _, x, ts: do_single_tone(x, ts)# 5.6e-8) #number is sampling interval
 
 if __name__ == '__main__':

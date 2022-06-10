@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from scipy.stats import mode
 
-n_split = 300  #400
+n_split = 200  #400
 
 def bin_data(data, ts, n_split):
 	'''
@@ -38,7 +38,7 @@ def find_cutoff(Pxx, freqs):
 	center = np.mean(freqs[sorted_peaks[-2:]])
 	#print(freqs[sorted_peaks[-2:]])
 	#print(center)
-	return 2.96e+6#center
+	return 3.02e6
 	
 
 def do_two_tone(data, ts, n_split = n_split, show_cutoff = False, ix_cutoff = 0):
@@ -51,7 +51,7 @@ def do_two_tone(data, ts, n_split = n_split, show_cutoff = False, ix_cutoff = 0)
 	t_avg = np.zeros(n_split)	
 	for j in np.arange(len(ixs)):
 		i = ixs[j]
-		Pxx, freqs = mlab.psd(split[i], NFFT = len(split[i]), Fs = 1.0/dt, pad_to = 2**12)
+		Pxx, freqs = mlab.psd(split[i], NFFT = len(split[i]), Fs = 1.0/dt, pad_to = 2**15)
 		if j ==0:
 			cutoff = find_cutoff(Pxx, freqs)
 			if show_cutoff:
@@ -79,12 +79,21 @@ def do_single_tone(data, ts):
 	t_avg = np.zeros(n_split)	
 	for j in np.arange(len(ixs)):
 		i = ixs[j]
-		Pxx, freqs = mlab.psd(split[i], NFFT = len(split[i]), Fs = 1.0/dt, pad_to = 2**12)
+		Pxx, freqs = mlab.psd(split[i], NFFT = len(split[i]), Fs = 1.0/dt, pad_to = 2**16)
 		#if j ==0:
 		#	cutoff = find_cutoff(Pxx, freqs)
 		#lower = (freqs < cutoff) & (freqs > 1e+6)
-		cutoff = 1.7e6
-		upper = freqs > cutoff
+		
+		#MM06102022 commented in merge conflict
+		#cutoff = 1.7e6
+		#upper = freqs > cutoff
+
+		cutoff = 500e3
+		cutoff_2 = 3.69247e6-10e3
+		cutoff_3 = 3.69247e6+10e3
+		upper = (freqs > cutoff) #& (freqs < cutoff_2) #& (freqs>cutoff_3)
+		print(upper)
+
 		lower_bound = int(1e6)
 		max_fs[i, 0] = np.max(Pxx[upper])
 		#max_fs[i, 1] = np.max(Pxx[upper])
