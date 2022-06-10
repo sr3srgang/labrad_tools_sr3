@@ -4,6 +4,7 @@ import os, json, h5py
 
 #CAVITY
 def get_cavity_data(abs_data_path, trace = 'gnd'):
+    #print(abs_data_path)
     with h5py.File(abs_data_path) as h5f:
         data = np.array(h5f[trace])
         #self.test = np.array(h5f['test_new_trig'])
@@ -11,11 +12,11 @@ def get_cavity_data(abs_data_path, trace = 'gnd'):
         ts = np.array(h5f['time'])
     return data, ts
 
-def get_cav_axis(update, name):
+def get_cav_axis(update, name, channel ='A'):
     for message_type, message in update.items():
         value = message.get('cavity_probe_pico')
         if message_type == 'record' and value is not None:
-            shot_num, folder_path = get_shot_num(value, '.cavity_probe_pico.hdf5')
+            shot_num, folder_path = get_shot_num(value, '.cavity_probe_pico_' + channel + '.hdf5')
             if shot_num is not None:
                 #print(name)
                 f_name = "{}.conductor.json".format(shot_num)

@@ -20,7 +20,7 @@ def bin_data(data, ts, n_split):
 def show_fft(data, ts, t):
 	dt, split, _, t_avgs = bin_data(data, ts, n_split)
 	this_bin = np.argmin(np.abs(t_avgs - t))
-	Pxx, freqs = mlab.psd(split[this_bin], NFFT = len(split[this_bin]), Fs = 1.0/dt, pad_to = 2**12)
+	Pxx, freqs = mlab.psd(split[this_bin], NFFT = len(split[this_bin]), Fs = 1.0/dt, pad_to = 2**14)
 	return Pxx, freqs, t_avgs[this_bin]
 
 def find_VRS_peaks(max_fs, t_avg):
@@ -83,7 +83,7 @@ def do_single_tone(data, ts):
 		#if j ==0:
 		#	cutoff = find_cutoff(Pxx, freqs)
 		#lower = (freqs < cutoff) & (freqs > 1e+6)
-		cutoff = 1e6
+		cutoff = 1.7e6
 		upper = freqs > cutoff
 		lower_bound = int(1e6)
 		max_fs[i, 0] = np.max(Pxx[upper])

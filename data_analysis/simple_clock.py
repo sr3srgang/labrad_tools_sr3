@@ -75,7 +75,7 @@ def gaussian(x, mu, sig,a, b):
   
 def fit_gaussian(freqs, exc):
 	cen_guess = np.argmax(exc)
-	fit, cov = curve_fit(gaussian,freqs, exc, p0=[freqs[cen_guess], 30, exc[cen_guess], 0.01])
+	fit, cov = curve_fit(gaussian,freqs, exc, p0=[freqs[cen_guess], 100, exc[cen_guess], 0.01])
 	FWHM = fit[1]*2*np.sqrt(2*np.log(2))
 	return fit, cov, FWHM
 	

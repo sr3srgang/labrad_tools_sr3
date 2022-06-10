@@ -1,8 +1,9 @@
 #Standard imports
 import numpy as np
-import os, json, h5py
+import os, json, h5py, time
 from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
+from scipy import signal
 
 #Importing analysis code from data_analysis folder
 import data_analysis.simple_clock as sc
@@ -14,6 +15,7 @@ from pico.clients.cavity_clock_clients.params import *
 from data_analysis.cavity_clock.cavity_sweep_min import *
 from data_analysis.cavity_clock.cavity_sweep_Lorentzian import *
 from data_analysis.sr1_fit import processAxialTemp, fit, axialTemp 
+from data_analysis.clock_lock import iq_lib as iq
 
 
 
@@ -53,7 +55,108 @@ def cavity_probe_two_tone(update, ax, trace = 'gnd', val = False, do_lorentzian 
             return True, vrs
         else:
             return False, None
+            
+def Q_fit(tprime, A, delta, kappaprime,c):
+    return (A * (tprime - delta)/(kappaprime/2)) / (1 + ((tprime-delta) /kappaprime/2)**2 ) + c
+            
+def process_homodyne(data, ts, t_a, t_b, do_filter = True):
+    #written 041322 MM 
+    ix_a = np.argmin(np.abs(ts - t_a))
+    ix_b = np.argmin(np.abs(ts - t_b))
+    
+    data_range = data[ix_a:ix_b]
+    ts_range = ts[ix_a:ix_b]
+    freqs = np.linspace(0,(1.5e6/1)*0.5 , len(ts_range))
+    
+    if do_filter:
+        #Filter from john's notebook
+        fc = 4000
+        #Design of digital filter requires cut-off frequency to be normalised by sampling_rate/2
+        sampling_rate = 1/(ts_range[2]-ts_range[1])
+        ncut = 200
+        w = fc /(sampling_rate/2)
+        b, a = signal.butter(3, w, 'low', analog = False)
+        data_range = signal.filtfilt(b, a, data_range.ravel())[ncut:]
+        ts_range = ts_range[ncut:]
+        freqs = freqs[ncut:]
+    
+    return data_range, ts_range, freqs
 
+def fit_cavity_freq(data, ts, t_a, t_b, ax = None, do_filter = False):
+    output_V, ts_range, freqs = process_homodyne(data, ts, t_a, t_b, do_filter = do_filter)
+    cav_1 = 260429.39915606365
+    fit, cov = curve_fit(Q_fit, freqs, output_V, p0=[2e-2, cav_1+1e3, 3e4, 0], bounds = ((-np.inf, 2.3e5, 3e4, -np.inf),(np.inf, np.inf, 4.5e4, np.inf)))
+    if ax is not None:
+        #plot
+        ax.plot(ts_range*1e3, Q_fit(freqs, *fit), color = 'white')
+    
+    return fit[1] #returns cavity detuning
+
+def mean_v(data, ts, t_a, t_b, ax = None, do_filter = False):
+    output_V, ts_range, freqs = process_homodyne(data, ts, t_a, t_b, do_filter = do_filter)
+    mean_V = np.mean(output_V)
+    if ax is not None:
+        ax.plot(ts_range*1e3, np.ones(len(ts_range))*mean_V, color = 'grey')
+    return np.mean(output_V)
+    
+def filtered_cavity_time_domain(update, ax, trace = 'gnd', val = False, do_fit = False, t_bounds = None, subtract_acc = True):
+    #MM 051722 synchronous acc. subtraction option
+    ax.set_facecolor('xkcd:pinkish grey')
+    for message_type, message in update.items():
+        value = message.get('cavity_probe_pico')
+        if message_type == 'record' and value is not None:
+            data, ts = get_cavity_data(value, trace)
+            data, ts, _ = process_homodyne(data, ts, ts[0], ts[-1]) #pre-filter
+            ax.clear()
+            ax.plot(ts*1e3, data, '.k', ms = .5)
+            if subtract_acc:
+                time.sleep(.1)
+                n, data_head = get_shot_num(value, str_end = '.cavity_probe_pico.hdf5')
+                acc_data, acc_ts = get_cavity_data(os.path.join(data_head, '{}.accelerometer_pico.hdf5'.format(n)), trace)
+                acc_data, acc_ts, _ = process_homodyne(acc_data, acc_ts, acc_ts[0], acc_ts[-1])
+                assert(np.all(ts == acc_ts))
+                data = data # turn off- acc_data #subtract off accelerometer data NOTE MIGHT NEED TO OPTIMIZE AMPLITUDE HERE
+                ax.plot(ts*1e3, data, color = 'gray', alpha = .7, linewidth = 1)
+            ax.set_xlabel('Cavity probe time (ms)')
+            ax.set_ylabel('homodyne output')
+            #ax.set_ylim((0, 5e-10))
+            fit_fxns = [fit_cavity_freq, mean_v]
+            if do_fit > 0: #some type of fit turned on
+                datums = np.zeros(len(t_bounds))
+                fxn = fit_fxns[do_fit - 1] #apply corresponding fit function
+                for i in np.arange(len(t_bounds)):
+                    datums[i] = fxn(data, ts, t_bounds[i][0], t_bounds[i][1], ax, do_filter = False) #don't re-filter
+                return True, datums
+            else:
+                return True, None
+        else:
+            return False, None   
+def correlations(update, ax, datums):
+    ax.set_facecolor('xkcd:pinkish grey')
+    ax.plot(datums[0] - datums[1], datums[0] - datums[2], 'ok')
+    ax.set_aspect('equal', adjustable='box')
+    ax.set_xlabel('V0 - V1')
+    ax.set_ylabel('V0 - V3')
+    
+def cavity_time_domain(update, ax, trace = 'gnd', val = False):
+    ax.set_facecolor('xkcd:pinkish grey')
+    for message_type, message in update.items():
+        value = message.get('cavity_probe_pico')
+        if message_type == 'record' and value is not None:
+            data, ts = get_cavity_data(value, trace)
+            n, _ = get_shot_num(value, str_end = '.cavity_probe_pico.hdf5')
+            #t_avg, max_fs = do_single_tone(data, ts)
+            ax.clear()
+            ax.plot(ts*1e3, data, color = 'k')
+            #ax.plot(t_avg*1e3, max_fs[:, 1], color = 'white')
+            ax.set_xlabel('Cavity probe time (ms)')
+            ax.set_ylabel('homodyne output')
+            #ax.set_ylim((0, 5e-10))
+            
+            return True, None
+        else:
+            return False, None
+            
 def bare_cavity_single_tone(update, ax, trace = 'gnd', val = False, do_lorentzian = True):
     ax.set_facecolor('xkcd:pinkish grey')
     for message_type, message in update.items():
@@ -79,8 +182,40 @@ def bare_cavity_single_tone(update, ax, trace = 'gnd', val = False, do_lorentzia
             return True, vrs
             '''
         else:
-            return False, None
+            return False, None            
 
+def do_iq(update, ax, t_min, t_max, t_cut, rf_offset, rf_slope, trace = 'gnd', val = False, do_lorentzian = True):
+    ax.set_facecolor('xkcd:pinkish grey')
+    for message_type, message in update.items():
+        value = message.get('cavity_probe_pico')
+        if message_type == 'record' and value is not None:
+            data, ts = get_cavity_data(value, trace)
+            in_range = np.logical_and(ts > t_min, ts < t_max)
+            omega_rf = 2*np.pi*(ts[in_range]*rf_slope + rf_offset)
+            [V_c, V_s, t_arr, omega_rf] = iq.do_iq_fixed(ts[in_range], data[in_range], omega_rf)
+            in_range = t_arr > t_cut
+            ax.clear()
+            ax.plot(V_c[in_range]*1e3, V_s[in_range]*1e3, color = 'k')
+            #ax.plot(t_avg*1e3, max_fs[:, 1], color = 'white')
+            ax.set_xlabel('I (mV)')
+            ax.set_ylabel('Q (mV)')
+            ax.set_xlim(-2, 2)
+            ax.set_ylim(-2, 2)
+            ax.set_aspect('equal', adjustable='box')
+            #ax.set_ylim((0, 5e-10))
+            return True, None
+            '''
+            #try to find vrs
+            if do_lorentzian:
+                vrs = vrs_from_L(data, ts, ax)
+            else:
+                vrs = get_vrs(t_avg, max_fs, ax)
+            print("vrs: " + str(vrs*1e-6))
+            return True, vrs
+            '''
+        else:
+            return False, None
+            
 def exc_frac_cavity(update, ax, data_x, data_y, vrs_gnd, vrs_exc, x_ax):
     n_down = vrs_gnd**2
     n_up = vrs_exc**2
@@ -191,8 +326,6 @@ def exc_frac(update, ax, data_x, data_y, time_domain = False, time_name = 'seque
 
 
 
-
-   
 
 
 
