@@ -7,11 +7,14 @@ from data_analysis.sr1_fit import processAxialTemp, fit, axialTemp
 pico_shot_range = np.arange(10, 25)
 freq_offset = 116.1e6
 from scipy.signal import find_peaks
+from sys import platform
 
 crossing_emp = .00154
 t_range_emp = [.007, .017]
 scan_rate_emp = 1e6/(20e-3) #1MHz/20 ms
 def get_cavity_data(abs_data_path, trace = 'gnd'):
+    if platform == 'win32':
+        abs_data_path = 'K:/' + path[15:]
     with h5py.File(abs_data_path) as h5f:
         data = np.array(h5f[trace])
         #self.test = np.array(h5f['test_new_trig'])
@@ -179,7 +182,15 @@ print('Probability in the 4th excited band: '+str(np.round(p4, 3)))
 print('<n_z> = '+str(np.round(nzBar,3)))         
 ''' 
 def get_clock_data(path, time_name = 'sequencer.t_dark'):
+    #try:
+    #    shot_num, folder_path = get_shot_num(path)
+    #except:
+        #modify_path_here
+    if platform == 'win32':
+        path = 'K:/' + path[15:]
     shot_num, folder_path = get_shot_num(path)
+
+        
     f = h5py.File(path)
     gnd = np.array(f['gnd'])
     exc = np.array(f['bgd'])

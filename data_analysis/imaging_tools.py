@@ -5,6 +5,7 @@ from scipy.optimize import curve_fit
 import pylab
 from matplotlib.ticker import NullFormatter
 import matplotlib.patches as patches
+from scipy.optimize import curve_fit
 #import data_analysis.live_plotter as lp
 
 
@@ -29,11 +30,19 @@ def gaussian_2D(x, y, A, x0, y0, sigma_x, sigma_y, p, offset):
     #astropy
     exp_val = ((sigma_y*(x - x0))**2 - 2*p*sigma_x*sigma_y*(x - x0)*(y - y0) + (sigma_x*(y - y0))**2)/((1 - p**2)*(sigma_x*sigma_y)**2)
     return A * np.exp(-exp_val/2) + offset
-    
+
+def fast_gaussian(x, y, A, x0, y0, sigma_x, sigma_y, offset):
+    exp_val = ((x- x0)/sigma_x)**2 + ((y - y0)/sigma_y)**2
+    return A *np.exp(-exp_val/2) + offset
+
 def fit_gaussian_form(X, A, x0, y0, sigma_x, sigma_y, p, offset):
     x, y = X
     return gaussian_2D(x, y, A, x0, y0, sigma_x, sigma_y, p, offset).flatten() 
-    
+
+def fit_fast_form(X, A, x0, y0, sigma_x, sigma_y, offset):
+    x, y = X
+    return fast_gaussian(x, y, A, x0, y0, sigma_x, sigma_y, offset).flatten()
+
 
 def visualize_mot_image(mot_array, show_plot = True, c_max = 200, show_title = False, title = None):
     #From example here: https://matplotlib.org/examples/pylab_examples/scatter_hist.html
@@ -118,6 +127,46 @@ def fit_gaussian_2D_real(mot_img, background_file = None, show_plot = False):
         plt.show()
         #plt.title('A = {:.4f} +/- {:.4f}'.format(vals[0], np.sqrt(pcov[0, 0])), fontsize = 20)
     return vals, np.sqrt(np.diag(pcov))
+
+def gaussian_1D(z, A, z0, sigma, B):
+    return A*np.exp(-((z - z0)/sigma)**2/2) + B
+
+def fit_gaussian_2D_cut(mot_image, xlim, ylim, ax = None):
+    #MM 081921: take existing mot image array
+    bounded = (xlim is not None) and (ylim is not None)
+    if bounded:
+        print(int(np.ceil(ylim[0])))
+        mot_image = mot_image[int(np.ceil(ylim[0])):int(np.ceil(ylim[1])), int(np.ceil(xlim[0])): int(np.ceil(xlim[1]))]
+    
+    y_pix, x_pix = mot_image.shape
+    x_cut = np.sum(mot_image, axis = 0)
+    y_cut = np.sum(mot_image, axis = 1)
+    y_grid = np.linspace(0, y_pix, y_pix)
+    x_grid = np.linspace(0, x_pix, x_pix)
+    
+    
+    x0_guess = np.argmax(x_cut)
+    y0_guess = np.argmax(y_cut)
+    A_x_guess = x_cut[x0_guess]
+    A_y_guess = y_cut[y0_guess]
+
+    #set initial guesses
+    p0_x = [A_x_guess, x0_guess, 20, 0]
+    p0_y = [A_y_guess, y0_guess, 20, 0]
+
+    bounds = (0, (np.inf, np.inf, 40, np.inf))
+    vals_x, pcov_x = curve_fit(gaussian_1D, x_grid, x_cut, p0_x, bounds=bounds)
+    vals_y, pcov_xy = curve_fit(gaussian_1D, y_grid, y_cut, p0_y, bounds=bounds)
+
+    if bounded:
+        vals_x[1] += int(np.ceil(xlim[0]))
+        vals_y[1] += int(np.ceil(ylim[0]))
+    print(vals_x, vals_y)
+    if ax is not None:
+        #NOTE: plotted sigma curves don't take into account covariance!! These are a diagnostic tool ONLY
+        e = patches.Ellipse((vals_x[1], vals_y[1]), 2*vals_x[2], 2*vals_y[2], fill=False, ec = 'white', lw = 6)
+        ax.add_artist(e)
+    return vals_x, vals_y
     
 def process_file(mot_img, zoom = False, ROI = None, background = None):
     mot_image = cv2.imread(mot_img, 0).T.astype(np.int16)
@@ -164,11 +213,12 @@ def save_gui_window_ROI(mot_img, save_loc, ROI, rot = 0, show_title = False, tit
 MM Modified 070221 for new camera gui from here on:
 '''
    
-def fig_gui_window_ROI(mot_img, ax, ROI, rot = 0, show_title = False, title = None, zoom = False, background = None):
+def fig_gui_window_ROI(mot_img, ax, xlim, ylim, rot = 0, show_title = False, title = None, zoom = False, background = None):
     print(mot_img)
-    mot_image = process_file(mot_img, zoom, ROI, background)
+    mot_image = process_file(mot_img, zoom, None, background)
     mot_image = np.rot90(mot_image, rot)
-    fig_visualize_mot_image(mot_image, ax, show_title = show_title, title = 'testing')
+    
+    fig_visualize_mot_image(mot_image, ax, xlim, ylim, show_title = show_title, title = 'testing')
     '''
     fig, axImshow, dims = default_window(mot_img, rot = rot, show_title = show_title, title = title, zoom = zoom, ROI = ROI, background = background)
     if not zoom:
@@ -178,11 +228,28 @@ def fig_gui_window_ROI(mot_img, ax, ROI, rot = 0, show_title = False, title = No
     plt.close()
     return dims    
     '''
+def make_synth(mot_image):
+    y_pix, x_pix = mot_image.shape
+    y_grid = np.linspace(0, y_pix, y_pix)
+    x_grid = np.linspace(0, x_pix, x_pix)
+    x, y = np.meshgrid(x_grid, y_grid)
+    vals = [50, 500, 600, 100, 200, 0, 0]
+    return gaussian_2D(x, y, *vals)
     
-def fig_visualize_mot_image(mot_array, axImshow, c_max = 100, show_title = False, title = None):
+    
+def fig_visualize_mot_image(mot_array, axImshow, xlim, ylim, c_max = 100, show_title = False, title = None, fit_gaussian = False):
     axImshow.clear()
     #center imshow:
+    #mot_array = make_synth(mot_array)
     im = axImshow.imshow(mot_array, cmap = 'magma', origin = 'lower', aspect = 'equal')
+    if fit_gaussian: #MM added 081921 to do real-time TOF
+        _, __ = fit_gaussian_2D_cut(mot_array, xlim, ylim, ax = axImshow)
+        #NOTE: plotted sigma curves don't take into account covariance!! These are a diagnostic tool ONLY
+        #sig1 = fast_gaussian(x0, y0 + sigma_y, A, x0, y0, sigma_x, sigma_y, offset)
+        #sig2 = fast_gaussian(x0, y0 + 2*sigma_y, A, x0, y0, sigma_x, sigma_y, offset)
+        #print(sig1, sig2)
+        #axImshow.contour(fast_gaussian(x, y, *vals), colors = 'white', levels = (sig2, sig1))
+
     axImshow.tick_params(color='white', labelcolor='white', labelsize=12)
     im.set_clim(0, c_max)
     if show_title:

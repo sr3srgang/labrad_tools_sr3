@@ -30,7 +30,7 @@ class MplCanvas(FigureCanvas):
 
 class CameraGui(QDialog):
     def set_vars(self):
-        self.camera = 'vertical_mot'
+        self.camera = 'horizontal_mot'
         self.name = self.camera
         self.fluorescence_mode = True
         self.update_id = np.random.randint(0, 2**31 - 1)
@@ -88,7 +88,7 @@ class CameraGui(QDialog):
                         if 'gnd' in value[0]:
                             print(value[0])
                             str_end = '_fluorescence.png'
-                            keyword = 'mot_cavity_'
+                            keyword = 'vertical_mot_fluor_'
                             split_str = value[0].partition(str_end)
                             parse_name = split_str[0].partition(keyword)
                             print(parse_name)
@@ -110,12 +110,15 @@ class CameraGui(QDialog):
                         
 
     def show_window(self):
-        try:
+        #try:
             if not self.no_lim:
                 xlim = self.canvas.ax.get_xlim()
-                ylim = self.canvas.ax.get_ylim()    
+                ylim = self.canvas.ax.get_ylim()
+            else:
+                xlim = None
+                ylim = None
             #self.canvas.ax.clear() #MOVED to after attempt to load fig
-            it.fig_gui_window_ROI(self.file_to_show, self.canvas.ax, self.ROI)
+            it.fig_gui_window_ROI(self.file_to_show, self.canvas.ax, xlim, ylim)
             if not self.no_lim:
                 self.canvas.ax.set_xlim(xlim)
                 self.canvas.ax.set_ylim(ylim)
@@ -125,9 +128,9 @@ class CameraGui(QDialog):
             self.canvas.ax.set_title("{:.3e}".format(self.Plotter.title), color = 'w', y = .85, size = 42)
             self.canvas.draw()
             print('redrawn')
-        except:
+        #except:
             #self.no_lim = True
-            print('Error loading file: not refreshed')
+            #print('Error loading file: not refreshed')
         
     def launch_plotter(self):
         self.Plotter.show()
