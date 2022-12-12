@@ -132,7 +132,8 @@ def filtered_cavity_time_domain(update, ax, trace = 'gnd', val = False, do_fit =
             data, ts = get_cavity_data(value, trace)
             data, ts, _ = process_homodyne(data, ts, ts[0], ts[-1]) #pre-filter
             ax.clear()
-            ax.plot(ts*1e3, data, '.k', ms = .5)
+            in_range = ts*1e3 <100 #MM 11232022 hacking pico window shorter
+            ax.plot(1e3*ts[in_range], data[in_range], '.k', ms = .5)
             if subtract_acc:
                 time.sleep(.1)
                 n, data_head = get_shot_num(value, str_end = '.cavity_probe_pico.hdf5')
@@ -292,7 +293,7 @@ def atom_number(update, ax, data_x, data_y, bad_points = None, time_domain = Fal
             	        sc.add_gaussian(data_x, data_y, ax, offset = False)
             	    else:
             	        print('Too few points to fit')
-            	ax.set_xlabel('Frequency (-116.1 MHz)')
+            	ax.set_xlabel('Frequency (-116.55 MHz)')
             	    
             else:
                 x_ax = shot_num
@@ -328,7 +329,7 @@ def exc_frac(update, ax, data_x, data_y, time_domain = False, time_name = 'seque
                ax.set_xlabel(time_name)
             elif freq_domain:
             	x_ax = (freq - freq_offset)
-            	ax.set_xlabel('Frequency (-116.1 MHz)')            	    
+            	ax.set_xlabel('Frequency (-116.55 MHz)')            	    
             else:
                 x_ax = shot_num
                 ax.set_xlabel('Shot number')
@@ -354,7 +355,7 @@ def exc_frac(update, ax, data_x, data_y, time_domain = False, time_name = 'seque
 
 
 
-<<<<<<< HEAD
+#<<<<<<< HEAD
 '''            
 tempZ, p0, p1, p2,p3, p4, nzBar = processAxialTemp((-1*np.array(freq_cut[0::1])+ np.mean(freq))/1e3, soln) # frequency input needs to be in kHz
     
@@ -372,15 +373,15 @@ def get_clock_data(path, time_name = 'sequencer.t_dark'):
     #    shot_num, folder_path = get_shot_num(path)
     #except:
         #modify_path_here
-    if platform == 'win32':
-        path = 'K:/' + path[15:]
+#    if platform == 'win32':
+#        path = 'K:/' + path[15:]
     shot_num, folder_path = get_shot_num(path)
 
         
     f = h5py.File(path)
     gnd = np.array(f['gnd'])
-    exc = np.array(f['bgd'])
-    background = np.array(f['exc'])
+    exc = np.array(f['exc'])
+    background = np.array(f['bgd'])
     ts = np.array(f['time'])
     if shot_num is not None:
         f_name = "{}.conductor.json".format(shot_num)
@@ -437,6 +438,6 @@ def get_clock_data_old(path, time_name = 'sequencer.t_dark'):
             t_dark = None
             print('dark time not specified')
     return gnd, exc, background, freq, ts, shot_num, t_dark
-=======
->>>>>>> 303bf0f26f8f897e7ed4995cff099dc2405b40ec
+#=======
+#>>>>>>> 303bf0f26f8f897e7ed4995cff099dc2405b40ec
         
