@@ -159,7 +159,7 @@ class MplCanvas(FigureCanvas):
         self.ax.cla()
         self.ax.set_xlabel('time [s]')
         self.ax.set_ylabel('voltage [V]')
-        self.ax.plot(times, voltages)
+        self.ax.plot(times, voltages, color = '#ff69b4')
         if self.fix_zoom:
             self.ax.set_ylim(ylim)
             self.ax.set_xlim(xlim)
