@@ -866,7 +866,7 @@ class ConductorServer(ThreadedServer):
         self._advance(suppress_errors)
     
     def _advance(self, suppress_errors=False):
-        print time.time()
+        #print time.time()
         # prevent multiple advances from happening at the same time
         if self.is_advancing:
             raise AlreadyAdvancing()
