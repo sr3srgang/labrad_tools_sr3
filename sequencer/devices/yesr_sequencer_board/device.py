@@ -61,7 +61,7 @@ class YeSrSequencerBoard(DefaultDevice):
         
 
     def load_sequence(self, sequencename):
-        for i in range(365):
+        for i in range(365*2): #MM 20221110 running off old K directory so extended to look back 2 yrs
             day = date.today() - timedelta(i)
             sequencepath = self.sequence_directory.format(day.strftime('%Y%m%d')) + sequencename
             if os.path.exists(sequencepath):

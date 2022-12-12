@@ -18,8 +18,8 @@ class SequencerButton(QtGui.QFrame):
         super(SequencerButton, self).__init__(None)
         self.setFrameShape(2)
         self.setLineWidth(1)
-        self.on_color = '#ff69b4'
-        self.off_color = '#ffffff'
+        self.on_color = '#eeeeee'#ff69b4'
+        self.off_color = '#fcfcfc'#ffffff'
     
     def setChecked(self, state):
         if state:
@@ -104,9 +104,9 @@ class NameBox(QtGui.QLabel):
         self.setText(loc+': '+name)
         self.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter  )
         self.name = name
-        self.off_color = '#ffffff'
+        self.off_color = '#eeeeee'#'#ffffff'
         self.auto_color = '#bbbbbb'
-        self.on_color = '#ffffff'
+        self.on_color = '#eeeeee'#ffffff'
         self.mode = kw['mode']
         self.manual_output = kw['manual_output']
         self.updateDisplay()
