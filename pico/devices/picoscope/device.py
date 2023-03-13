@@ -52,6 +52,7 @@ class Picoscope(DefaultDevice):
 		#self.ps.waitReady()
 		
 	def reset(self):
+		print("reset: block called!")
 		self.ps.stop()
 		self.ps.runBlock(pretrig=0.0, segmentIndex=0)	
 		#self.ps.waitReady()

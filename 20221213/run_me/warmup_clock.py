@@ -1,6 +1,6 @@
 import numpy as np
 
-this_expt = 'fixed'
+this_expt = 'scan'
 
 #Setting parameters for different classes of expts. 
 f_cen = 116.55e6 + 8.2174e4
@@ -15,7 +15,6 @@ total_flopping_time = 12e-3 #TODO: add
 default_t_pi = .4
 
 default_int = .2
-
 
 
 expt_types_values = {
