@@ -78,17 +78,13 @@ class CavityClockGui(QDialog):
         self.connect_to_labrad_cav()
         self.connect_to_labrad_clock()
         self.populate()
-        
-        
-        #self.Plotter = LivePlotter(self)
+
 
     def populate(self):
         self.setWindowTitle("Clock + cavity gui")
         self.canvas = MplCanvas()
 
         self.nav = NavigationToolbar(self.canvas, self)
-        #self.nav.addAction('Select analysis method')
-        #self.nav.addAction('Launch live plotter', self.launch_plotter)
 
         self.layout = QGridLayout()
         self.layout.setSpacing(0)
@@ -175,6 +171,18 @@ class CavityClockGui(QDialog):
                 print(this_expt)
                 self.canvas.reset_data()
                 self.expt = this_expt
+                
+                #MM 12142022 look for default warmup settings:
+                defaults = {'scan': 1, 'fixed': 0, 'flop': 4, 'sideband': 1}
+                keyword = 'warmup_'
+                if keyword in this_expt:
+                    expt_type = this_expt[len(keyword):this_expt.find('#')]
+                    ix = defaults.get(expt_type)
+                    if ix is not None:
+                    	self.mode = self.fxns[ix]
+                    	self.dropdown.setCurrentIndex(ix)
+                    	self.canvas.reset_data()
+                
                 self.data_path = this_path
                 self.canvas.fig.suptitle(self.expt)
                 self.canvas.lim_set = self.canvas.lim_default
@@ -191,9 +199,10 @@ class CavityClockGui(QDialog):
 
 
         #MM 041322 updating for homodyne listeners
-        
-        ts = self.make_time_windows()
-        ran, datums = listeners.filtered_cavity_time_domain(update, self.canvas.trace_axes[1], 'gnd', do_fit = self.do_fit, t_bounds = [[ts['t1_a'], ts['t1_b']], [ts['t2_a'], ts['t2_b']], [ts['t3_a'], ts['t3_b']], [ts['t4_a'], ts['t4_b']]])
+        #MM 121422 turning off cav fits to suppress error messages
+        #ts = self.make_time_windows()
+        #t_bounds = [[ts['t1_a'], ts['t1_b']], [ts['t2_a'], ts['t2_b']], [ts['t3_a'], ts['t3_b']], [ts['t4_a'], ts['t4_b']]]
+        ran, datums = listeners.filtered_cavity_time_domain(update, self.canvas.trace_axes[1], 'gnd', do_fit = False)
         if (self.do_fit == 2) and ran: #make rhs only if in mean mode
             listeners.correlations(update, self.canvas.data_axes[2], datums)
 
@@ -248,58 +257,7 @@ class CavityClockGui(QDialog):
      
     def add_subplot_buttons(self):
         self.nav.addAction('Fit', self.do_fit)
-        
-        '''
-        #MM 041322 turn off heterodyne buttons and add homodyne buttons
-        #Add fft client option to left cavity trace
-        self.fft_left = QPushButton(self)
-        self.fft_left.setText('FFT on click')
-        self.fft_left.move(525, 372)
-        self.fft_left.clicked.connect(self.show_fft)
-        
-        
-        self.set_param = QPushButton(self)
-        self.set_param.setText('IQ params')
-        self.set_param.move(1145, 372)
-        '''
-        
-        self.fit_toggle = QPushButton(self)
-        self.fit_toggle.move(525, 372)
-        self.fit_toggle.setAutoDefault(False)
-        self.fit_settings = ["Fit off", "Q response", "Mean"]
-        self.do_fit = len(self.fit_settings) - 1
-        self.toggle_fit() #Initialize with fit off
-        self.fit_toggle.pressed.connect(self.toggle_fit)
-        
-        self.cav_detuning = QLineEdit(self)
-        self.cav_detuning.setText("NaN")
-        self.cav_detuning.move(1145, 372)
-        self.cav_detuning.returnPressed.connect(self.set_detuning)
-        self.current_cav_detuning = None #no detuning specified yet on start-up
-        self.cav_detuning.setVisible(False)
-        
-        #MM 051922: client for setting time windows for spin measurements
-        #JOHN UPDATE DEFAULT PARAM VALS HERE
-        self.current_dark_time = 100e-6
-        t_dark = self.current_dark_time 
-        
-        '''
-        self.current_time_settings = {'t1_a': 0.1e-3,
-        't1_b': 39.5e-3,
-        't2_a': 48.1e-3,
-        't2_b': 88e-3,
-        't3_a': 89e-3 +t_dark,
-        't3_b': 89e-3+39e-3+t_dark,
-        't4_a': 136e-3+t_dark,
-        't4_b': 175e-3+t_dark}
-        '''
-        self.time_settings={'t1_start': .1e-3, 't_window': 39e-3, 't_between': 9e-3, 't_dark': 100e-6, 'cav_detuning': np.nan}
-        
-        self.set_windows = QPushButton(self)
-        self.set_windows.setText('Set windows')
-        self.set_windows.move(350, 372)
-        self.set_windows.pressed.connect(self.clicked_set_windows)
-        
+
         #Add dropdown for setting data x axis
         self.dropdown = QComboBox(self)
         self.labels = ["Shot num","Frequency", "Phase", "Dark time", "Pi time"]
@@ -317,19 +275,8 @@ class CavityClockGui(QDialog):
         self.analysis_script = self.fit_fxns[0]
         self.fxn_drop.move(1000, 4)
         self.fxn_drop.currentIndexChanged.connect(self.select_script)
-        
-    def make_time_windows(self):
-        ts = {
-        't1_a': self.time_settings['t1_start'],
-        't1_b': self.time_settings['t1_start'] + self.time_settings['t_window'],
-        't2_a': self.time_settings['t1_start'] + self.time_settings['t_window'] + self.time_settings['t_between'],
-        't2_b': self.time_settings['t1_start'] + 2* self.time_settings['t_window'] + self.time_settings['t_between'],
-        't3_a': self.time_settings['t1_start'] + 2* self.time_settings['t_window'] + self.time_settings['t_between'] + self.time_settings['t_dark'],
-        't3_b': self.time_settings['t1_start'] + 3* self.time_settings['t_window'] + self.time_settings['t_between'] + self.time_settings['t_dark'],
-        't4_a': self.time_settings['t1_start'] + 3* self.time_settings['t_window'] + 2*self.time_settings['t_between'] + self.time_settings['t_dark'],
-        't4_b': self.time_settings['t1_start'] + 4* self.time_settings['t_window'] + 2*self.time_settings['t_between'] + self.time_settings['t_dark']}
-        return ts
-            
+    
+
     def toggle_fit(self):
         self.do_fit = (self.do_fit + 1) % len(self.fit_settings)
         self.fit_toggle.setText(self.fit_settings[self.do_fit])
@@ -343,7 +290,7 @@ class CavityClockGui(QDialog):
 
                          
     def select_mode(self):
-        txt = self.dropdown.currentText()
+        #txt = self.dropdown.currentText()
         ix = self.dropdown.currentIndex()
         self.mode = self.fxns[ix]
         self.canvas.reset_data()

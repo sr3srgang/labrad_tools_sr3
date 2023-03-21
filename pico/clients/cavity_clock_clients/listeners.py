@@ -16,31 +16,8 @@ from data_analysis.cavity_clock.cavity_sweep_min import *
 from data_analysis.cavity_clock.cavity_sweep_Lorentzian import *
 from data_analysis.sr1_fit import processAxialTemp, fit, axialTemp
 
-#MM 06102022 commented old zuko version in merge conflict with toph
-'''
-<<<<<<< HEAD
-pico_shot_range = np.arange(10, 25)
-freq_offset = 116.1e6
-from scipy.signal import find_peaks
-from sys import platform
 
-crossing_emp = .00154
-t_range_emp = [.007, .017]
-scan_rate_emp = 1e6/(20e-3) #1MHz/20 ms
-def get_cavity_data(abs_data_path, trace = 'gnd'):
-    if platform == 'win32':
-        abs_data_path = 'K:/' + path[15:]
-    with h5py.File(abs_data_path) as h5f:
-        data = np.array(h5f[trace])
-        #self.test = np.array(h5f['test_new_trig'])
-        #print(self.test)
-        ts = np.array(h5f['time'])
-    return data, ts
-=======
-'''
 from data_analysis.clock_lock import iq_lib as iq
-
-#>>>>>>> 303bf0f26f8f897e7ed4995cff099dc2405b40ec
 
 
 #CAVITY LISTENERS            
@@ -132,7 +109,7 @@ def filtered_cavity_time_domain(update, ax, trace = 'gnd', val = False, do_fit =
             data, ts = get_cavity_data(value, trace)
             data, ts, _ = process_homodyne(data, ts, ts[0], ts[-1]) #pre-filter
             ax.clear()
-            in_range = ts*1e3 <100 #MM 11232022 hacking pico window shorter
+            in_range = ts*1e3 <100#MM 11232022 hacking pico window shorter
             ax.plot(1e3*ts[in_range], data[in_range], '.k', ms = .5)
             if subtract_acc:
                 time.sleep(.1)
@@ -369,15 +346,7 @@ print('Probability in the 4th excited band: '+str(np.round(p4, 3)))
 print('<n_z> = '+str(np.round(nzBar,3)))         
 ''' 
 def get_clock_data(path, time_name = 'sequencer.t_dark'):
-    #try:
-    #    shot_num, folder_path = get_shot_num(path)
-    #except:
-        #modify_path_here
-#    if platform == 'win32':
-#        path = 'K:/' + path[15:]
-    shot_num, folder_path = get_shot_num(path)
-
-        
+    shot_num, folder_path = get_shot_num(path)  
     f = h5py.File(path)
     gnd = np.array(f['gnd'])
     exc = np.array(f['exc'])
@@ -393,14 +362,15 @@ def get_clock_data(path, time_name = 'sequencer.t_dark'):
             t_dark = c_json[time_name]
         except:
             t_dark = None
-            print('dark time not specified')
+            #print('dark time not specified')
     else:
         freq = None
         t_dark = None
     return gnd, exc, background, freq, ts, shot_num, t_dark  
                
-def get_shot_num(path):
-    str_end = '.clock_pico.hdf5'
+def get_shot_num(path, str_end = None):
+    if str_end is None:
+        str_end = '.clock_pico.hdf5'
     head, tail = os.path.split(path)
     split_str = tail.partition(str_end)
     try:
