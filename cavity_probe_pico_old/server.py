@@ -17,7 +17,7 @@ class PicoServer(DeviceServer):
 			device = self._get_device(device_name)
 			device.record(device_request)
 		end = time.time()
-		print('time elapsed for server: {}'.format(end - start))
+		print(end - start)
 			
 			
 	@setting(12)

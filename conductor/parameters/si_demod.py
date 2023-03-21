@@ -17,7 +17,7 @@ class SiDemod(ConductorParameter):
     def update(self):
     	response = self.inst.ask('SOUR1:FREQ?')
         self.inst.local()
-        self.value = 8 * float(response)
+        self.value = float(response)
 
         print('Demod freq: ' + str(self.value))
 

@@ -1,5 +1,5 @@
 from device_server.device import DefaultDevice
-from picoscope import ps5000a
+from picoscope import ps6000a
 import os
 import json
 import h5py
@@ -29,10 +29,10 @@ class Picoscope(DefaultDevice):
 		self.init_pico()
 		
 	def init_pico(self):
-		ps = ps5000a.PS5000a(self.picoscope_serialnumber)
-		#except:
-		#	DeviceInitializationFailed(serial_number)
-		
+		ps = ps6000a.PS6000a(self.picoscope_serialnumber)
+		print('Found pico!')
+		for x in np.arange(1, 4):
+			ps.setChannel(x, enabled=False)
 		for channel_name, channel_settings in self.picoscope_channel_settings.items():
             		ps.setChannel(channel_name, **channel_settings)
             	
@@ -42,19 +42,19 @@ class Picoscope(DefaultDevice):
         	print 'number of samples:', response[1]
         	print 'max samples:', response[2]
         	self.n_samples = response[1]
-        
-        	ps.setSimpleTrigger('External', self.picoscope_trigger_threshold, timeout_ms=self.picoscope_timeout)
-        	print('set to trigger')
+        	#MM 10130105: ACTUALLY uses Aux channel, hardcoded in as 1001 in low-level as per device spec. 
+        	ps.setSimpleTrigger('A', self.picoscope_trigger_threshold, timeout_ms=self.picoscope_timeout) 
         	ps.memorySegments(self.picoscope_n_capture)
         	ps.setNoOfCaptures(self.picoscope_n_capture)
         	self.ps = ps
+        	print('set to trigger')
         	#self.ps.runBlock(pretrig=0.0, segmentIndex=0)
 		#self.ps.waitReady()
 		
 	def reset(self):
-		print("reset: block called!")
 		self.ps.stop()
 		self.ps.runBlock(pretrig=0.0, segmentIndex=0)	
+		print('reset: ran block')
 		#self.ps.waitReady()
 	'''
 	def set_max_V(self, V_new):
@@ -80,28 +80,23 @@ class Picoscope(DefaultDevice):
 				print('acquired')
 		'''      
 		print(self.data_format.items())
-		(data_raw, numSamples, overflow) = self.ps.getDataRawBulk()
-		dataV = self.ps.rawToV('A', data_raw)
+		channel, segments = self.data_format.items()[0]
+		(data_raw, numSamples, overflow) = self.ps.getDataRaw(channel=channel) #NOT bulk in this case
+		dataV = self.ps.rawToV(channel, data_raw)
 		print(np.shape(dataV))
 		data = {}
+		'''
 		for channel, segments in self.data_format.items():
 			data[channel] = {}
 			for i in np.arange(len(segments)):
 				label = segments[i]
+				print(dataV.shape)
 				data[channel][label] = dataV[i, :]
-				'''
-		data = {}
-		data['A'] = {}
-		data['A']['gnd'] = dataV[0, :]
-		data['A']['exc'] = dataV[1, :]
-		data['A']['bgd'] = dataV[2, :]
 		'''
-		'''
-		plt.figure()
-		plt.plot(dataV[0, :])
-		plt.plot(dataV[1, :])
-		plt.show()
-		'''
+		
+		data[channel] = {}
+		data[channel][segments[0]]= dataV
+
 		
 		#Save data. Data file path comes from conductor parameter, where condition for temporarily or permanently saving data is set. 
 		#print("Time acquiring: {}".format(tf - t0))
@@ -112,7 +107,7 @@ class Picoscope(DefaultDevice):
 		    os.makedirs(dir_path)
 		
 		#Save data
-		raw_data = data['A']
+		raw_data = data[channel]
 		ts = np.arange(self.n_samples)*self.picoscope_sampling_interval
 		h5py_path = os.path.join(self.data_path, rel_data_path + '.hdf5')
 		try:
