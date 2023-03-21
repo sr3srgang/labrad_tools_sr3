@@ -14,6 +14,8 @@ from data_analysis.cavity_clock.helpers import *
 from pico.clients.cavity_clock_clients.params import *
 from data_analysis.cavity_clock.cavity_sweep_min import *
 from data_analysis.cavity_clock.cavity_sweep_Lorentzian import *
+from data_analysis.cavity_clock.MM_plotter_package import *
+
 from data_analysis.sr1_fit import processAxialTemp, fit, axialTemp
 
 
@@ -99,8 +101,19 @@ def mean_v(data, ts, t_a, t_b, ax = None, do_filter = False):
     if ax is not None:
         ax.plot(ts_range*1e3, np.ones(len(ts_range))*mean_V, color = 'grey')
     return np.mean(output_V)
-    
-def filtered_cavity_time_domain(update, ax, trace = 'gnd', val = False, do_fit = False, t_bounds = None, subtract_acc = True):
+
+def filtered_cavity_time_domain(update, ax, val = False, do_fit = False):
+    #MM -03212023 written for compatibility with multiple triggers of ps6000a
+    ax.set_facecolor('xkcd:pinkish grey')
+    for message_type, message in update.items():
+        value = message.get('cavity_probe_pico')
+        if message_type == 'record' and value is not None:
+            ax.clear()
+            fits, _ = process_shot_sweep(value, ax = ax)
+            ax.legend(labelcolor = 'k')
+            return True, fits[0]
+        
+def filtered_cavity_time_domain_OLD(update, ax, trace = 'gnd', val = False, do_fit = False, t_bounds = None, subtract_acc = False):
     #MM 051722 synchronous acc. subtraction option
     ax.set_facecolor('xkcd:pinkish grey')
     for message_type, message in update.items():
@@ -109,8 +122,8 @@ def filtered_cavity_time_domain(update, ax, trace = 'gnd', val = False, do_fit =
             data, ts = get_cavity_data(value, trace)
             data, ts, _ = process_homodyne(data, ts, ts[0], ts[-1]) #pre-filter
             ax.clear()
-            in_range = ts*1e3 <100#MM 11232022 hacking pico window shorter
-            ax.plot(1e3*ts[in_range], data[in_range], '.k', ms = .5)
+            #in_range = ts*1e3 <100#MM 11232022 hacking pico window shorter
+            ax.plot(1e3*ts, data, '.k', ms = .5)
             if subtract_acc:
                 time.sleep(.1)
                 n, data_head = get_shot_num(value, str_end = '.cavity_probe_pico.hdf5')
@@ -325,26 +338,6 @@ def exc_frac(update, ax, data_x, data_y, time_domain = False, time_name = 'seque
             return True
             
 
-
-
-
-
-
-
-
-#<<<<<<< HEAD
-'''            
-tempZ, p0, p1, p2,p3, p4, nzBar = processAxialTemp((-1*np.array(freq_cut[0::1])+ np.mean(freq))/1e3, soln) # frequency input needs to be in kHz
-    
-print('Temperature in the lattice: '+str(np.round(tempZ, 2))+' uK')
-print('Probability in the ground band: '+str(np.round(p0, 3)))
-print('Probability in the 1st excited band: '+str(np.round(p1, 3)))
-print('Probability in the 2nd excited band: '+str(np.round(p2, 3)))
-print('Probability in the 3rd excited band: '+str(np.round(p3, 3)))
-print('Probability in the 4th excited band: '+str(np.round(p4, 3)))
-
-print('<n_z> = '+str(np.round(nzBar,3)))         
-''' 
 def get_clock_data(path, time_name = 'sequencer.t_dark'):
     shot_num, folder_path = get_shot_num(path)  
     f = h5py.File(path)

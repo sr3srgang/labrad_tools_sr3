@@ -202,7 +202,7 @@ class CavityClockGui(QDialog):
         #MM 121422 turning off cav fits to suppress error messages
         #ts = self.make_time_windows()
         #t_bounds = [[ts['t1_a'], ts['t1_b']], [ts['t2_a'], ts['t2_b']], [ts['t3_a'], ts['t3_b']], [ts['t4_a'], ts['t4_b']]]
-        ran, datums = listeners.filtered_cavity_time_domain(update, self.canvas.trace_axes[1], 'gnd', do_fit = False)
+        ran, datums = listeners.filtered_cavity_time_domain(update, self.canvas.trace_axes[1], do_fit = False)
         if (self.do_fit == 2) and ran: #make rhs only if in mean mode
             listeners.correlations(update, self.canvas.data_axes[2], datums)
 
