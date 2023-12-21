@@ -95,7 +95,7 @@ def add_gaussian(freqs, exc, freq_ax, offset = True, inverted = False):
 
 def fit_inverted_gaussian(freqs, exc):
 	cen_guess = np.argmin(exc)
-	p0=[freqs[cen_guess], 10, exc[cen_guess] - 1, 1]
+	p0=[freqs[cen_guess], 1, exc[cen_guess] - 1, 1]
 	fit, cov = curve_fit(gaussian,freqs, exc, p0 =p0)
 	FWHM = fit[1]*2*np.sqrt(2*np.log(2))
 	

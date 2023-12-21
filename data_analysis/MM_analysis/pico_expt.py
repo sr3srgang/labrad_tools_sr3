@@ -6,7 +6,7 @@ import statsmodels.api as sm
 import os, json, h5py
     
 def calc_excitation(gnd, exc):
-	frac = (exc.astype(np.float))/(exc + gnd)
+	frac = (exc.astype(float))/(exc + gnd)
 	return frac 
 	   
 def import_pico_scan(data_path, exp_name, shot, keywords = ['clock_sg380']):

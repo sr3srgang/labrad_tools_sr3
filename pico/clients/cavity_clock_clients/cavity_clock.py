@@ -42,12 +42,15 @@ class MplCanvas(FigureCanvas):
         self.data_axes.append(fig.add_subplot(gs[2:4, 4:8]))
         self.lim_default = [False, False, False, False, False, False]
         self.lim_set = self.lim_default
-        for ax in self.trace_axes + self.data_axes:
+        self.cav_snd_y = self.data_axes[2].twinx()
+        for ax in self.trace_axes + self.data_axes + [self.cav_snd_y]:
             ax.set_facecolor('xkcd:grey')
             ax.yaxis.label.set_color('white')
             ax.xaxis.label.set_color('white')
             ax.tick_params(color='white', labelcolor='white')
-
+        
+        
+        
         # Initialize live data memory
         self.data_x = [[] for _ in np.arange(self.n_data_plots)]
         self.data_y = [[] for _ in np.arange(self.n_data_plots)]
@@ -61,6 +64,7 @@ class MplCanvas(FigureCanvas):
         self.data_x = [[] for _ in np.arange(self.n_data_plots)]
         self.data_y = [[] for _ in np.arange(self.n_data_plots)]
         [ax.clear() for ax in self.data_axes]
+        self.cav_snd_y.clear()
         
 
 
@@ -72,6 +76,8 @@ class CavityClockGui(QDialog):
         self.expt= "Waiting for updates"
         self.data_path = None
         self.update = None
+        self.sweep = None
+        self.seq = None
         #Specify analysis frameworks
         self.analysis_script = fits.do_gaussian_fit
         self.mode = lambda update, preset : None
@@ -153,16 +159,18 @@ class CavityClockGui(QDialog):
                       
     def receive_update(self, c, update_json):
         update = json.loads(update_json)
-        #self.update = update
+        #print(update)
+        
         this_expt, this_path = listeners.get_expt(update)
         if this_expt is not None and self.expt != this_expt:
             if (not self.expt.isnumeric()) and (self.data_path is not None):
                 #Save data traces when expt ends
                 folder_path = os.path.join(self.data_path, self.expt)
-                np.save(os.path.join(folder_path, "processed_data_x"), self.canvas.data_x)
-                np.save(os.path.join(folder_path, "processed_data_y"), self.canvas.data_y)
+                np.save(os.path.join(folder_path, "processed_data_x"), np.asarray(self.canvas.data_x, dtype = object), allow_pickle = True)
+                np.save(os.path.join(folder_path, "processed_data_y"), np.asarray(self.canvas.data_y, dtype = object), allow_pickle = True)
                 self.save_fig(self.canvas.data_axes[0], self.canvas.fig, os.path.join(folder_path, 'fig_0.png'))
                 self.save_fig(self.canvas.data_axes[1], self.canvas.fig, os.path.join(folder_path, 'fig_1.png'))
+                self.save_fig(self.canvas.data_axes[2], self.canvas.fig, os.path.join(folder_path, 'fig_2.png'))
                 print('Saved data in folder: ' + folder_path)
             if this_expt.isnumeric():
                 self.canvas.fig.suptitle(self.expt + " ended")
@@ -173,7 +181,7 @@ class CavityClockGui(QDialog):
                 self.expt = this_expt
                 
                 #MM 12142022 look for default warmup settings:
-                defaults = {'scan': 1, 'fixed': 0, 'flop': 4, 'sideband': 1}
+                defaults = {'scan': 1, 'fixed': 0, 'flop': 4, 'sideband': 1, 'ramsey': 2}
                 keyword = 'warmup_'
                 if keyword in this_expt:
                     expt_type = this_expt[len(keyword):this_expt.find('#')]
@@ -186,7 +194,14 @@ class CavityClockGui(QDialog):
                 self.data_path = this_path
                 self.canvas.fig.suptitle(self.expt)
                 self.canvas.lim_set = self.canvas.lim_default
-         
+        
+        #MM 20230322-- if 'param' update, record values
+        #MM 20230508 also write down experimental sequence
+        sweep, seq = listeners.sweep_params(update)
+        if sweep is not None:
+            self.sweep = sweep
+        if seq is not None:
+            self.seq = seq
         #Get current lims to prevent re-scaling 
         lims = self.preserve_lim()
         preset = self.canvas.lim_set.copy()
@@ -202,14 +217,14 @@ class CavityClockGui(QDialog):
         #MM 121422 turning off cav fits to suppress error messages
         #ts = self.make_time_windows()
         #t_bounds = [[ts['t1_a'], ts['t1_b']], [ts['t2_a'], ts['t2_b']], [ts['t3_a'], ts['t3_b']], [ts['t4_a'], ts['t4_b']]]
-        ran, datums = listeners.filtered_cavity_time_domain(update, self.canvas.trace_axes[1], do_fit = False)
-        if (self.do_fit == 2) and ran: #make rhs only if in mean mode
-            listeners.correlations(update, self.canvas.data_axes[2], datums)
-
+        ran, datums, windows= listeners.filtered_cavity_time_domain(update, self.canvas.trace_axes[1], self.seq)
+        if ran:
+            listeners.sweep_to_f(update, self.canvas.data_axes[2], self.canvas.cav_snd_y,  self.canvas.data_x[2], self.canvas.data_y[2], datums, self.sweep, windows)
+            #self.canvas.lim_set[2] = True
         for message_type, message in update.items():
             value = message.get('cavity_probe_pico')
         if value is not None:
-            self.canvas.lim_set[1] = True
+            #self.canvas.lim_set[1] = True
             #self.canvas.lim_set[0] = True
             self.update = update
             #self.canvas.lim_set[2] = True

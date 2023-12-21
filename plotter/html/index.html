@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+</head>
+<div id="figure"></div>
+<script type="text/javascript">
+var connection = new WebSocket('ws://toph.colorado.edu:9000');
+connection.onopen = function() {
+    console.log('!!!!!');
+};
+connection.onmessage = function(figure_data) {
+//    console.log(figure_data);
+    var svg = new DOMParser().parseFromString(figure_data.data, 'application/xml');
+    var figure = document.getElementById("figure")
+    while (figure.hasChildNodes()) {
+        figure.removeChild(figure.lastChild);
+    }
+    figure.appendChild(
+        figure.ownerDocument.importNode(
+            svg.documentElement, true));
+    figure.firstChild.style.height = "100vh";
+};
+</script>
+</html>
