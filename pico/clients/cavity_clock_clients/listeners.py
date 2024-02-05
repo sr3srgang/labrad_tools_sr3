@@ -65,7 +65,7 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs):
     for message_type, message in update.items():
         value = message.get('cavity_probe_pico')
         if message_type == 'record' and value is not None:
-            n, _ = get_shot_num(value, str_end = '.cavity_probe_pico.hdf5')
+            n, _ = get_shot_num(value, str_end = '.cavity_probe_pico_A.hdf5')
         else:
             n = None
     if n >1:
