@@ -40,6 +40,7 @@ class MyClientContainer(MultipleClientContainer):
 if __name__ == '__main__':
     from PyQt4 import QtGui
     app = QtGui.QApplication([])
+    app.setWindowIcon(QtGui.QIcon('icon_image_blueLaser.png'))
     from client_tools import qt4reactor 
     qt4reactor.install()
     from twisted.internet import reactor

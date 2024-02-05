@@ -54,7 +54,7 @@ class SequencerClient(QtGui.QWidget):
 
     spacer_width = 65
     spacer_height = 15
-    namecolumn_width = 130
+    namecolumn_width = 200#130
     namelabel_width = 200
     durationrow_height = 20
     analog_height = 50

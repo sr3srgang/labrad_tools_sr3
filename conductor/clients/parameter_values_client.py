@@ -16,7 +16,8 @@ class MyClient(ParameterValuesClient):
     numRows = 25
 
 if __name__ == '__main__':
-    a = QtGui.QApplication([])
+    app = QtGui.QApplication([])
+    app.setWindowIcon(QtGui.QIcon('icon_image_paramVar.png'))
     from client_tools import qt4reactor
     qt4reactor.install()
     from twisted.internet import reactor
