@@ -109,8 +109,7 @@ class Camera(QMainWindow):
             if key == 'reset':
                 print('RESET CALLED')
                 self.stream.paths = Queue()
-                print('CAM RESET')
-        
+
     def init_camera(self):
         with Vimba.get_instance() as vimba:
             all_cam = vimba.get_all_cameras()
@@ -143,6 +142,5 @@ class Camera(QMainWindow):
         
     def set_gain(self, gain_val):
         with Vimba.get_instance() as vimba:
-            cam = self.this_camera
-            with cam:
+            with self.this_camera as cam:
                 cam.Gain.set(gain_val)
