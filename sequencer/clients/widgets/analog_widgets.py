@@ -57,6 +57,7 @@ class AnalogArray(FigureCanvas):
     def populate(self):
         self.fig = Figure()
         FigureCanvas.__init__(self, self.fig)
+        #self.fig.set_facecolor('#eeeeee')
 
         self.axes = self.fig.add_subplot(111)
         self.axes.spines['top'].set_visible(False)
@@ -84,7 +85,8 @@ class AnalogArray(FigureCanvas):
             if max(abs(V)) > 0:
                 V *= 9. / max(abs(V))
             V = np.array(V) - i*20
-            self.axes.plot(T, V)
+            self.axes.plot(T, V, color = self.parent.analog_colors[i%len(self.parent.analog_colors)], linewidth=3)
+            self.axes.set_facecolor('#fcfcfc')
         for i in range(len(self.channels)-1):
             self.axes.axhline(-10-i*20, linestyle="-", color='k', alpha=0.5, linewidth=1)
         for i in range(len(sequence[self.parent.timing_channel])-1):

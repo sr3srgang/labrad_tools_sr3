@@ -42,12 +42,15 @@ class MplCanvas(FigureCanvas):
         self.data_axes.append(fig.add_subplot(gs[2:4, 4:8]))
         self.lim_default = [False, False, False, False, False, False]
         self.lim_set = self.lim_default
-        for ax in self.trace_axes + self.data_axes:
+        self.cav_snd_y = self.data_axes[2].twinx()
+        for ax in self.trace_axes + self.data_axes + [self.cav_snd_y]:
             ax.set_facecolor('xkcd:grey')
             ax.yaxis.label.set_color('white')
             ax.xaxis.label.set_color('white')
             ax.tick_params(color='white', labelcolor='white')
-
+        
+        
+        
         # Initialize live data memory
         self.data_x = [[] for _ in np.arange(self.n_data_plots)]
         self.data_y = [[] for _ in np.arange(self.n_data_plots)]
@@ -61,6 +64,7 @@ class MplCanvas(FigureCanvas):
         self.data_x = [[] for _ in np.arange(self.n_data_plots)]
         self.data_y = [[] for _ in np.arange(self.n_data_plots)]
         [ax.clear() for ax in self.data_axes]
+        self.cav_snd_y.clear()
         
 
 
@@ -72,23 +76,21 @@ class CavityClockGui(QDialog):
         self.expt= "Waiting for updates"
         self.data_path = None
         self.update = None
+        self.sweep = None
+        self.seq = None
         #Specify analysis frameworks
         self.analysis_script = fits.do_gaussian_fit
         self.mode = lambda update, preset : None
         self.connect_to_labrad_cav()
         self.connect_to_labrad_clock()
         self.populate()
-        
-        
-        #self.Plotter = LivePlotter(self)
+
 
     def populate(self):
         self.setWindowTitle("Clock + cavity gui")
         self.canvas = MplCanvas()
 
         self.nav = NavigationToolbar(self.canvas, self)
-        #self.nav.addAction('Select analysis method')
-        #self.nav.addAction('Launch live plotter', self.launch_plotter)
 
         self.layout = QGridLayout()
         self.layout.setSpacing(0)
@@ -157,16 +159,18 @@ class CavityClockGui(QDialog):
                       
     def receive_update(self, c, update_json):
         update = json.loads(update_json)
-        #self.update = update
+        #print(update)
+        
         this_expt, this_path = listeners.get_expt(update)
         if this_expt is not None and self.expt != this_expt:
             if (not self.expt.isnumeric()) and (self.data_path is not None):
                 #Save data traces when expt ends
                 folder_path = os.path.join(self.data_path, self.expt)
-                np.save(os.path.join(folder_path, "processed_data_x"), self.canvas.data_x)
-                np.save(os.path.join(folder_path, "processed_data_y"), self.canvas.data_y)
+                np.save(os.path.join(folder_path, "processed_data_x"), np.asarray(self.canvas.data_x, dtype = object), allow_pickle = True)
+                np.save(os.path.join(folder_path, "processed_data_y"), np.asarray(self.canvas.data_y, dtype = object), allow_pickle = True)
                 self.save_fig(self.canvas.data_axes[0], self.canvas.fig, os.path.join(folder_path, 'fig_0.png'))
                 self.save_fig(self.canvas.data_axes[1], self.canvas.fig, os.path.join(folder_path, 'fig_1.png'))
+                self.save_fig(self.canvas.data_axes[2], self.canvas.fig, os.path.join(folder_path, 'fig_2.png'))
                 print('Saved data in folder: ' + folder_path)
             if this_expt.isnumeric():
                 self.canvas.fig.suptitle(self.expt + " ended")
@@ -175,10 +179,29 @@ class CavityClockGui(QDialog):
                 print(this_expt)
                 self.canvas.reset_data()
                 self.expt = this_expt
+                
+                #MM 12142022 look for default warmup settings:
+                defaults = {'scan': 1, 'fixed': 0, 'flop': 4, 'sideband': 1, 'ramsey': 2}
+                keyword = 'warmup_'
+                if keyword in this_expt:
+                    expt_type = this_expt[len(keyword):this_expt.find('#')]
+                    ix = defaults.get(expt_type)
+                    if ix is not None:
+                    	self.mode = self.fxns[ix]
+                    	self.dropdown.setCurrentIndex(ix)
+                    	self.canvas.reset_data()
+                
                 self.data_path = this_path
                 self.canvas.fig.suptitle(self.expt)
                 self.canvas.lim_set = self.canvas.lim_default
-         
+        
+        #MM 20230322-- if 'param' update, record values
+        #MM 20230508 also write down experimental sequence
+        sweep, seq = listeners.sweep_params(update)
+        if sweep is not None:
+            self.sweep = sweep
+        if seq is not None:
+            self.seq = seq
         #Get current lims to prevent re-scaling 
         lims = self.preserve_lim()
         preset = self.canvas.lim_set.copy()
@@ -191,16 +214,17 @@ class CavityClockGui(QDialog):
 
 
         #MM 041322 updating for homodyne listeners
-        
-        ts = self.make_time_windows()
-        ran, datums = listeners.filtered_cavity_time_domain(update, self.canvas.trace_axes[1], 'gnd', do_fit = self.do_fit, t_bounds = [[ts['t1_a'], ts['t1_b']], [ts['t2_a'], ts['t2_b']], [ts['t3_a'], ts['t3_b']], [ts['t4_a'], ts['t4_b']]])
-        if (self.do_fit == 2) and ran: #make rhs only if in mean mode
-            listeners.correlations(update, self.canvas.data_axes[2], datums)
-
+        #MM 121422 turning off cav fits to suppress error messages
+        #ts = self.make_time_windows()
+        #t_bounds = [[ts['t1_a'], ts['t1_b']], [ts['t2_a'], ts['t2_b']], [ts['t3_a'], ts['t3_b']], [ts['t4_a'], ts['t4_b']]]
+        ran, datums, windows= listeners.filtered_cavity_time_domain(update, self.canvas.trace_axes[1], self.seq)
+        if ran:
+            listeners.sweep_to_f(update, self.canvas.data_axes[2], self.canvas.cav_snd_y,  self.canvas.data_x[2], self.canvas.data_y[2], datums, self.sweep, windows)
+            #self.canvas.lim_set[2] = True
         for message_type, message in update.items():
             value = message.get('cavity_probe_pico')
         if value is not None:
-            self.canvas.lim_set[1] = True
+            #self.canvas.lim_set[1] = True
             #self.canvas.lim_set[0] = True
             self.update = update
             #self.canvas.lim_set[2] = True
@@ -248,58 +272,7 @@ class CavityClockGui(QDialog):
      
     def add_subplot_buttons(self):
         self.nav.addAction('Fit', self.do_fit)
-        
-        '''
-        #MM 041322 turn off heterodyne buttons and add homodyne buttons
-        #Add fft client option to left cavity trace
-        self.fft_left = QPushButton(self)
-        self.fft_left.setText('FFT on click')
-        self.fft_left.move(525, 372)
-        self.fft_left.clicked.connect(self.show_fft)
-        
-        
-        self.set_param = QPushButton(self)
-        self.set_param.setText('IQ params')
-        self.set_param.move(1145, 372)
-        '''
-        
-        self.fit_toggle = QPushButton(self)
-        self.fit_toggle.move(525, 372)
-        self.fit_toggle.setAutoDefault(False)
-        self.fit_settings = ["Fit off", "Q response", "Mean"]
-        self.do_fit = len(self.fit_settings) - 1
-        self.toggle_fit() #Initialize with fit off
-        self.fit_toggle.pressed.connect(self.toggle_fit)
-        
-        self.cav_detuning = QLineEdit(self)
-        self.cav_detuning.setText("NaN")
-        self.cav_detuning.move(1145, 372)
-        self.cav_detuning.returnPressed.connect(self.set_detuning)
-        self.current_cav_detuning = None #no detuning specified yet on start-up
-        self.cav_detuning.setVisible(False)
-        
-        #MM 051922: client for setting time windows for spin measurements
-        #JOHN UPDATE DEFAULT PARAM VALS HERE
-        self.current_dark_time = 100e-6
-        t_dark = self.current_dark_time 
-        
-        '''
-        self.current_time_settings = {'t1_a': 0.1e-3,
-        't1_b': 39.5e-3,
-        't2_a': 48.1e-3,
-        't2_b': 88e-3,
-        't3_a': 89e-3 +t_dark,
-        't3_b': 89e-3+39e-3+t_dark,
-        't4_a': 136e-3+t_dark,
-        't4_b': 175e-3+t_dark}
-        '''
-        self.time_settings={'t1_start': .1e-3, 't_window': 39e-3, 't_between': 9e-3, 't_dark': 100e-6, 'cav_detuning': np.nan}
-        
-        self.set_windows = QPushButton(self)
-        self.set_windows.setText('Set windows')
-        self.set_windows.move(350, 372)
-        self.set_windows.pressed.connect(self.clicked_set_windows)
-        
+
         #Add dropdown for setting data x axis
         self.dropdown = QComboBox(self)
         self.labels = ["Shot num","Frequency", "Phase", "Dark time", "Pi time"]
@@ -317,19 +290,8 @@ class CavityClockGui(QDialog):
         self.analysis_script = self.fit_fxns[0]
         self.fxn_drop.move(1000, 4)
         self.fxn_drop.currentIndexChanged.connect(self.select_script)
-        
-    def make_time_windows(self):
-        ts = {
-        't1_a': self.time_settings['t1_start'],
-        't1_b': self.time_settings['t1_start'] + self.time_settings['t_window'],
-        't2_a': self.time_settings['t1_start'] + self.time_settings['t_window'] + self.time_settings['t_between'],
-        't2_b': self.time_settings['t1_start'] + 2* self.time_settings['t_window'] + self.time_settings['t_between'],
-        't3_a': self.time_settings['t1_start'] + 2* self.time_settings['t_window'] + self.time_settings['t_between'] + self.time_settings['t_dark'],
-        't3_b': self.time_settings['t1_start'] + 3* self.time_settings['t_window'] + self.time_settings['t_between'] + self.time_settings['t_dark'],
-        't4_a': self.time_settings['t1_start'] + 3* self.time_settings['t_window'] + 2*self.time_settings['t_between'] + self.time_settings['t_dark'],
-        't4_b': self.time_settings['t1_start'] + 4* self.time_settings['t_window'] + 2*self.time_settings['t_between'] + self.time_settings['t_dark']}
-        return ts
-            
+    
+
     def toggle_fit(self):
         self.do_fit = (self.do_fit + 1) % len(self.fit_settings)
         self.fit_toggle.setText(self.fit_settings[self.do_fit])
@@ -343,7 +305,7 @@ class CavityClockGui(QDialog):
 
                          
     def select_mode(self):
-        txt = self.dropdown.currentText()
+        #txt = self.dropdown.currentText()
         ix = self.dropdown.currentIndex()
         self.mode = self.fxns[ix]
         self.canvas.reset_data()

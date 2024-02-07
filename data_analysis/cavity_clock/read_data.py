@@ -3,6 +3,13 @@ import numpy as np
 import os, json, h5py
 
 #CAVITY
+def sweep_params(update):
+    for message_type, message in update.items():
+        if message_type == 'params':
+            return (message.get('low'), message.get('high'), message.get('fixed')), message.get('sequence')
+        else:
+            return None, None
+    
 def get_cavity_data(abs_data_path, trace = 'gnd'):
     #print(abs_data_path)
     with h5py.File(abs_data_path) as h5f:
@@ -40,6 +47,8 @@ def get_expt(update):
             #print('Expt folder:')
             #print(os.path.join(head, day))
             return expt, os.path.join(head, day)
+        else:
+            return None, None
             
 def get_shot_num(path, str_end = '.clock_pico.hdf5'):
     #str_end = '.clock_pico.hdf5'

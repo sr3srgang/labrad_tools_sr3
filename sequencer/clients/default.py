@@ -5,6 +5,7 @@ import os
 import sys
 
 from PyQt4 import QtGui, QtCore, Qt
+from PyQt4.QtGui import QColor
 from PyQt4.QtCore import pyqtSignal 
 from twisted.internet.defer import inlineCallbacks
 
@@ -36,6 +37,7 @@ class LoadAndSave(QtGui.QWidget):
         self.layout.addWidget(self.loadButton)
         self.layout.addWidget(self.saveButton)
         self.setLayout(self.layout)
+        
 
 class SequencerClient(QtGui.QWidget):
     name = None
@@ -52,12 +54,13 @@ class SequencerClient(QtGui.QWidget):
 
     spacer_width = 65
     spacer_height = 15
-    namecolumn_width = 130
+    namecolumn_width = 200#130
     namelabel_width = 200
     durationrow_height = 20
     analog_height = 50
     max_columns = 100
-    digital_colors = ["#ff0000", "#ff7700", "#ffff00", "#00ff00", "#0000ff", "#8a2be2"]
+    digital_colors =["#fbbdda", "#fdd0b1", "#f9efc7", "#c3edbf", '#b8dfe6', "#c5bbde"] 
+    analog_colors = ["#fbbdda", "#fdd0b1", "#f9efc7", "#c3edbf", '#b8dfe6', "#c5bbde"]#["#ff0000", "#ff7700", "#ffff00", "#00ff00", "#0000ff", "#8a2be2"]
     qt_style = 'Gtk+'
 
     def __init__(self, reactor, cxn=None):
@@ -110,6 +113,9 @@ class SequencerClient(QtGui.QWidget):
                   for nameloc in self.digital_channels])
     
     def populate(self):
+        p = self.palette()
+        p.setColor(self.backgroundRole(), QColor('#eeeeee'))
+        self.setPalette(p)
         self.loadAndSave = LoadAndSave()
 
         self.addDltRow = AddDltRow(self)

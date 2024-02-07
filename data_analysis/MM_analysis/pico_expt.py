@@ -6,14 +6,14 @@ import statsmodels.api as sm
 import os, json, h5py
     
 def calc_excitation(gnd, exc):
-	frac = (exc.astype(np.float))/(exc + gnd)
+	frac = (exc.astype(float))/(exc + gnd)
 	return frac 
 	   
 def import_pico_scan(data_path, exp_name, shot, keywords = ['clock_sg380']):
 	path = os.path.join(data_path, exp_name, '{}.clock_pico.hdf5'.format(shot))
-	path_last = os.path.join(data_path, exp_name, '{}.clock_pico.hdf5'.format(shot - 1))
+	#path_last = os.path.join(data_path, exp_name, '{}.clock_pico.hdf5'.format(shot - 1))
 	f = h5py.File(path)
-	f_last = h5py.File(path_last)
+	#f_last = h5py.File(path_last)
 	
 	'''
 	#Use this first config for old data (pre-072921)

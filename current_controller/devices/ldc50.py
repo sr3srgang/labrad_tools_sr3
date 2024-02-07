@@ -42,9 +42,12 @@ class LDC50(object):
     def power(self):
         s = self._get_socket()
         s.send('RWPD?\n')
-        response = s.recv(1024)
-        s.close()
-        power_mw = float(response.strip())
+        try:
+        	response = s.recv(1024)
+        	s.close()
+        	power_mw = float(response.strip())
+        except:
+        	power_mw = 0
         return power_mw / 1e3
 
     def relock(self):
