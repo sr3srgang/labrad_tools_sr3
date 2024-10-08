@@ -14,6 +14,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
+from influxdb.influxdb_write import write_influxdb
 #from client_tools.connection import connection
 
 class MplCanvas(FigureCanvas):
@@ -107,6 +108,14 @@ class CameraGui(QDialog):
                         time.sleep(.1)
                         self.Plotter.show_window()
                         self.show_window()
+                        
+                        try:
+                            write_influxdb('mot_fluro',self.Plotter.title)
+                        except:
+                            print('InfluxDB server not happy.')
+                            
+                            
+                            
                         
 
     def show_window(self):

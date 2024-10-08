@@ -6,6 +6,7 @@ import pylab
 from matplotlib.ticker import NullFormatter
 import matplotlib.patches as patches
 from scipy.optimize import curve_fit
+import time
 #import data_analysis.live_plotter as lp
 
 
@@ -185,6 +186,10 @@ def gaussian_1D(z, A, z0, sigma, B):
 
 def fit_gaussian_2D_cut(mot_image, xlim, ylim, ax = None):
     #MM 081921: take existing mot image array
+    
+    # Start a timer to measured elapsed time in this function
+    start = time.time()
+    
     bounded = (xlim is not None) and (ylim is not None)
     if bounded:
         print(int(np.ceil(ylim[0])))
@@ -203,10 +208,10 @@ def fit_gaussian_2D_cut(mot_image, xlim, ylim, ax = None):
     A_y_guess = y_cut[y0_guess]
 
     #set initial guesses
-    p0_x = [A_x_guess, x0_guess, 20, 0]
-    p0_y = [A_y_guess, y0_guess, 20, 0]
+    p0_x = [A_x_guess, x0_guess, 200, 0]
+    p0_y = [A_y_guess, y0_guess, 200, 0]
 
-    bounds = (0, (np.inf, np.inf, 40, np.inf))
+    bounds = (0, (np.inf, np.inf, np.inf, np.inf))
     vals_x, pcov_x = curve_fit(gaussian_1D, x_grid, x_cut, p0_x, bounds=bounds)
     vals_y, pcov_xy = curve_fit(gaussian_1D, y_grid, y_cut, p0_y, bounds=bounds)
 
@@ -214,10 +219,21 @@ def fit_gaussian_2D_cut(mot_image, xlim, ylim, ax = None):
         vals_x[1] += int(np.ceil(xlim[0]))
         vals_y[1] += int(np.ceil(ylim[0]))
     print(vals_x, vals_y)
+    
     if ax is not None:
-        #NOTE: plotted sigma curves don't take into account covariance!! These are a diagnostic tool ONLY
-        e = patches.Ellipse((vals_x[1], vals_y[1]), 2*vals_x[2], 2*vals_y[2], fill=False, ec = 'white', lw = 6)
-        ax.add_artist(e)
+        # Draw the ellipse
+        e = patches.Ellipse((vals_x[1], vals_y[1]), 3*vals_x[2], 3*vals_y[2], fill=False, edgecolor='red', lw=1)
+        ax.add_patch(e)
+        
+        # Draw a red cross at the fitted center
+        cross_size = 1*vals_x[2]  # Adjust size as needed
+        ax.plot(vals_x[1], vals_y[1], 'r+', markersize=cross_size, markeredgewidth=1)
+   
+        
+    # End a timer to measured elapsed time in this function
+    end = time.time()
+    print(f"Gaussian 2D fit done in {end - start:0.4f} seconds")
+    
     return vals_x, vals_y
     
 def process_file(mot_img, zoom = False, ROI = None, background = None):
@@ -280,6 +296,25 @@ def fig_gui_window_ROI(mot_img, ax, xlim, ylim, rot = 0, show_title = False, tit
     plt.close()
     return dims    
     '''
+    
+def fig_gui_window_ROI_with_fitting(mot_img, ax, xlim, ylim, rot = 0, show_title = False, title = None, zoom = False, background = None):
+    print(mot_img)
+    mot_image = process_file(mot_img, zoom, None, background)
+    mot_image = np.rot90(mot_image, rot)
+    fig_visualize_mot_image(mot_image, ax, xlim, ylim, show_title = show_title, title = 'testing')
+    vals_x, vals_y = fit_gaussian_2D_cut(mot_image, xlim, ylim, ax = ax)
+    
+    return vals_x, vals_y
+    '''
+    fig, axImshow, dims = default_window(mot_img, rot = rot, show_title = show_title, title = title, zoom = zoom, ROI = ROI, background = background)
+    if not zoom:
+        rect = patches.Rectangle((ROI[0], ROI[1]),ROI[2],ROI[3],linewidth=1,edgecolor='pink',facecolor='none')
+        axImshow.add_patch(rect)
+    fig.savefig(save_loc)
+    plt.close()
+    return dims    
+    '''
+    
 def make_synth(mot_image):
     y_pix, x_pix = mot_image.shape
     y_grid = np.linspace(0, y_pix, y_pix)
@@ -289,7 +324,8 @@ def make_synth(mot_image):
     return gaussian_2D(x, y, *vals)
     
     
-def fig_visualize_mot_image(mot_array, axImshow, xlim, ylim, c_max = 100, show_title = False, title = None, fit_gaussian = False):
+def fig_visualize_mot_image(mot_array, axImshow, xlim, ylim, c_max = 255, show_title = False, title = None, fit_gaussian = False):
+    # cmax is changed from 100 to 255. 02082024
     axImshow.clear()
     #center imshow:
     #mot_array = make_synth(mot_array)

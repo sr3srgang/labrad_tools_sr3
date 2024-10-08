@@ -3,7 +3,7 @@ from current_controller.devices.ldc50 import LDC50, LDC50Proxy
 class Device(LDC50):
     _socket_address = ('192.168.1.11', 8888)
     _current_range = (0.0, 0.400)
-    _relock_stepsize = 0.002
+    _relock_stepsize = 0.001
     _locked_threshold = 160e-3
 
 
