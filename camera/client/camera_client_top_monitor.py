@@ -1,4 +1,7 @@
-import sys, json, time, os
+import sys
+import json
+import time
+import os
 from shutil import copyfile
 import numpy as np
 from client_tools.connection3 import connection
@@ -18,7 +21,8 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as Navigatio
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import numpy as np
-#from client_tools.connection import connection
+# from client_tools.connection import connection
+
 
 class MplCanvas(FigureCanvas):
     def __init__(self):
@@ -32,6 +36,7 @@ class MplCanvas(FigureCanvas):
         FigureCanvas.__init__(self, self.fig)
         self.setFixedSize(1200, 800)
 
+
 class CameraGui(QDialog):
     def set_vars(self):
         self.camera = 'top_monitor'
@@ -40,24 +45,25 @@ class CameraGui(QDialog):
         self.update_id = np.random.randint(0, 2**31 - 1)
         self.ROI = None
         self.no_lim = True
-    
+
     def __init__(self):
         super(CameraGui, self).__init__(None)
         self.set_vars()
         self.connect_to_labrad()
         self.loadButtonState = False  # Track the toggle state of the "Load" button
         self.populate()
-        self.Plotter = LivePlotter(self)  
-    
+        self.Plotter = LivePlotter(self)
+
     def populate(self):
         self.setWindowTitle("Camera GUI")
         self.canvas = MplCanvas()
-        
+
         self.nav = NavigationToolbar(self.canvas, self)
-        
+
         # Table initialization with custom font size for labels
         self.paramsTable = QTableWidget(4, 3)
-        self.paramsTable.setHorizontalHeaderLabels(['Label', 'X Parameters', 'Y Parameters'])
+        self.paramsTable.setHorizontalHeaderLabels(
+            ['Label', 'X Parameters', 'Y Parameters'])
         self.paramsTable.setFixedSize(400, 150)
         labelFont = QFont()
         labelFont.setPointSize(14)  # Font size for table labels
@@ -66,48 +72,48 @@ class CameraGui(QDialog):
             labelItem = QTableWidgetItem(label)
             labelItem.setFont(labelFont)
             self.paramsTable.setItem(i, 0, labelItem)
-        
+
         # "Save" button with custom font size
         self.saveButton = QPushButton("Save")
         buttonFont = QFont()
         buttonFont.setPointSize(16)  # Font size for buttons
         self.saveButton.setFont(buttonFont)
         self.saveButton.clicked.connect(self.save_vals)
-        
+
         # "Load" button initialization with custom font size
         self.loadButton = QPushButton("Load")
         self.loadButton.setFont(buttonFont)
         self.loadButton.clicked.connect(self.toggle_load_button)
-        
+
         # Layout for buttons
         buttonLayout = QHBoxLayout()
         buttonLayout.addWidget(self.saveButton)
         buttonLayout.addWidget(self.loadButton)
-        
+
         # Layout for parameters table and buttons
         paramsLayout = QVBoxLayout()
         paramsLayout.addWidget(self.paramsTable)
         paramsLayout.addLayout(buttonLayout)
         paramsLayout.addStretch(1)  # Push everything up
-        
+
         # Main layout
         mainLayout = QHBoxLayout()
         plotLayout = QVBoxLayout()
         plotLayout.addWidget(self.nav)
         plotLayout.addWidget(self.canvas)
         plotLayout.addStretch(1)
-        
+
         mainLayout.addLayout(plotLayout)
         paramsWidget = QWidget()
         paramsWidget.setLayout(paramsLayout)
         mainLayout.addWidget(paramsWidget, 1)
-        
+
         self.setLayout(mainLayout)
         self.adjustSize()
-        
+
     def toggle_load_button(self):
         self.loadButtonState = not self.loadButtonState  # Toggle the state
-        
+
         if self.loadButtonState:
             # When the Load button is toggled on
             self.loadButton.setStyleSheet("background-color: green;")
@@ -116,20 +122,20 @@ class CameraGui(QDialog):
             # When the Load button is toggled off
             self.loadButton.setStyleSheet("")  # Clear custom styles
             self.loadButton.setText("Load")
-        
-        self.show_window()  # Update the window to reflect the current state 
-        
-    #Labrad connection:
-    @inlineCallbacks    
+
+        self.show_window()  # Update the window to reflect the current state
+
+    # Labrad connection:
+    @inlineCallbacks
     def connect_to_labrad(self):
-        #self.cxn = connect(name=self.name)
+        # self.cxn = connect(name=self.name)
         self.cxn = connection()
-        yield self.cxn.connect(name = 'camera viewer')
+        yield self.cxn.connect(name='camera viewer')
         server = yield self.cxn.get_server('camera')
         yield server.signal__update(self.update_id)
-        yield server.addListener(listener = self.receive_update, source=None, ID=self.update_id)
+        yield server.addListener(listener=self.receive_update, source=None, ID=self.update_id)
         print('connected')
-        
+
     def receive_update(self, c, update_json):
         update = json.loads(update_json)
         for key, value in update.items():
@@ -148,18 +154,18 @@ class CameraGui(QDialog):
                             shot_num = int(parse_name[-1])
                             offset = 3
                             mod_shot = shot_num - offset
-                            new_path = beginning + keyword + str(mod_shot) + str_end
+                            new_path = beginning + keyword + \
+                                str(mod_shot) + str_end
                             print(new_path)
-                            self.file_to_show = new_path#value[0]
+                            self.file_to_show = new_path  # value[0]
                         else:
                             self.file_to_show = value[0]
                         print(self.file_to_show)
-                        
 
-                        time.sleep(.1)
+                        time.sleep(.3)
                         self.Plotter.show_window()
-                        self.show_window()                       
-    
+                        self.show_window()
+
     def show_window(self):
         if not self.no_lim:
             xlim = self.canvas.ax.get_xlim()
@@ -167,17 +173,18 @@ class CameraGui(QDialog):
         else:
             xlim = None
             ylim = None
-        
+
         # Simulate the calculation and formatting of vals_x and vals_y
         # In your actual code, vals_x and vals_y would be obtained from your image processing function
-        vals_x, vals_y = it.fig_gui_window_ROI_with_fitting(self.file_to_show, self.canvas.ax, xlim, ylim)
+        vals_x, vals_y = it.fig_gui_window_ROI_with_fitting(
+            self.file_to_show, self.canvas.ax, xlim, ylim)
         self.vals_x = vals_x
         self.vals_y = vals_y
-        
+
         # Assuming vals_x and vals_y are formatted as strings; convert them if they are not
         vals_x_str = ', '.join(f"{x:.3f}" for x in vals_x)
         vals_y_str = ', '.join(f"{y:.3f}" for y in vals_y)
-        
+
         # Define the font for the table items
         font = QFont()
         font.setPointSize(16)  # Set the desired text size
@@ -198,55 +205,59 @@ class CameraGui(QDialog):
             self.canvas.ax.set_ylim(ylim)
         else:
             self.no_lim = False
-            
-        try:    
+
+        try:
             if self.loadButtonState:
                 self.load_vals()  # Call load_vals only when the Load button is toggled on
         except:
             print("Failed to load historical data.")
 
         # Update the plot title and redraw
-        self.canvas.ax.set_title("{:.3e}".format(self.Plotter.title), color='w', y=.85, size=42)
+        self.canvas.ax.set_title("{:.3e}".format(
+            self.Plotter.title), color='w', y=.85, size=42)
         self.canvas.draw()
         print('redrawn')
-        
+
     def launch_plotter(self):
         self.Plotter.show()
-        
+
     def save_vals(self):
         # Format the current time
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
+
         # Assuming vals_x and vals_y are stored as attributes of the class
         # Convert them to strings
         vals_x_str = ', '.join(f"{x:.3f}" for x in self.vals_x)
         vals_y_str = ', '.join(f"{y:.3f}" for y in self.vals_y)
-        
+
         # Specify the Windows file path
         filename = r"C:\Users\srgang\labrad_tools\camera\client\Top_Monitor_Historical_Markers.txt"
-        
+
         # Open the file in append mode and write the current time, followed by vals_x and vals_y
         with open(filename, "a+") as file:
             file.write(f"Current Time: {current_time}\n")
             file.write(f"Vals X: {vals_x_str}\n")
             file.write(f"Vals Y: {vals_y_str}\n\n")
-        
+
         print(f"Values appended to {filename}")
-        
+
     def load_vals(self):
         filename = 'C:/Users/srgang/labrad_tools/camera/client/Top_Monitor_Historical_Markers.txt'
         with open(filename, 'r') as file:
             lines = file.readlines()
 
         ellipse_count = 0
-        for i in range(0, len(lines), 4):  # Assuming each record spans 4 lines (including the blank line)
+        # Assuming each record spans 4 lines (including the blank line)
+        for i in range(0, len(lines), 4):
             if lines[i].startswith('Current Time:'):
                 # Extract vals_x and vals_y
                 vals_x_str = lines[i+1].split(": ")[1].strip()
                 vals_y_str = lines[i+2].split(": ")[1].strip()
-                vals_x = [float(val) for val in vals_x_str.strip('[]').split(', ')]
-                vals_y = [float(val) for val in vals_y_str.strip('[]').split(', ')]
-                
+                vals_x = [float(val)
+                          for val in vals_x_str.strip('[]').split(', ')]
+                vals_y = [float(val)
+                          for val in vals_y_str.strip('[]').split(', ')]
+
                 # Assuming vals_x and vals_y format: [A, mean, sigma, C]
                 mean_x, sigma_x = vals_x[1], vals_x[2]
                 mean_y, sigma_y = vals_y[1], vals_y[2]
@@ -256,11 +267,12 @@ class CameraGui(QDialog):
                 ellipse = patches.Ellipse((mean_x, mean_y), width=5*sigma_x, height=5*sigma_y,
                                           angle=0, fill=False, edgecolor='red', lw=1, alpha=0.4, linestyle='--')
                 self.canvas.ax.add_patch(ellipse)
-                
+
                 # Draw a red cross at the fitted center
                 cross_size = 1*sigma_x  # Adjust size as needed
-                self.canvas.ax.plot(mean_x, mean_y, 'r+', markersize=cross_size, markeredgewidth=1, alpha=0.4)
-                
+                self.canvas.ax.plot(
+                    mean_x, mean_y, 'r+', markersize=cross_size, markeredgewidth=1, alpha=0.4)
+
                 ellipse_count += 1
                 # Add a number label to the upper right of each ellipse
                 self.canvas.ax.text(mean_x + 2*sigma_x, mean_y + 2*sigma_y, str(ellipse_count),
