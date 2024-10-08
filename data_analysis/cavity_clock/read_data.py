@@ -41,6 +41,8 @@ def get_metadata(path, ax_name, str_end='.clock_pico.hdf5'):
         f = open(path)
         c_json = json.load(f)
         val = c_json[ax_name]
+        if ax_name == 'clock_sg380':
+            val -= 116.55e6
     else:
         val = None
     return shot_num, val

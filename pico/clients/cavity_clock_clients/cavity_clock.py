@@ -24,7 +24,7 @@ class MplCanvas(FigureCanvas):
         self.fig.tight_layout()
         plt.rcParams.update({'font.size': 12, 'text.color': 'white'})
         # Set up subplots
-        self.n_data_plots = 3
+        self.n_data_plots = 4
         gs = gridspec.GridSpec(ncols=25, nrows=18)
         fig.patch.set_facecolor('black')
         p_x = (1, 8)  # pmt row ixs
@@ -208,9 +208,11 @@ class CavityClockGui(QDialog):
         ran, datums, windows = listeners.filtered_cavity_time_domain(
             update, self.canvas.trace_axes[1], self.seq)
         if ran:
-            listeners.sweep_to_f(update, self.canvas.data_axes[2], self.canvas.cav_snd_y,
-                                 self.canvas.data_x[2], self.canvas.data_y[2], datums, self.sweep, windows, ax_name=self.x_ax)
+            processed_sweeps, x, dfs = listeners.sweep_to_f(update, self.canvas.data_axes[2], self.canvas.cav_snd_y,
+                                                            self.canvas.data_x[2], self.canvas.data_y[2], datums, self.sweep, windows, ax_name=self.x_ax)
             # self.canvas.lim_set[2] = True
+            listeners.exc_frac_cavity(
+                self.canvas.data_axes[3], self.canvas.data_x[3], self.canvas.data_y[3], x, dfs, windows)
 
         # Add back past lims to prevent rescaling
         # self.enforce_lim(lims, preset)
@@ -219,17 +221,23 @@ class CavityClockGui(QDialog):
 
 # Add buttons to select config, fit methods
 
+
     def add_subplot_buttons(self):
         self.nav.addAction('Fit', self.do_fit)
 
+        # MM 20240326
+        # Add fill-in section for specifying arbitrary parameter for x axis
+        self.param_box = QLineEdit(self)
+        self.param_box.returnPressed.connect(self.specify_param)
+        self.param_box.move(740, 4)
         # Add dropdown for setting data x axis
         self.dropdown = QComboBox(self)
         self.labels = ["Shot num", "Frequency",
-                       "Phase", "Dark time", "Pi time"]
+                       "Phase", "Dark time", "Pi time", "specify param"]
         self.default_axes = [
-            None, 'clock_sg380', 'sequencer.clock_phase', 'sequencer.t_dark', 'sequencer.t_pi']
+            None, 'clock_sg380', 'sequencer.clock_phase', 'sequencer.t_dark', 'sequencer.t_pi', None]
         self.default_axes_labels = ["Shot num", 'Frequency (-116.55 MHz)',
-                                    "Ramsey phase (2 pi rad)", "Dark time (s)", "Pi time (s)"]
+                                    "Ramsey phase (2 pi rad)", "Dark time (s)", "Pi time (s)", "specified param"]
 
         self.dropdown.addItems(self.labels)
         self.dropdown.currentIndexChanged.connect(self.select_mode)
@@ -245,6 +253,12 @@ class CavityClockGui(QDialog):
         self.analysis_script = self.fit_fxns[0]
         self.fxn_drop.move(1000, 4)
         self.fxn_drop.currentIndexChanged.connect(self.select_script)
+
+    def specify_param(self):
+        txt = self.param_box.displayText()
+        if txt != "":
+            self.default_axes[-1] = txt
+            self.default_axes_labels[-1] = txt
 
     def toggle_fit(self):
         self.do_fit = (self.do_fit + 1) % len(self.fit_settings)
@@ -264,5 +278,11 @@ class CavityClockGui(QDialog):
         self.analysis_script = self.fit_fxns[ix]
 
     def do_fit(self):
+        try:
+            self.analysis_script(
+                self.canvas.data_axes[1], self.canvas.data_x[1], self.canvas.data_y[1])
+        except:
+            print(self.canvas.data_x[1], self.canvas.data_y[1])
+        # MM 20240718
         self.analysis_script(
-            self.canvas.data_axes[1], self.canvas.data_x[1], self.canvas.data_y[1])
+            self.canvas.data_axes[3], self.canvas.data_x[3], self.canvas.data_y[3])

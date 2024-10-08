@@ -44,11 +44,11 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
                 # default to shot num unless otherwise specified
                 x = n
         else:
-            return False
+            return False, None, None
     if n > 1 and x is not None:
         # Setting numerical factors for converting sweep fitted times to cavity frequencies.
-        mod_rate = 1.5e6  # MHz/V on 11/2 demod synthesizer
-        t_range = .04  # set assuming 40 ms windows
+        mod_rate = 1.5e6  # 1.5e6  # MHz/V on 11/2 demod synthesizer
+        t_range = .04  # .04  # set assuming 40 ms windows
         v_range = sweep[1] - sweep[0]
         # v_fixed = sweep[2]
         conv = v_range/t_range * mod_rate
@@ -71,18 +71,24 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
                 fixed_counter += 1
         ax.set_ylabel('delta freq, sweep', color='white')
         # ax2.set_ylabel('delta v, fixed', color='white') #this is showing up on the wrong axis side by default?
-        data_x.append(n)
+        data_x.append(x)
         data_y.append(dfs)
+        return True, x, dfs
+    else:
+        return False, None, None
 
 
-def exc_frac_cavity(update, ax, data_x, data_y, vrs_gnd, vrs_exc, x_ax):
-    n_down = vrs_gnd**2
-    n_up = vrs_exc**2
-    exc_frac = n_up/(n_up + n_down)
-    x_val = get_cav_axis(update, x_ax)
-    print("Exc_frac: " + str(exc_frac))
-    ax.plot(x_val, exc_frac, 'ok')
+def exc_frac_cavity(ax, data_x, data_y, x, dfs, fixed_ixs, cav_detuning=2e6):
     ax.set_facecolor('xkcd:pinkish grey')
+    def f_to_n_delta(f, delta): return f*delta/5e3**2 * (1 + f/delta)
+    def f_to_n(f): return f_to_n_delta(f, cav_detuning)
+    swepts = dfs[np.logical_not(fixed_ixs)]
+    g = f_to_n(swepts[0])
+    e = f_to_n(swepts[1])
+    exc_frac = e/(e + g)
+    data_x.append(x)
+    data_y.append(exc_frac)
+    ax.plot(x, exc_frac, 'ok')
 
 
 # CLOCK LISTENERS
@@ -116,7 +122,6 @@ def pmt_atom_number(update, ax, data_x, data_y, ax_name=None):
             if x_ax is None:
                 # default to shot num unless otherwise specified
                 x_ax = shot_num
-
             gnd, exc, background, _ = get_pmt_data(value)
             atom_num = np.sum((gnd + exc - 2*background)[pico_shot_range])
             num_gnd = np.sum((gnd - background)[pico_shot_range])
