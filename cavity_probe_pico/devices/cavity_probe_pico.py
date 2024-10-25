@@ -6,7 +6,7 @@ class CavityPico(Picoscope):
 	picoscope_serialnumber = 'IW990/0033'#'FP648/023' 'FP648/023'#'DU009/008'#'IU888/0102'
 	#Properties for data recording:
 	picoscope_trigger_threshold = .1
-	picoscope_timeout = 5000# in ms
+	picoscope_timeout = 10000# in ms
 	picoscope_duration = .04#.52 #20230313 MM updated for multiple capture testing
 	picoscope_sampling_interval = 1e-6# 2e-6
 	#2e-6#48e-9#16e-9#16e-9#16e-9#25e-6#16e-9
@@ -21,7 +21,7 @@ class CavityPico(Picoscope):
 		    },
 		'B': {
 		    'coupling': 'DC',
-		    'VRange': .05,
+		    'VRange':  .05,
 		    'probeAttenuation': 1.0,
 		    'enabled': True,
 		    },

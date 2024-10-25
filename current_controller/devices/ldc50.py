@@ -3,7 +3,7 @@ import time
 class LDC50(object):
     _socket_address = None
     _current_range = (0.0, 153.0)
-    _relock_stepsize = 0.001
+    _relock_stepsize = 0.005
     _relock_duration = 2
 
     def __init__(self, **kwargs):
@@ -55,6 +55,7 @@ class LDC50(object):
         self.current = current + self._relock_stepsize
         time.sleep(self._relock_duration)
         self.current = current
+    
 
     @property
     def state(self):

@@ -85,7 +85,7 @@ class ABCD(YeSrDigitalBoard):
         ),
         YeSrDigitalChannel(
             loc=["A", 11],
-            name="11/2 MOT AOM",
+            name="9/2 & 11/2 MOT AOM inverted",
             mode="auto",
             manual_output=False,
             invert=False,
@@ -196,7 +196,7 @@ class ABCD(YeSrDigitalBoard):
         ),
         YeSrDigitalChannel(
             loc=["B", 12],
-            name="rad cool aom",
+            name="cav probe AOM",
             mode="auto",
             manual_output=False,
             invert=False,
@@ -233,10 +233,18 @@ class ABCD(YeSrDigitalBoard):
             invert=True,
         ),
         YeSrDigitalChannel(
-            loc=["C", 2], name="C2", mode="auto", manual_output=False, invert=False
+            loc=["C", 2],
+            name="Bottom monitor cam",
+            mode="auto",
+            manual_output=False,
+            invert=False
         ),
         YeSrDigitalChannel(
-            loc=["C", 3], name="C3", mode="auto", manual_output=False, invert=False
+            loc=["C", 3],
+            name="Top monitor cam",
+            mode="auto",
+            manual_output=False,
+            invert=False
         ),
         YeSrDigitalChannel(
             loc=["C", 4], name="C4", mode="auto", manual_output=False, invert=False
