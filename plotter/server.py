@@ -24,6 +24,12 @@ import matplotlib.pyplot as plt
 import os
 import StringIO
 from time import time
+<<<<<<< HEAD
+=======
+import numpy as np
+from pathlib import Path
+import matplotlib.gridspec as gridspec
+>>>>>>> fe00ddafa6ddde9495657f9d0419a8b27b310496
 
 from autobahn.twisted.websocket import WebSocketServerProtocol
 from autobahn.twisted.websocket import WebSocketServerFactory
@@ -47,7 +53,13 @@ class MyServerProtocol(WebSocketServerProtocol):
     
     @classmethod
     def send_figure(cls, figure):
+<<<<<<< HEAD
         print 'num connections', len(cls.connections)
+=======
+    #def send_figure(cls):
+        print('num connections', len(cls.connections))
+#       figure = "figure"
+>>>>>>> fe00ddafa6ddde9495657f9d0419a8b27b310496
         for c in set(cls.connections):
             reactor.callFromThread(cls.sendMessage, c, figure, False)
     
@@ -79,7 +91,38 @@ class PlotterServer(ThreadedServer):
         factory = WebSocketServerFactory()
         factory.protocol = MyServerProtocol
         reactor.listenTCP(WEBSOCKET_PORT, factory)
+<<<<<<< HEAD
     
+=======
+        #fig, ax = plt.subplots(2,2)
+	self.init_fig()
+        self.current_expt = ''
+    
+    def init_fig(self):
+        fig = plt.figure(figsize = (12,8))
+        plt.rcParams.update({'font.size':16})
+
+        gs = gridspec.GridSpec(ncols = 2, nrows = 3)#, figure = fig)
+        fig.patch.set_facecolor('black')
+        #gs = fig.add_gridspec(3, 2)
+        ax_trace = fig.add_subplot(gs[0, :])#, gridspec_kw = {'height_ratios': [1, 3]})
+        ax_trace.set_facecolor('xkcd:pinkish grey')
+        ax_freq = fig.add_subplot(gs[1:, 0])
+        ax_freq.set_facecolor('xkcd:pinkish grey')
+        ax_shot = fig.add_subplot(gs[1:, 1])
+	ax_shot.set_facecolor('xkcd:pinkish grey')
+#	fig = plt.figure()
+        self.my_fig = fig
+        self.data_x = []
+        self.data_y = []
+        self.my_ax = [ax_freq, ax_shot, ax_trace]
+	for ax in self.my_ax:
+		ax.yaxis.label.set_color('white')      
+		ax.xaxis.label.set_color('white')   
+#		plt.setp([ax.get_xticklines(), ax.get_yticklines()], color='white')
+		ax.tick_params(color = 'green', labelcolor = 'white')
+        
+>>>>>>> fe00ddafa6ddde9495657f9d0419a8b27b310496
     def stopServer(self):
         """ socket server """
         MyServerProtocol.close_all_connections()
@@ -91,11 +134,16 @@ class PlotterServer(ThreadedServer):
             reactor.callInThread(self._plot, settings)
             #self._plot(settings)
         else:
+<<<<<<< HEAD
             print 'still making previous plot'
+=======
+            print('still making previous plot')
+>>>>>>> fe00ddafa6ddde9495657f9d0419a8b27b310496
 
     def _plot(self, settings):
         try:
             self.is_plotting = True
+<<<<<<< HEAD
             print 'plotting'
             path = settings['plotter_path']                 
             function_name = settings['plotter_function'] # name of function that will process data
@@ -112,6 +160,40 @@ class PlotterServer(ThreadedServer):
         except Exception as e:
             raise e
             print 'failed plotting'
+=======
+#            print(settings)
+            
+            #Reset the plotter if the experiment changes
+            this_expt = settings['exp_name']
+            if self.current_expt != this_expt:
+            	self.current_expt = this_expt
+            	self.init_fig()
+
+            
+            print('plotting')
+            path = settings['plotter_path']             
+            function_name = settings['plotter_function'] # name of function that will process data
+            module_name = "plot_test"
+            print(path)
+            print(module_name)
+            module = imp.load_source(module_name, path)
+            function = getattr(module, function_name)
+            fig, x, y= function(settings, self.my_fig, self.my_ax, self.data_x, self.data_y)
+            self.data_x = x
+            self.data_y = y
+            sio = StringIO.StringIO()
+            fig.savefig(sio, format='svg', facecolor = 'black')
+            sio.seek(0)
+            figure_data = sio.read()
+            MyServerProtocol.send_figure(figure_data)
+            #MyServerProtocol.send_figure()
+            print('done plotting')
+            print(settings['maxShots'])
+#            print settings['freqRange']
+#        except Exception as e:
+#            raise e
+#            print 'failed plotting'
+>>>>>>> fe00ddafa6ddde9495657f9d0419a8b27b310496
         finally:
             self.is_plotting = False
             try:
@@ -121,6 +203,10 @@ class PlotterServer(ThreadedServer):
                 del figure_data
             except:
                 pass
+<<<<<<< HEAD
+=======
+                
+>>>>>>> fe00ddafa6ddde9495657f9d0419a8b27b310496
 
 Server = PlotterServer
 
