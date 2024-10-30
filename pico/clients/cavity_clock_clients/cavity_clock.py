@@ -148,7 +148,9 @@ class CavityClockGui(QDialog):
 
         this_expt, this_path = listeners.get_expt(update)
         if this_expt is not None and self.expt != this_expt:
-            if (not self.expt.isnumeric()) and (self.data_path is not None):
+            # MM updated 20241030 to save data when end expt is run, not just when a new expt starts
+            # if (not self.expt.isnumeric()) and (self.data_path is not None):
+            if (self.data_path is not None):
                 # Save data traces when expt ends
                 folder_path = os.path.join(self.data_path, self.expt)
                 np.save(os.path.join(folder_path, "processed_data_x"), np.asarray(
@@ -159,6 +161,12 @@ class CavityClockGui(QDialog):
                 self.canvas.fig.savefig(os.path.join(
                     folder_path, 'plotter_view.png'))
                 print('Saved data in folder: ' + folder_path)
+                # MM 20241030
+                if self.influxdb_params is not None:
+                    listeners.log_to_influxdb(self.influxdb_params)
+
+                self.data_path = None
+
             if this_expt.isnumeric():
                 self.canvas.fig.suptitle(self.expt + " ended")
                 self.expt = this_expt
@@ -190,6 +198,12 @@ class CavityClockGui(QDialog):
             self.sweep = sweep
         if seq is not None:
             self.seq = seq
+
+        # MM 20241030: keep track of influxdb params, log once expt ends
+        influxdb_params = listeners.get_influxdb_params(
+            update, self.influxdb_log)
+        if influxdb_params is not None:
+            self.influxdb_params = influxdb_params
 
         # Get current lims to prevent re-scaling
         lims = self.preserve_lim()
@@ -238,6 +252,8 @@ class CavityClockGui(QDialog):
             None, 'clock_sg380', 'sequencer.clock_phase', 'sequencer.t_dark', 'sequencer.t_pi', None]
         self.default_axes_labels = ["Shot num", 'Frequency (-116.55 MHz)',
                                     "Ramsey phase (2 pi rad)", "Dark time (s)", "Pi time (s)", "specified param"]
+        # MM 20241030 specifying experimental params to log to influxdb
+        self.influxdb_log = ['clock_pulse_sg380']
 
         self.dropdown.addItems(self.labels)
         self.dropdown.currentIndexChanged.connect(self.select_mode)
@@ -259,6 +275,10 @@ class CavityClockGui(QDialog):
         if txt != "":
             self.default_axes[-1] = txt
             self.default_axes_labels[-1] = txt
+            # MM 20241030: set to specify param whenever enter pressed
+            ix = len(self.default_axes_labels) - 1
+            self.dropdown.setCurrentIndex(ix)
+            self.select_mode()
 
     def toggle_fit(self):
         self.do_fit = (self.do_fit + 1) % len(self.fit_settings)
