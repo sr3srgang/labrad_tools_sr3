@@ -8,8 +8,44 @@ from data_analysis.cavity_clock.MM_plotter_package import *
 
 from pico.clients.cavity_clock_clients.params import *
 
+from influxdb.influxdb_write import write_influxdb
+
+
+def smart_append(data_x, data_y, x, y, name):
+    if data_x is not None:
+        data_x.append(x)
+    if data_y is not None:
+        data_y.append(y)
+    try:
+        # write_influxdb(name+'_x', x)
+        write_influxdb(name, y)
+        print('wrote {} to influxdb'.format(name))
+    except Exception as e:
+        print('InfluxDB server not happy:', e)
 
 # CAVITY LISTENERS
+
+
+def log_to_influxdb(influxdb_params):
+    try:
+        for (l, p) in influxdb_params:
+            write_influxdb(l, p)
+        print('logged all vals to influxdb')
+    except Exception as e:
+        print('InfluxDB server not happy:', e)
+
+
+def get_influxdb_params(update, influxdb_log):
+    for message_type, message in update.items():
+        value = message.get('cavity_probe_pico')
+        if message_type == 'record' and value is not None:
+            influxdb_params = []
+            for l in influxdb_log:
+                n, x = get_metadata(
+                    value, ax_name=l, str_end='.cavity_probe_pico_A.hdf5')
+                influxdb_params.append((l, x))
+            return influxdb_params
+
 
 def filtered_cavity_time_domain(update, ax, seq):
     # MM 03222023 added listening for sweep params
@@ -64,6 +100,7 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
             if not fixed_ixs[i]:
                 dfs[i] = (datums[i, 0] - datums[last_swept, 0])*conv
                 ax.plot(x, dfs[i], marker_swept, color=cs[i])
+                print('plotter: {}'.format(dfs[i]))
             else:
                 dfs[i] = datums[i, 0]  # just save voltages.
                 ax2.plot(x, dfs[i], markers_fixed[fixed_counter],
@@ -71,6 +108,8 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
                 fixed_counter += 1
         ax.set_ylabel('delta freq, sweep', color='white')
         # ax2.set_ylabel('delta v, fixed', color='white') #this is showing up on the wrong axis side by default?
+        # smart_append(data_x, data_y, x, dfs, 'cav_fits')
+        # print(dfs)
         data_x.append(x)
         data_y.append(dfs)
         return True, x, dfs
@@ -86,8 +125,12 @@ def exc_frac_cavity(ax, data_x, data_y, x, dfs, fixed_ixs, cav_detuning=2e6):
     g = f_to_n(swepts[0])
     e = f_to_n(swepts[1])
     exc_frac = e/(e + g)
-    data_x.append(x)
-    data_y.append(exc_frac)
+    smart_append(data_x, data_y, x, exc_frac, 'cav_exc')
+    smart_append(None, None, x, swepts[0], 'cav_freq_g')
+    print('influxdb: {}'.format(swepts[0]))
+    smart_append(None, None, x, swepts[1], 'cav_freq_e')
+    # data_x.append(x)
+    # data_y.append(exc_frac)
     ax.plot(x, exc_frac, 'ok')
 
 
@@ -132,8 +175,11 @@ def pmt_atom_number(update, ax, data_x, data_y, ax_name=None):
                 return False, None, None, None
 
             # Otherwise, plot and add to saved data
-            data_x.append(x_ax)
-            data_y.append(atom_num)
+            # data_x.append(x_ax)
+            # data_y.append(atom_num)
+            smart_append(data_x, data_y, x_ax, atom_num, "pmt_num")
+            smart_append(None, None, x_ax, num_gnd, "pmt_g")
+            smart_append(None, None, x_ax, num_exc, "pmt_e")
             ax.plot(x_ax, num_gnd, 's', color='white',
                     fillstyle='none', zorder=3)
             ax.plot(x_ax, num_exc, 'd', color='white', zorder=2)
@@ -150,8 +196,9 @@ def pmt_exc_frac(ax, data_x, data_y, x, n_g, n_e):
         exc_frac = calc_excitation(n_g, n_e)
         ax.plot(x, exc_frac, 'o', color='k')
         ax.set_ylabel('Excitation fraction', color='white')
-        data_x.append(x)
-        data_y.append(exc_frac)
+        smart_append(data_x, data_y, x, exc_frac, 'pmt_exc')
+        # data_x.append(x)
+        # data_y.append(exc_frac)
         return True
     else:
         return False
