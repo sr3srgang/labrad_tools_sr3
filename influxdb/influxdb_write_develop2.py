@@ -1,7 +1,10 @@
 # 2024/11/03 Modified by Joonseok Hur
 
+ dateutil.parser
 from typing import TypedDict
 from typing import Iterable, Dict, Any, Union, Optional, overload
+from influxdb_client import InfluxDBClient
+from influxdb_client.client.write_api import SYNCHRONOUS
 from influxdb_client import InfluxDBClient
 from influxdb_client.client.write_api import SYNCHRONOUS
 
@@ -13,13 +16,24 @@ influxdb_default_bucket = "sr3"
 influxdb_default_url = "http://yemonitor.colorado.edu:8086"
 
 
-def write_influxdb(name, value):
+# >>>>> legacy function for uploading data to Ye Sr Group's influxDB >>>>>
+
+
+def write_influxdb_legacy(name, value):
     """
     Update InfluxDB with a single value and a name.
 
     :param value: The value to write to the database.
     :param name: The name associated with the value.
     """
+    # legacy influxdb upload parameters
+    influxdb_default_token = "yelabtoken"
+    influxdb_default_org = "yelab"
+
+    # Ensure the bucket exists in your database UI.
+    influxdb_default_bucket = "sr3"
+    influxdb_default_url = "http://yemonitor.colorado.edu:8086"
+
     with InfluxDBClient(url=influxdb_default_url, token=influxdb_default_token, org=influxdb_default_org) as client:
         write_api = client.write_api(write_options=SYNCHRONOUS)
 
@@ -29,10 +43,8 @@ def write_influxdb(name, value):
         write_api.write(influxdb_default_bucket, influxdb_default_org, message)
 
         # print(message)  # Print to the console
+# <<<<< legacy function for uploading data to Ye Sr Group's influxDB <<<<<<
 
-
-def write_influxdb_legacy(name, value):
-    pass
 
 # The JSON format of sample data to be uploaded to InfluxDB:
 # It is basically a Python list of sample data, each of which has
@@ -253,6 +265,23 @@ def verifyInput_tags(tags):
         verifyInput_tagValue(tags[tag_key])
 
 
+# from datetime import datetime
+# def isisotime(str: str) -> bool:
+#     """return if a given string is in ISO 8601 time format or not
+
+#     Args:
+#         str (str): string argument to be checked
+
+#     Returns:
+#         bool: true if string argument has the form of iso time
+#     """
+#     try:
+#         datetime.fromisoformat(str)
+#     except:
+#         return False
+#     return True
+
+
 def verifyInput_time(time):
     # TODO: check for int for Unix nanosecond timestamp (e.g., +1730862677120000000) or
     # a string for ISO 8601 expression for date and time in UTC
@@ -263,8 +292,27 @@ def verifyInput_time(time):
 
     # TODO: minimum timestamp (-9223372036854775806 or "1677-09-21T00:12:43.145224194Z")
     # & max timestamp (9223372036854775806 or "2262-04-11T23:47:16.854775806Z")
+    unix_time_ns = time
     if isinstance(time, (int, str)) is False:
         raise TypeError("Time does not have int or string type.")
+    elif isinstance(time, str) is True:
+        # if isisotime(time) is False:
+        #     raise TypeError("Time string does not have ISO 8601 format.")
+        try:
+            # unix nanosecond time
+            # unix_time_ns = datetime.fromisoformat(time).timestamp()
+            unix_time_ns = dateutil.parser.isoparse(time).timestamp()*1e9
+        except:
+            raise TypeError("Time string does not have ISO 8601 format.")
+
+    if unix_time_ns < -9223372036854775806:
+        raise ValueError("Time is behind the minimum valid time: "
+                         "-9223372036854775806 or "
+                         "\"1677-09-21T00:12:43.145224194Z\"")
+    if unix_time_ns > +9223372036854775806:
+        raise ValueError("Time is ahead of the maximum valid time: "
+                         "+9223372036854775806 or "
+                         "\"2262-04-11T23:47:16.854775806Z\"")
 
 
 def verifyInput_fieldKey(field_key):
@@ -386,8 +434,15 @@ def composeInfluxDBJSONData_fields(
     if time is not None:
         verifyInput_time(time)
 
-    record = {}
-    record['measurement'] = measurement
+
+does not have ISO 8601 format.")
+
+    if unix_time_ns < -9223372036854775806:
+        raise ValueError("Time is behind the minimum valid time: "
+                         "-9223372036854775806 or "
+                         "\"1677-09-21T00:12:43.145224194Z\"")
+    if unix_time_ns > +9223372036854775806:
+        raise ValueError("Time is ahead of the maximum valid
     if tags is not None:
         record['tags'] = tags
     if time is not None:
@@ -525,10 +580,6 @@ def write_influxdb_new(
 if __name__ == "__main__":
     print(">>> Test codes is running...\n")
 
-    measurement = "test_measurement"
-    time_ISO8601 = "2024-11-06T03:11:17.12Z"
-    time_UnixTime_ns = +1730862677120000000
-
     name = 'test_name'
     value = 1
 
@@ -538,19 +589,26 @@ if __name__ == "__main__":
     # write_influxdb_new(name='test_name', value=1)
     # print()
 
+    measurement = "test_measurement"
+    time_ISO8601 = "2024-11-06T03:11:17.12Z"
+    time_UnixTime_ns = +1730862677120000000
+
     # print("- signle name-value pair")
     # write_influxdb_new(measurement, name, value)
     # write_influxdb_new(measurement, name, value=value)
     # write_influxdb_new(measurement, name=name, value=value)
     # write_influxdb_new(measurement=measurement, name=name, value=value)
     # write_influxdb_new(measurement, name, value, time_ISO8601)
-    # # write_influxdb_new(measurement, name, value, time_UnixTime_ns)
+    # write_influxdb_new(measurement, name, value, time_UnixTime_ns)
     # write_influxdb_new(measurement, name, value, time=time_ISO8601)
     # write_influxdb_new(measurement, name, value=value, time=time_ISO8601)
     # write_influxdb_new(measurement, name=name, value=value, time=time_ISO8601)
     # write_influxdb_new(measurement=measurement, name=name,
     #                    value=value, time=time_ISO8601)
     # print()
+
+    # write_influxdb_new(measurement, name, value,
+    #                    "1677-09-21T00:12:43.145224194Z")
 
     names = ['test_name1', 'test_name2', 'test_name3', 'test_name4']
     values = [True, 2, 3.51, "test_value4"]
@@ -561,7 +619,7 @@ if __name__ == "__main__":
     # write_influxdb_new(measurement, names=names, values=values)
     # write_influxdb_new(measurement=measurement, names=names, values=values)
     # write_influxdb_new(measurement, names, values, time_ISO8601)
-    # # write_influxdb_new(measurement, names, values, time_UnixTime_ns)
+    # write_influxdb_new(measurement, names, values, time_UnixTime_ns)
     # write_influxdb_new(measurement, names, values, time=time_ISO8601)
     # write_influxdb_new(measurement, names, values=values, time=time_ISO8601)
     # write_influxdb_new(measurement, names=names,
@@ -598,12 +656,14 @@ if __name__ == "__main__":
     #         "tags": tags,
     #         "fields": fields,
     #     }
-    # )
-    # write_influxdb_new(
-    #     {
-    #         "measurement": measurement,
-    #         "time": time_ISO8601,
-    #         "fields": fields,
+    # )does not have ISO 8601 format.")
+
+    if unix_time_ns < -9223372036854775806:
+        raise ValueError("Time is behind the minimum valid time: "
+                         "-9223372036854775806 or "
+                         "\"1677-09-21T00:12:43.145224194Z\"")
+    if unix_time_ns > +9223372036854775806:
+        raise ValueError("Time is ahead of the maximum valid
     #     }
     # )
     # write_influxdb_new(
@@ -650,21 +710,44 @@ if __name__ == "__main__":
     # print()
 
     print("- should fail")
-    write_influxdb_new()
+    # # no or not enough arguments
+    # write_influxdb_new()
     # write_influxdb_new(1)
+    # # undefined arguments
     # write_influxdb_new(measurement, name, value, undefinedArgument=1)
 
+    # # invalid input type for single name or value
     # write_influxdb_new(1, name, value)
-    write_influxdb_new(measurement, 1, value)
-    write_influxdb_new(measurement, 1, {})
-    write_influxdb_new(measurement, name, [])
-    write_influxdb_new(measurement, name, values)
-    write_influxdb_new(measurement, [], value)
-    write_influxdb_new(measurement, names, value)
+    # write_influxdb_new(measurement, 1, value)
+    # write_influxdb_new(measurement, 1, {})
+    # write_influxdb_new(measurement, name, [])
+    # write_influxdb_new(measurement, name, values)
+    # write_influxdb_new(measurement, [], value)
+    # write_influxdb_new(measurement, names, value)
+    # write_influxdb_new(measurement, names, value, "afsd")
+    # write_influxdb_new(measurement, names, value, 1.5)
+    # write_influxdb_new(measurement, names, value, [])
 
-    write_influxdb_new(measurement, ['name1', 2, 'name3'], values)
-    write_influxdb_new(measurement, names, [1, [], 3])
-    print()
+    # # invalid input value for time
+    write_influxdb_new(measurement, name, value, -9223372036853775807)
+    # write_influxdb_new(measurement, name, value,
+    #                    "1677-09-21T00:12:43.145224195Z")
+    # write_influxdb_new(measurement, name, value,
+    #                    "1677-09-21T00:12:43.145224094Z")
+    # write_influxdb_new(measurement, name, value, -9223372036854775809)
+    # write_influxdb_new(measurement, name, value, +9223372036854775807)
+    write_influxdb_new(measurement, name, value,
+                       "2262-04-11T23:47:16.854775807Z")
+    # write_influxdb_new(measurement, name, value,
+    #                    "2262-04-11T23:47:16.854776807Z")
+
+    # # invalid input type in multiple names or values
+    # write_influxdb_new(measurement, ['name1', 2, 'name3'], values)
+    # write_influxdb_new(measurement, names, [1, [], 3])
+
+    # # invalid input
+
+    # print()
 
     print(">>> Tests finished.")
     pass
