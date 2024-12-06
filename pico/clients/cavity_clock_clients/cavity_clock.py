@@ -253,7 +253,8 @@ class CavityClockGui(QDialog):
         self.default_axes_labels = ["Shot num", 'Frequency (-116.55 MHz)',
                                     "Ramsey phase (2 pi rad)", "Dark time (s)", "Pi time (s)", "specified param"]
         # MM 20241030 specifying experimental params to log to influxdb
-        self.influxdb_log = ['clock_pulse_sg380']
+        self.influxdb_log = ['clock_pulse_sg380',
+                             'cav_eom_amp_sg380', 'cav_eom_phase_sg380']
 
         self.dropdown.addItems(self.labels)
         self.dropdown.currentIndexChanged.connect(self.select_mode)
