@@ -96,6 +96,11 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
         dfs = np.zeros(n_windows)
         fixed_counter = 0
         last_swept = [i for i in np.arange(n_windows) if not fixed_ixs[i]][-1]
+        # MM 20241213: log fit params of final sweep (presumed bare cav) to influxdb
+        bare_params = ['bare_amp', 'bare_fwhm', 'bare_c']
+        for k in np.arange(len(bare_params)):
+            smart_append(None, None, None,
+                         datums[last_swept, k+1], bare_params[k])
         for i in np.arange(n_windows):
             if not fixed_ixs[i]:
                 dfs[i] = (datums[i, 0] - datums[last_swept, 0])*conv
