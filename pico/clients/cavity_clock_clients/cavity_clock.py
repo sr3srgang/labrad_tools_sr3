@@ -74,6 +74,10 @@ class CavityClockGui(QDialog):
         self.data_path = None
         self.sweep = None
         self.seq = None
+        # MM 20240203; save data and reset plotter every counter_thresh number of cavity shots processed
+        self.shot_counter = 0
+        self.save_counter = 0
+        self.counter_thresh = 200
         # Specify analysis frameworks
         self.analysis_script = fits.do_gaussian_fit
         self.x_ax = None
@@ -147,24 +151,26 @@ class CavityClockGui(QDialog):
         update = json.loads(update_json)
 
         this_expt, this_path = listeners.get_expt(update)
-        if this_expt is not None and self.expt != this_expt:
+        if this_expt is not None and (self.expt != this_expt or self.shot_counter >= self.counter_thresh):
             # MM updated 20241030 to save data when end expt is run, not just when a new expt starts
             # if (not self.expt.isnumeric()) and (self.data_path is not None):
             if (self.data_path is not None):
                 # Save data traces when expt ends
+                ix = self.save_counter
                 folder_path = os.path.join(self.data_path, self.expt)
-                np.save(os.path.join(folder_path, "processed_data_x"), np.asarray(
+                np.save(os.path.join(folder_path, "processed_data_x_{}".format(ix)), np.asarray(
                     self.canvas.data_x, dtype=object), allow_pickle=True)
-                np.save(os.path.join(folder_path, "processed_data_y"), np.asarray(
+                np.save(os.path.join(folder_path, "processed_data_y_{}".format(ix)), np.asarray(
                     self.canvas.data_y, dtype=object), allow_pickle=True)
                 # MM 20240304 saving just 1 fig showing full view
                 self.canvas.fig.savefig(os.path.join(
-                    folder_path, 'plotter_view.png'))
+                    folder_path, 'plotter_view_{}.png'.format(ix)))
                 print('Saved data in folder: ' + folder_path)
                 # MM 20241030
                 if self.influxdb_params is not None:
                     listeners.log_to_influxdb(self.influxdb_params)
-
+                self.save_counter += 1
+                self.shot_counter = 0
                 self.data_path = None
 
             if this_expt.isnumeric():
@@ -222,6 +228,7 @@ class CavityClockGui(QDialog):
         ran, datums, windows = listeners.filtered_cavity_time_domain(
             update, self.canvas.trace_axes[1], self.seq)
         if ran:
+            self.shot_counter += 1
             processed_sweeps, x, dfs = listeners.sweep_to_f(update, self.canvas.data_axes[2], self.canvas.cav_snd_y,
                                                             self.canvas.data_x[2], self.canvas.data_y[2], datums, self.sweep, windows, ax_name=self.x_ax)
             # self.canvas.lim_set[2] = True
