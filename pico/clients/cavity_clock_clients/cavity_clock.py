@@ -173,6 +173,9 @@ class CavityClockGui(QDialog):
                 self.shot_counter = 0
                 self.data_path = None
 
+            if self.expt != this_expt:
+                self.save_counter = 0
+
             if this_expt.isnumeric():
                 self.canvas.fig.suptitle(self.expt + " ended")
                 self.expt = this_expt
@@ -241,7 +244,6 @@ class CavityClockGui(QDialog):
 
 
 # Add buttons to select config, fit methods
-
 
     def add_subplot_buttons(self):
         self.nav.addAction('Fit', self.do_fit)
