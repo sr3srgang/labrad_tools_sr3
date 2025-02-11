@@ -23,6 +23,7 @@ def smart_append(data_x, data_y, x, y, name):
     except Exception as e:
         print('InfluxDB server not happy:', e)
 
+
 # CAVITY LISTENERS
 
 
@@ -90,7 +91,7 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
         conv = v_range/t_range * mod_rate
         # t_fixed = (v_fixed - sweep[0])*t_range/v_range
 
-        markers_fixed = ['.', '.', 'o', 'o']
+        markers_fixed = ['.', '.', 'o', 'o', '.', '.', 'o', 'o']
         marker_swept = 'x'
         n_windows = len(fixed_ixs)
         dfs = np.zeros(n_windows)
@@ -102,12 +103,12 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
         last_swept = swept_ixs[-1]
         # MM 20241213: log fit params of final sweep (presumed bare cav) to influxdb
         # bare_params = ['bare_amp', 'bare_fwhm', 'bare_c']
-        params = ['amp', 'fwhm', 'c']
+        params = ['delta', 'amp', 'fwhm', 'c']
         for k in np.arange(len(params)):
             p = params[k]
             smart_append(None, None, None,
-                         datums[last_swept, k+1], 'bare_'+p)
-            smart_append(None, None, None, datums[swept_ixs, k+1], 'all_' + p)
+                         datums[last_swept, k], 'bare_'+p)
+            smart_append(None, None, None, datums[swept_ixs, k], 'all_' + p)
         for i in np.arange(n_windows):
             if not fixed_ixs[i]:
                 dfs[i] = (datums[i, 0] - datums[last_swept, 0])*conv
