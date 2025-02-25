@@ -5,7 +5,7 @@ from PyQt4 import QtGui, QtCore, Qt
 from PyQt4.QtCore import pyqtSignal
 from twisted.internet.defer import inlineCallbacks
 
-from conductor.clients.smart_values import SmartValuesClient
+from conductor.clients.smart_values_beta import SmartValuesClient
 
 
 class MyClient(SmartValuesClient):

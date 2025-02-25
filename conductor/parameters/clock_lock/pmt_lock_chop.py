@@ -9,16 +9,17 @@ from data_analysis.PID import PID
 
 # the value of this parameter (PmtLock.vallue) should be a dict with PID p 
 
-class PmtLock(ConductorParameter):
+class PmtLockChop(ConductorParameter):
     autostart = False
     priority = 10
     data_directory = os.path.join(os.getenv('PROJECT_DATA_PATH'), 'data')
     #data_filename = '{}.conductor.json'
     call_in_thread = False
     default = 885387.35 + 116.55e6
+    errorSig = 0
 
     def initialize(self, config):
-        super(PmtLock, self).initialize(config)
+        super(PmtLockChop, self).initialize(config)
         self.connect_to_labrad()
         
         print("config:")
@@ -29,16 +30,15 @@ class PmtLock(ConductorParameter):
 		default_val = config.get('script_default')
 		if default_val is not None:
 		    self.default = default_val
-		super(PmtLock, self).initialize(config)
-		self.connect_to_labrad()
-		# self.PID_params = {"k_prop": -1, "t_int": 20, "t_diff": 0, "setpoint":.5,  "dt": 1, "output_default":self.default}
-		self.PID_params = {"k_prop": -1, "t_int": 20, "t_diff": 0, "setpoint":.5,  "dt": 1, "output_default":self.default}
+		# self.PID_params = {"k_prop": -1, "t_int": 10, "t_diff": 0, "setpoint":0,  "dt": 1, "output_default":self.default}
+		self.PID_params = {"k_prop": -1, "t_int": 10, "t_diff": 0, "setpoint":0,  "dt": 1, "output_default":self.default}
 		self.PID = PID(self.PID_params)
 		self.server.parameters.get('clock_sg380').set_value_lock(self.default)
 		print('Running a pmt clock lock')
         
     def update(self):
     	if self.active:
+    		
 		print('Lock update at {}'.format(time.time()))
 		#Data file to use:
 		df = self.server.parameters.get('pico.clock_recorder').get_last_value() #want to find the data file from last shot during this blue mot loading
@@ -53,13 +53,21 @@ class PmtLock(ConductorParameter):
 		     print(gnd_tot, exc_tot)
 		     atom_num = gnd_tot + exc_tot
 		     exc_frac = float(exc_tot)/(exc_tot + gnd_tot)
-		     err_sig = exc_frac
-		     print(exc_frac)
 		     
-		     out = self.PID.update(err_sig)
-		     print("new value: {}".format(out))
-		     
-		     self.server.parameters.get('clock_sg380').set_value_lock(out)
+		     clock_phase = self.server.parameters.get('sequencer.clock_phase').value
+		     print(clock_phase, exc_frac)
+		     if clock_phase == .25 and self.errorSig != 0:
+		     	self.errorSig += exc_frac
+		     	out = self.PID.update(self.errorSig)
+		     	print("new value: {}".format(out))
+		     	self.server.parameters.get('clock_sg380').set_value_lock(out)
+		     	self.errorSig = 0
+		     	
+		     if clock_phase == -.25:
+    			self.errorSig -= exc_frac
+    			
+
+
 		     #self.server.parameters.get('clock_pulse_sg380').set_value_lock(out)
 
 
@@ -70,4 +78,4 @@ class PmtLock(ConductorParameter):
         
         
     
-Parameter = PmtLock
+Parameter = PmtLockChop

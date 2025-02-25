@@ -196,7 +196,7 @@ class ABCD(YeSrDigitalBoard):
         ),
         YeSrDigitalChannel(
             loc=["B", 12],
-            name="cav probe AOM",
+            name="cav probe EOM drive",
             mode="auto",
             manual_output=False,
             invert=False,
@@ -250,7 +250,11 @@ class ABCD(YeSrDigitalBoard):
             loc=["C", 4], name="C4", mode="auto", manual_output=False, invert=False
         ),
         YeSrDigitalChannel(
-            loc=["C", 5], name="C5", mode="auto", manual_output=False, invert=False
+            loc=["C", 5],
+            name="Radial cooling shutter",
+            mode="auto",
+            manual_output=False,
+            invert=False
         ),
         YeSrDigitalChannel(
             loc=["C", 6], name="C6", mode="auto", manual_output=False, invert=False
@@ -284,14 +288,14 @@ class ABCD(YeSrDigitalBoard):
         ),
         YeSrDigitalChannel(
             loc=["D", 0],
-            name="Cavity AOM shutter inverted",
+            name="Cav probe AOM inverted",
             mode="auto",
             manual_output=False,
             invert=False,
         ),
         YeSrDigitalChannel(
             loc=["D", 1],
-            name="Cavity AOM sweep",
+            name="Cav probe AOM sweep",
             mode="auto",
             manual_output=False,
             invert=False,

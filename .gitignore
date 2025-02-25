@@ -1,3 +1,86 @@
+# user gitignore
+conductor/.experiments/*
+conductor/parameters/.values/*
+
+# gitignore for vscode as of 2024/12/05
+# https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Local History for Visual Studio Code
+.history/
+
+# Built Visual Studio Code Extensions
+*.vsix
+
+
+
+
+
+# gitignore for conda as of 2024/12/05
+# https://github.com/conda/conda/blob/main/.gitignore
+
+*~
+*.pyc
+*.egg-info
+build/
+dist/
+docs/_build
+docs/source/dev-guide/api
+docs/source/dev-guide/umls/*.puml
+.cache/
+.idea/
+ve/
+MANIFEST
+.coverage
+coverage.xml
+.tox/
+junit.xml
+tmpfile.rc
+.DS_Store
+.coverage*
+*.bz2
+tempfile.rc
+conda-build/
+conda_build_test_recipe/
+record.txt
+.vagrant/
+Vagrantfile
+dev-init.bat
+devenv/
+Miniconda*.sh
+miniconda*.sh
+miniconda*.exe
+.pytest_cache/
+**/.vscode
+conda.tmp/
+*.iml
+*.ipr
+*.iws
+test-report.xml
+
+# default pytest duration files
+.test_durations
+
+# Rever
+rever/
+
+# setuptools-scm
+conda/_version.py
+
+
+
+
+
+
+# gitignore for python as of 2024/12/05
+# https://github.com/github/gitignore/blob/main/Python.gitignore
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

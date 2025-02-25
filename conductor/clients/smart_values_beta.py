@@ -36,6 +36,7 @@ class ParameterRow(QtGui.QWidget):
         self.setLayout(self.layout)
 
 
+# create a column of numRows parameter rows
 class ParameterColumn(QtGui.QGroupBox):
     def __init__(self, parent):
         QtGui.QDialog.__init__(self)
@@ -57,6 +58,39 @@ class ParameterColumn(QtGui.QGroupBox):
 
         self.setFixedSize(self.nameBoxWidth + self.valueBoxWidth +
                           4, self.numRows*(self.boxHeight+2))
+        self.setLayout(self.layout)
+
+# create a grid of numCols ParameterColumns
+
+
+class ParameterGrid(QtGui.QGroupBox):
+    def __init__(self, parent):
+        QtGui.QDialog.__init__(self)
+        self.numRows = parent.numRows
+        self.numCols = parent.numCols
+        self.nameBoxWidth = parent.nameBoxWidth
+        self.valueBoxWidth = parent.valueBoxWidth
+        self.boxHeight = parent.boxHeight
+        self.populateGUI()
+
+    def populateGUI(self):
+        self.parameterCols = [ParameterColumn(
+            self) for i in range(self.numCols)]
+
+        self.layout = QtGui.QHBoxLayout()
+
+        for pc in self.parameterCols:
+            self.layout.addWidget(pc)
+
+        self.layout.setSpacing(1)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+
+        self.setFixedSize((1 + self.numCols)*(self.nameBoxWidth + self.valueBoxWidth +
+                          4),
+                          (2 + self.numRows)*(self.boxHeight+2))
+        # self.updateAll_button = QtGui.QTabWidget()
+        # self.setWindowTitle('test')
+
         self.setLayout(self.layout)
 
 
@@ -85,21 +119,21 @@ class SmartValuesClient(QtGui.QGroupBox):
             self.setDisabled(True)
 
     def populateGUI(self):
-        self.parameterCols = [ParameterColumn(
-            self) for i in range(self.numCols)]
+        self.paramGrid = ParameterGrid(self)
+        self.parameterCols = self.paramGrid.parameterCols
 
-        self.layout = QtGui.QHBoxLayout()
+        self.refreshButton = QtGui.QPushButton('refresh all vals', self)
+        self.saveButton = QtGui.QPushButton('save to .vals', self)
+        # self.refreshButton.clicked.connect(HERE)
 
-        for pc in self.parameterCols:
-            self.layout.addWidget(pc)
+        self.layout = QtGui.QGridLayout()
+        self.layout.addWidget(self.paramGrid, 1, 0, 4, 8)
+        self.layout.addWidget(self.refreshButton, 0, 4, 1, 1)
+        self.layout.addWidget(self.saveButton, 0, 6, 1, 1)
 
-        self.layout.setSpacing(1)
         self.layout.setContentsMargins(0, 0, 0, 0)
-
-        self.setFixedSize((1 + self.numCols)*(self.nameBoxWidth + self.valueBoxWidth +
-                          4),
-                          (2 + self.numRows)*(self.boxHeight+2))
-        # self.updateAll_button = QtGui.QTabWidget()
+        self.layout.setSpacing(0)
+        self.setWindowTitle('beta conductor client')
         # self.setWindowTitle('test')
 
         self.setLayout(self.layout)
@@ -148,10 +182,7 @@ class SmartValuesClient(QtGui.QGroupBox):
         @inlineCallbacks
         def spv():
             name = str(parameterRow.nameBox.text())
-            # 2025/02/19: Joon -- I updated this part to let the client set the None value
-            # value = float(parameterRow.valueBox.value())
-            valuetext = parameterRow.valueBox.text()
-            value = None if valuetext == 'None' else float(valuetext)
+            value = float(parameterRow.valueBox.value())
             server = yield self.cxn.get_server(self.servername)
             request = {name: value}
             yield server.set_parameter_values(json.dumps(request))
@@ -173,11 +204,7 @@ class SmartValuesClient(QtGui.QGroupBox):
     @inlineCallbacks
     def set_parameter_values(self):
         server = yield self.cxn.get_server(self.servername)
-        valueBoxstr = pr.valueBox.value()
-        value = None if valueBoxstr == 'None' else float(valueBoxstr)
-        print(value)
-        print(type(value))
-        request = {str(pr.nameBox.text()): value for pr in self.parameterRows
+        request = {str(pr.nameBox.text()): float(pr.valueBox.value()) for pr in self.parameterRows
                    if str(pr.nameBox.text())}
         response_json = yield server.set_parameter_values(json.dumps(request))
         response = json.loads(response_json)
