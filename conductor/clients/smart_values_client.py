@@ -34,8 +34,14 @@ class MyClient(SmartValuesClient):
                     'sequencer.clock_phase_align', 'sequencer.t_pi', 'sequencer.t_pi_2',
                     'sequencer.t_dark',
                     'sequencer.BxClock', 'sequencer.ByClock', 'sequencer.BzClock']
-    defaults = [('lattice', lat_params), ('clock', clock_params),
-                ('cavity', cav_params), ('other', ['sequencer.bLoad', 'sequencer.t_pump'])]
+    defaults = [('lattice', lat_params), 
+                ('clock', clock_params),
+                ('cavity', cav_params), 
+                ('other', ['sequencer.bLoad', 'sequencer.t_pump', 
+                        'transport_big_sweep_stop_freq_dg4162',
+                        'transport_small_sweep_amp_dg4162',
+                        'transport_small_sweep_time_dg4162',
+                        'transport_small_sweep_hold_time_dg4162'])]
 
 
 if __name__ == '__main__':

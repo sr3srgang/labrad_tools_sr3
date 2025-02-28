@@ -31,7 +31,7 @@ class DG4162(object):
             print(msg)
         
 
-    def _validate_freq_input(freq):
+    def _validate_freq_input(self, frequency):
         """
         Check if a input frequency is valid for this device (range & resolution) and
         raise errors or warnings and/or return an appropriate valid frequency value.
@@ -47,6 +47,14 @@ class DG4162(object):
         
         # return valid frequency inputS
         return frequency
+
+    def _validate_sweep_time_input(self, t):
+        #TBD
+        return t
+    
+    def _validate_sweep_hold_time_input(self, t):
+        #TBD
+        return t
     
     # global (i.e., non-channel-wise) control
     def align_phase(self):
@@ -90,47 +98,47 @@ class DG4162(object):
     commands_ch_param['sweep_start_frequency'] = "SOURce{}:FREQuency:STARt"
     def get_sweep_start_frequency(self, chinx):
         param_name = 'sweep_start_frequency'
-        self._get_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx)
+        return self._get_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx)
     def set_sweep_start_frequency(self, chinx, frequency):
         param_name = 'sweep_start_frequency'
         frequency = self._validate_freq_input(frequency)
-        self._set_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx, value=frequency)
+        return self._set_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx, value=frequency)
     
     commands_ch_param['sweep_stop_frequency'] = "SOURce{}:FREQuency:STOP"
     def get_sweep_stop_frequency(self, chinx):
         param_name = 'sweep_stop_frequency'
-        self._get_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx)
+        return self._get_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx)
     def set_sweep_stop_frequency(self, chinx, frequency):
         param_name = 'sweep_stop_frequency'
         frequency = self._validate_freq_input(frequency)
-        self._set_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx, value=frequency)
+        return self._set_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx, value=frequency)
         
     commands_ch_param['sweep_time'] = ":SOURce{}:SWEep:TIME"
     def get_sweep_time(self, chinx):
         param_name = 'sweep_time'
-        self._get_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx)
-    def set_sweep_time(self, chinx, frequency):
+        return self._get_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx)
+    def set_sweep_time(self, chinx, t):
         param_name = 'sweep_time'
-        frequency = self._validate_freq_input(frequency)
-        self._set_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx, value=frequency)
+        t = self._validate_sweep_time_input(t)
+        return self._set_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx, value=t)
         
     commands_ch_param['sweep_hold_time'] = ":SOURce{}:SWEep:HTIMe:STOP"
     def get_sweep_hold_time(self, chinx):
         param_name = 'sweep_hold_time'
-        self._get_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx)
-    def set_sweep_hold_time(self, chinx, frequency):
+        return self._get_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx)
+    def set_sweep_hold_time(self, chinx, t):
         param_name = 'sweep_hold_time'
-        frequency = self._validate_freq_input(frequency)
-        self._set_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx, value=frequency)
+        t = self._validate_sweep_hold_time_input(t)
+        return self._set_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx, value=t)
     
     commands_ch_param['sweep_return_time'] = ":SOURce{}:SWEep:RTIMe"
     def get_sweep_return_time(self, chinx):
         param_name = 'sweep_return_time'
-        self._get_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx)
-    def set_sweep_return_time(self, chinx, frequency):
+        return self._get_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx)
+    def set_sweep_return_time(self, chinx, t):
         param_name = 'sweep_return_time'
-        frequency = self._validate_freq_input(frequency)
-        self._set_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx, value=frequency)
+        t = self._validate_sweep_time_input(t)
+        return self._set_ch_param(param_name=param_name, command=self.commands_ch_param[param_name], chinx=chinx, value=t)
 
     
     # define the control parameters above of each RIGOL channel as an object property (using `property` decorator)

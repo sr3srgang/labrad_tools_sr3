@@ -8,11 +8,11 @@ antisymmetically by the same magnitude, from the given carrier frequencies
 from conductor.parameter import ConductorParameter
 import os
 from rf.DG4162 import *
-from influxdb.influxdb_write import *
+# from influxdb.influxdb_write import *
 
 class TransportSmallDG4162SweepAmplitude(ConductorParameter):
-    autostart = False
-    priority = 3
+    autostart = True
+    priority = 4
     dev_up = None
     dev_down = None
     last_val = None
@@ -27,29 +27,62 @@ class TransportSmallDG4162SweepAmplitude(ConductorParameter):
         self.dev_down = DG4162(_vxi11_address = "192.168.1.42", is_vervose = False); self.chinx_down = 1 # VLATT RIGOL 2 CH1 for transport down
         
         self.update()
-            
-            
+        
+        
     def update(self):
+        isUpdated = False
+        
         if self.value is not None:
+            isUpdated = True
             # if self.value != self.last_val:
             self.dev_up.sweep_stop_frequency[self.chinx_up] = self.sweep_start_frequency_up + self.value
             self.dev_down.sweep_stop_frequency[self.chinx_down] = self.sweep_start_frequency_down - self.value
             print(self.param_name + " is " + str(self.value))
+            # self.dev_up.set_local()
+            # self.dev_down.set_local()
+            self.last_val = self.value
+        
+        # update other values together to the device
+        # # sweep & return time
+        param_name = 'transport_small_sweep_time_dg4162'
+        param = self.server.parameters.get(param_name)
+        if param is not None:
+            t = param.value
+            if t is not None:
+                isUpdated = True
+                # sweep time
+                self.dev_up.sweep_time[self.chinx_up] = t
+                self.dev_down.sweep_time[self.chinx_down] = t
+                # sweep return time
+                self.dev_up.sweep_return_time[self.chinx_up] = t
+                self.dev_down.sweep_return_time[self.chinx_down] = t
+                print(param_name + " is " + str(t))
+        
+        # # sweep hold time
+        param_name = 'transport_small_sweep_hold_time_dg4162'
+        param = self.server.parameters.get(param_name)
+        if param is not None:
+            t = param.value
+            if t is not None:
+                self.dev_up.sweep_hold_time[self.chinx_up] = t
+                self.dev_down.sweep_hold_time[self.chinx_down] = t
+                print(param_name + " is " + str(t))
+            
+        if isUpdated is True:
             self.dev_up.set_local()
             self.dev_down.set_local()
-            self.last_val = self.value
             
-            self.upload_influxdb()
+    #         self.upload_influxdb()
             
-    def upload_influxdb(self):
-        """Upload relevant values to InfluxDB"""
-        fields = {
-            self.param_name: self.value,
-            'transport_small_up_sweep_start_freq_dg4162': self.dev_up.sweep_start_frequency[self.chinx_up],
-            'transport_small_up_sweep_stop_freq_dg4162': self.dev_up.sweep_stop_frequency[self.chinx_up],
-        }
+    # def upload_influxdb(self):
+    #     """Upload relevant values to InfluxDB"""
+    #     fields = {
+    #         self.param_name: self.value,
+    #         'transport_small_up_sweep_start_freq_dg4162': self.dev_up.sweep_start_frequency[self.chinx_up],
+    #         'transport_small_up_sweep_stop_freq_dg4162': self.dev_up.sweep_stop_frequency[self.chinx_up],
+    #     }
         
-        write_influxdb_fields(fields)
+    #     write_influxdb_fields(fields)
         
         
 
