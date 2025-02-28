@@ -1,7 +1,7 @@
 from conductor.parameter import ConductorParameter
 import os
 from rf.DG4162 import *
-# from influxdb.influxdb_write import *
+from influxdb.influxdb_write_py27 import *
 
 
 class TransportBigDG4162SweepStopFrequency(ConductorParameter):
@@ -26,11 +26,11 @@ class TransportBigDG4162SweepStopFrequency(ConductorParameter):
             print(self.param_name + " is " + str(self.dev.sweep_stop_frequency[self.chinx]))
             self.last_val = self.value
             
-            # self.upload_influxdb()
+        self.upload_influxdb()
             
     
-    # def upload_influxdb(self):
-    #     """Upload relevant values to InfluxDB"""
-    #     write_influxdb(self.param_name, self.value)
+    def upload_influxdb(self):
+        """Upload relevant values to InfluxDB"""
+        write_influxdb('transport_big_sweep_stop_freq_dg4162', self.dev.sweep_stop_frequency[self.chinx])
 
 Parameter = TransportBigDG4162SweepStopFrequency

@@ -8,7 +8,7 @@ antisymmetically by the same magnitude, from the given carrier frequencies
 from conductor.parameter import ConductorParameter
 import os
 from rf.DG4162 import *
-# from influxdb.influxdb_write import *
+from influxdb.influxdb_write_py27 import *
 
 class TransportSmallDG4162SweepAmplitude(ConductorParameter):
     autostart = True
@@ -72,17 +72,43 @@ class TransportSmallDG4162SweepAmplitude(ConductorParameter):
             self.dev_up.set_local()
             self.dev_down.set_local()
             
-    #         self.upload_influxdb()
+        self.upload_influxdb()
             
-    # def upload_influxdb(self):
-    #     """Upload relevant values to InfluxDB"""
-    #     fields = {
-    #         self.param_name: self.value,
-    #         'transport_small_up_sweep_start_freq_dg4162': self.dev_up.sweep_start_frequency[self.chinx_up],
-    #         'transport_small_up_sweep_stop_freq_dg4162': self.dev_up.sweep_stop_frequency[self.chinx_up],
-    #     }
+    def upload_influxdb(self):
+        """Upload relevant values to InfluxDB"""
+        fields = {}
         
-    #     write_influxdb_fields(fields)
+        # transport_small_sweep_amp_dg4162
+        if self.value is not None:
+            fields[self.param_name] = self.value
+        fields['transport_small_up_sweep_start_freq_dg4162'] = self.dev_up.sweep_start_frequency[self.chinx_up]
+        fields['transport_small_up_sweep_stop_freq_dg4162'] = self.dev_up.sweep_stop_frequency[self.chinx_up]
+        fields['transport_small_down_sweep_start_freq_dg4162'] = self.dev_down.sweep_start_frequency[self.chinx_down]
+        fields['transport_small_down_sweep_stop_freq_dg4162'] = self.dev_down.sweep_stop_frequency[self.chinx_down]
+        
+        # transport_small_sweep_time_dg4162
+        param_name = 'transport_small_sweep_time_dg4162'
+        param = self.server.parameters.get(param_name)
+        if param is not None:
+            value = param.value
+            if value is not None:
+                fields[param_name] = value
+        fields['transport_small_up_sweep_time_dg4162'] = self.dev_up.sweep_time[self.chinx_up]
+        fields['transport_small_down_sweep_time_dg4162'] = self.dev_down.sweep_time[self.chinx_down]
+        fields['transport_small_up_sweep_return_time_dg4162'] = self.dev_up.sweep_return_time[self.chinx_up]
+        fields['transport_small_down_sweep_return_time_dg4162'] = self.dev_down.sweep_return_time[self.chinx_down]
+        
+        # transport_small_sweep_hold_time_dg4162
+        param_name = 'transport_small_sweep_hold_time_dg4162'
+        param = self.server.parameters.get(param_name)
+        if param is not None:
+            value = param.value
+            if value is not None:
+                fields[param_name] = value
+        fields['transport_small_up_sweep_hold_time_dg4162'] = self.dev_up.sweep_hold_time[self.chinx_up]
+        fields['transport_small_down_sweep_hold_time_dg4162'] = self.dev_down.sweep_hold_time[self.chinx_down]
+        
+        write_influxdb_fields(fields)
         
         
 
