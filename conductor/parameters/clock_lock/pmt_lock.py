@@ -32,7 +32,7 @@ class PmtLock(ConductorParameter):
 		super(PmtLock, self).initialize(config)
 		self.connect_to_labrad()
 		# self.PID_params = {"k_prop": -1, "t_int": 20, "t_diff": 0, "setpoint":.5,  "dt": 1, "output_default":self.default}
-		self.PID_params = {"k_prop": -1, "t_int": 20, "t_diff": 0, "setpoint":.5,  "dt": 1, "output_default":self.default}
+		self.PID_params = {"k_prop": -1, "t_int": 10, "t_diff": 0, "setpoint":.5,  "dt": 1, "output_default":self.default}
 		self.PID = PID(self.PID_params)
 		self.server.parameters.get('clock_sg380').set_value_lock(self.default)
 		print('Running a pmt clock lock')
