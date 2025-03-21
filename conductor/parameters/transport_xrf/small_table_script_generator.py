@@ -1,0 +1,167 @@
+"""
+Conductor parameter to generate advance table script for small transports and send it to Moglabs XRF synthesizer
+Not really parameter by itself; it loads other transport parameters, forms transport functon,
+Generate advanced table script, and send it to the synthesizer at the beginning of each shot.
+"""
+
+# from labrad.server import LabradServer
+from conductor.parameter import ConductorParameter
+import os
+import time
+import json
+import jsonplus
+
+class TransportXRFSmallTableScriptGenerator(ConductorParameter):
+    autostart = True
+    priority = 3
+    dev = None # dummy
+    last_val = None # dummy
+    
+    # for building transports
+    LATT_CONST = 813.4e-9/2 # m; lattice constant
+    BASE_FREQ = 110e6 # Hz; base AOM drive frequence
+    
+    saveTableScript = True
+    
+    
+    DEBUG_MODE = True
+    def print_debug(self, str):
+        if self.DEBUG_MODE is not True:
+            return
+        print("[DEBUG] " + str + "\n\tfrom " + __file__)
+    
+    def get_control_parameters(self, name):
+        try:
+            value = self.server.parameters[name].value
+        except KeyError as ex:
+            raise KeyError("Conductor parameter does not exist: {}".format(name), ex)
+        except AttributeError as ex:
+            raise AttributeError("Conductor parameter is not initialized: {}".format(name), ex)
+        return value
+    
+    
+    def initialize(self, config):
+        """
+        Called by conductor server when it starts up.
+        See labrad_tool.conductor.parameter.ConductorParameter.__doc__
+        """
+        # initialize as a ConductorParameter instance
+        # initialize() and also connect_to_labrad() in labrad_tool.conductor.parameter.ConductorParameter
+        super(TransportXRFSmallTableScriptGenerator, self).initialize(config)
+        self.connect_to_labrad() # assign Labrad client in self.cxn
+        
+        # additional initialization for this parameter
+        self.data_path = os.path.join(os.getenv('PROJECT_DATA_PATH'), 'data')
+    
+    
+    def update(self):
+        """
+        Called (by conductor?) at the beginning of the each shot.
+        See labrad_tool.conductor.parameter.ConductorParameter.__doc__
+        """
+        
+        # >>>>> identify transports in sequence >>>>>
+        
+        # get transport_sequence parameter value of this shot
+        try:
+            transport_sequence = self.get_control_parameters('transport_xrf.small_transport_sequence')
+        except Exception as ex:
+            if self.DEBUG_MODE:
+                self.print_debug(ex.args[0])
+                
+            return
+        self.print_debug("Got conductor parameter: transport_sequence={}".format(transport_sequence))
+        if transport_sequence is None:
+            return
+
+        
+        # >>>>> generate table script  >>>>>
+        
+        self.print_debug("Generating table script...")
+        self.cxn.transport_xrf_device_server.update(jsonplus.dumps({"transport_sequence": transport_sequence}))
+        
+        # <<<<< generate table script <<<<<
+
+        
+        
+        
+        # >>>>> save result to file >>>>>
+        
+        # get experiment & shot numbers of this shot
+        # not clear if `self.server` is ConductorParameter.server and how it was defined... probably `{server: attributes}` in config dict when it's called (see lines 314, 938 in labrad_tool/conductor/parameter.py)
+        experiment_name = self.server.experiment.get('name')
+        shot_number_str = self.server.experiment.get('shot_number')
+        self.print_debug("Got experiment_name={}, shot_number={}.".format(experiment_name, shot_number_str))
+        experiment_number = int(experiment_name.split('#')[-1])
+        shot_number = int(shot_number_str)
+        
+        # get sequencer.sequence parameter value of this shot
+        try:
+            sequence = self.get_control_parameters('sequencer.sequence')
+        except Exception as ex:
+            if self.DEBUG_MODE:
+                self.print_debug(ex.args[0])
+            return
+        self.print_debug("sequence.value is {} None".format("not" if sequence is not None else ""))
+        if sequence is None:
+            return
+        
+        # set file path to save the result of the previous shot
+        if experiment_name is not None:
+            fname_noext = r"{}.transport_xrf".format(shot_number_str)
+            rel_fpath_noext = os.path.join(experiment_name, fname_noext)
+        else:
+            # just in case experiment name is not known or given...
+            # save files in folder named today's date. (will be overwritten.)
+            rel_fpath_noext = r"{}/transport_xrf".format(time.strftime('%Y%m%d'))
+        fpath_noext = os.path.join(self.data_path, rel_fpath_noext)
+        self.print_debug("fpath_noext={}".format(fpath_noext))
+
+        # if enabled, save the generated table script
+        if self.DEBUG_MODE:
+                print("DEBUG: saveTableScript = {}".format(self.saveTableScript))
+        
+        if self.saveTableScript is True:
+            # import json
+            # data = {"transport_sequence": transport_sequence}
+            # with open(fpath_noext + ".json", "w") as file:
+            #     json.dump(data, file, indent=4)
+            # import h5py
+            #     with h5py.File(rel_point_path + ".hd5f", 'w') as hf:
+            #     hf.create_dataset('transport_sequence', data=transport_sequence)
+            if self.DEBUG_MODE:
+                print("DEBUG: table script file saved: {}".format(fpath_noext))    
+        
+        # <<<<< save result to file <<<<<
+        
+        
+        # assign value to this parameter
+        # here it will be some useful information about the transport
+        self.value = {
+            
+        }
+        self.last_val = self.value
+
+
+
+Parameter = TransportXRFSmallTableScriptGenerator
+
+"""
+Joon's note
+Why not developing & using a labrad server, like PicoServer for picoscopes, to control Moglabs XRF synthesizer?
+Is putting all the device controls (e.g., experiment-wise & shot-wise initializations, saving data) in this control parameter okay/sufficient? 
+    - labrad_tool.conductor.parameter.ConductorParameter.__doc__ even suggests to do so.
+    - cf. PicoSever's inheritance: 
+        labrad.server.LabradServer (generic labrad server) >
+        labrad_tools.server_tools.threaded_server.ThreadedSever (wrapper of LabradServer; related to threading) >
+        labrad_tools.device_server.server.DeviceServer (generic labrad server for devices & have a list of all device servers (in `devices` class variable)) >
+        labrad_tools.clock_pico.server.PicoServer (an implementation of the DeviceServer; what's used in exp!)
+
+1. When experiment doesn't need to wait for the job
+    The dedicated server will run such jobs ascynchronously from conductor
+    In this case the time for initializing the synth is not a big concern,
+    (Arming the synth (Receiving table script, parse it, & programming FPGA) few 10--100 ms sec typ.)
+    It will be still nice to save some time and the synth will be armed while loading the blue MOT.
+2. Python 3!
+    The codes runing in the conductor must be python 2... I made a XRF server because of this.
+"""
