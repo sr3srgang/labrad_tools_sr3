@@ -23,6 +23,7 @@ def smart_append(data_x, data_y, x, y, name):
     except Exception as e:
         print('InfluxDB server not happy:', e)
 
+
 # CAVITY LISTENERS
 
 
@@ -90,22 +91,35 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
         conv = v_range/t_range * mod_rate
         # t_fixed = (v_fixed - sweep[0])*t_range/v_range
 
-        markers_fixed = ['.', '.', 'o', 'o']
+        markers_fixed = ['.', '.', 'o', 'o', '.', '.', 'o', 'o']
         marker_swept = 'x'
         n_windows = len(fixed_ixs)
         dfs = np.zeros(n_windows)
         fixed_counter = 0
-        last_swept = [i for i in np.arange(n_windows) if not fixed_ixs[i]][-1]
+        swept_ixs = np.array(
+            [i for i in np.arange(n_windows) if not fixed_ixs[i]])
+
+        # [i for i in np.arange(n_windows) if not fixed_ixs[i]][-1]
+        last_swept = swept_ixs[-1]
+        # MM 20241213: log fit params of final sweep (presumed bare cav) to influxdb
+        # bare_params = ['bare_amp', 'bare_fwhm', 'bare_c']
+        params = ['delta', 'amp', 'fwhm', 'c']
+        for k in np.arange(len(params)):
+            p = params[k]
+            smart_append(None, None, None,
+                         datums[last_swept, k], 'bare_'+p)
+            smart_append(None, None, None, datums[swept_ixs, k], 'all_' + p)
         for i in np.arange(n_windows):
             if not fixed_ixs[i]:
                 dfs[i] = (datums[i, 0] - datums[last_swept, 0])*conv
                 ax.plot(x, dfs[i], marker_swept, color=cs[i])
-                print('plotter: {}'.format(dfs[i]))
+                # print('plotter: {}'.format(dfs[i]))
             else:
                 dfs[i] = datums[i, 0]  # just save voltages.
                 ax2.plot(x, dfs[i], markers_fixed[fixed_counter],
                          color=cs[i], alpha=.1)
                 fixed_counter += 1
+        smart_append(None, None, None, datums[fixed_ixs, 0], 'all_fixed')
         ax.set_ylabel('delta freq, sweep', color='white')
         # ax2.set_ylabel('delta v, fixed', color='white') #this is showing up on the wrong axis side by default?
         # smart_append(data_x, data_y, x, dfs, 'cav_fits')
@@ -127,7 +141,7 @@ def exc_frac_cavity(ax, data_x, data_y, x, dfs, fixed_ixs, cav_detuning=2e6):
     exc_frac = e/(e + g)
     smart_append(data_x, data_y, x, exc_frac, 'cav_exc')
     smart_append(None, None, x, swepts[0], 'cav_freq_g')
-    print('influxdb: {}'.format(swepts[0]))
+    # print('influxdb: {}'.format(swepts[0]))
     smart_append(None, None, x, swepts[1], 'cav_freq_e')
     # data_x.append(x)
     # data_y.append(exc_frac)
