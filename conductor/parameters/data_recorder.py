@@ -35,7 +35,7 @@ class DataRecorder(ConductorParameter):
     
     def _save_json(self, point_path, parameter_values):
        with open(point_path, 'w') as outfile:
-           json.dump(parameter_values, outfile, default=lambda x: None)
+           json.dump(parameter_values, outfile, default=lambda x: None, indent=4)
     
     
 Parameter = DataRecorder

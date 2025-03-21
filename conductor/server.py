@@ -139,7 +139,7 @@ class ConductorServer(ThreadedServer):
         A parameter is configured by having a python module placed in 
         "self.parameters_path" with an assignment, "Parameter = SomeParameterClass".
         the defined Parameter should inherit the parent class "ConductorParameter"
-        from "labrad_tools/conductor/conductor_parameter.py"
+        from "labrad_tools/conductor/parameter.py"
         to ensure correct behavior by default.
 
         The parameter directory can be structured as follows.
@@ -933,6 +933,7 @@ class ConductorServer(ThreadedServer):
     
     def _import_parameter(self, parameter_name, suppress_errors=False):
         module_path = '{}.parameters.{}'.format(self.name, parameter_name)
+        # print("DEBUG: module_path={}".format(module_path))
         parameter_class_name = 'Parameter'
         try:
             module = importlib.import_module(module_path)
