@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from labrad.server import setting #, LabradServer
 from device_server.server import DeviceServer
 import json
@@ -10,7 +12,10 @@ class TransportXRFServer(DeviceServer):
     # name as a Labrad server
     # Also, name in the DeviceServer.devices static dictionary (via DeviceServer._initialize_devices())
 	name = 'transport_xrf_device_server'
-	
+ 
+	def __init__(self):
+		super(TransportXRFServer, self).__init__()
+		print(">>>>> trasport_xrf device server started up >>>>>")
 	# print useful debug messages if enabled
 	DEBUG_MODE = True
 	def print_debug(self, str):
@@ -43,3 +48,5 @@ if __name__ == "__main__":
 
     #Server.initialize_devices(json.dumps({'cavity_pico': {}}))
     #print('test')
+    
+    print("<<<<< trasport_xrf device server ended <<<<<")
