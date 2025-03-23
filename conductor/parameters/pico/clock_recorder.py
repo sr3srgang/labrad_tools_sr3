@@ -10,7 +10,7 @@ from conductor.parameter import ConductorParameter
 
 class Recorder(ConductorParameter):
     autostart = True
-    priority = -1
+    priority = 5
     call_in_thread = False
 
     data_filename = '{}.clock_pico'

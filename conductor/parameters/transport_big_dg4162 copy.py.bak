@@ -1,0 +1,37 @@
+from rf.DG4162 import *
+from conductor.parameter import ConductorParameter
+import time
+
+class Device(DG4162):
+    _vxi11_address = "192.168.1.41"
+
+class TransportBigDG4162SweepStopFrequency(ConductorParameter):
+    autostart = True
+    priority = 3
+    dev = None
+    last_val = None
+
+    def initialize(self, config):
+        super(TransportBigDG4162SweepStopFrequency, self).initialize(config)
+        self.connect_to_labrad()
+        self.dev = Device()
+        if self.value is not None:
+            self.dev.sweep_stop_frequency = self.value
+            
+    def update(self):
+        if self.value is not None:
+            # if self.value != self.last_val:
+            self.dev.sweep_stop_frequency = self.value
+            #print(self.value)
+            print("TransportBigDG4162SweepStopFrequency is " + str(self.dev.sweep_stop_frequency))
+            self.last_val = self.value
+        
+        VLATT_RIGOL2 = DG4162(_vxi11_address="192.168.1.42")
+        VLATT_RIGOL2.align_phase()
+        VLATT_RIGOL3 = DG4162(_vxi11_address="192.168.1.43")
+        VLATT_RIGOL3.align_phase()
+        
+        VLATT_RIGOL2.set_local()
+        VLATT_RIGOL3.set_local()
+
+Parameter = TransportBigDG4162SweepStopFrequency

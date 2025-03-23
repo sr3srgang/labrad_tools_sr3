@@ -1,0 +1,116 @@
+## low-level codes for communication with & control RIGOL DG4162 AWGs
+## run the script directly for connection test
+
+class DeviceCommunicationError(Exception):
+    pass
+
+class FrequencyOutOfBoundsError(Exception):
+    pass
+
+class RigolDG4162:
+    _frequency_range = (1e-3, 160e6)  # Min: 1 mHz, Max: 160 MHz (adjust if needed)
+    _ip_address = None
+
+    def __init__(self, ip_address):
+        """Initialize connection to the RIGOL DG4162 AWG via LAN."""
+        if 'vxi11' not in globals():
+            global vxi11
+            import vxi11
+        if 'np' not in globals():
+            global np
+            import numpy as np
+
+        self._ip_address = ip_address
+        self.instrument = None
+        self._init_connection()
+        
+
+    def _init_connection(self):
+        """Establish a connection to the instrument."""
+        try:
+            self.instrument = vxi11.Instrument(self._ip_address)
+            self.instrument.timeout =1000  # Set timeout to 5 seconds
+            msg = self.get_idn()
+            if not msg:
+                raise DeviceCommunicationError("Failed to receive valid IDN response.")
+            print "Connected to: " + msg
+        except Exception as e:
+            raise DeviceCommunicationError("Connection error: {}".format(e))
+
+    def get_idn(self):
+        """Query the instrument identity."""
+        try:
+            return self.instrument.ask("*IDN?").strip()
+        except Exception:
+            return None
+
+    @property
+    def sweep_stop_frequency(self):
+        """Query the sweep stop frequency."""
+        try:
+            return float(self.instrument.ask(":SOURce1:FREQuency:STOP?"))
+        except Exception:
+            raise DeviceCommunicationError("Failed to query sweep stop frequency.")
+
+    @sweep_stop_frequency.setter
+    def sweep_stop_frequency(self, frequency_hz):
+        """Set the sweep stop frequency (Hz)."""
+        
+        
+        # check input frequency    
+        if frequency_hz < min(self._frequency_range) or frequency_hz > max(self._frequency_range):
+            raise FrequencyOutOfBoundsError("Frequency out of range: {} Hz".format(frequency_hz))
+        
+        if frequency % 1 != 0: # not integer
+            print("WARNING: RIGOL DG4162 frequency can be set to integer mHz! Your input %f Hz is rounded to %.03f Hz" % (frequency, frequency))
+            frequency = np.round(frequency, 3)
+        
+        # send SCPI command to set freq 
+        try:
+            self.instrument.write(":SOURce1:FREQuency:STOP {}".format(frequency_hz))
+            # print "Set sweep stop frequency to {} Hz".format(frequency_hz)
+        except Exception:
+            raise DeviceCommunicationError("Failed to set sweep stop frequency.")
+
+    def close(self):
+        """Close the VXI-11 connection to the instrument."""
+        if self.instrument:
+            try:
+                self.instrument.close()
+                print "Connection to RIGOL DG4162 closed."
+            except Exception:
+                print "Warning: Failed to properly close the connection."
+
+
+
+
+if __name__ == "__main__":
+    IP_ADDRESS = "192.168.1.41"  # Big transport up RIGOL
+
+    try:
+        rigol = RigolDG4162(IP_ADDRESS)
+        
+        # Query the current sweep stop frequency
+        current_freq = rigol.sweep_stop_frequency
+        print "Current Sweep Stop Frequency: {} Hz".format(current_freq)
+
+        # User input for new frequency (Python 2 uses raw_input)
+        try:
+            new_freq = float(raw_input("Enter new sweep stop frequency (Hz): "))
+            rigol.sweep_stop_frequency = new_freq
+            time.sleep(0.5)  # Small delay for command processing
+
+            # Verify change
+            updated_freq = rigol.sweep_stop_frequency
+            print "Updated Sweep Stop Frequency: {} Hz".format(updated_freq)
+        except ValueError:
+            print "Invalid input. Please enter a numeric value."
+    
+    except DeviceCommunicationError as e:
+        print "Error: {}".format(e)
+    
+    finally:
+        rigol.close()
+
+
+

@@ -1,0 +1,45 @@
+from rf.DG4162 import *
+from conductor.parameter import ConductorParameter
+
+class TransportSmallDG4162SweepAmplitude(ConductorParameter):
+    autostart = False
+    priority = 3
+    dev_up = None
+    dev_down = None
+    last_val = None
+    sweep_start_frequency_up = 31e6
+    sweep_start_frequency_down = 19e6
+
+    def initialize(self, config):
+        super(TransportSmallDG4162SweepAmplitude, self).initialize(config)
+        self.connect_to_labrad()
+        self.dev_up = DG4162(_vxi11_address = "192.168.1.43", is_vervose = False) # VLATT RIGOL 3 for transport up
+        self.dev_down = DG4162(_vxi11_address = "192.168.1.42", is_vervose = False) # VLATT RIGOL 2 for transport down
+        if self.value is not None:
+            self.dev_up.sweep_stop_frequency_ch1 = self.sweep_start_frequency_up + self.value
+            self.dev_down.sweep_stop_frequency_ch1 = self.sweep_start_frequency_down - self.value
+            self.dev_up.set_local()
+            self.dev_down.set_local()
+            self.last_val = self.value
+            
+            
+    def update(self):
+        if self.value is not None:
+            # if self.value != self.last_val:
+            self.dev_up.sweep_stop_frequency_ch1 = self.sweep_start_frequency_up + self.value
+            self.dev_down.sweep_stop_frequency_ch1 = self.sweep_start_frequency_down - self.value
+            print("TransportSmallUpDG4162SweepAmplitude is " + str(self.value))
+            self.dev_up.set_local()
+            self.dev_down.set_local()
+            self.last_val = self.value
+        
+        
+        # VLATT_RIGOL2 = DG4162(_vxi11_address="192.168.1.42")
+        # VLATT_RIGOL2.align_phase()
+        # VLATT_RIGOL3 = DG4162(_vxi11_address="192.168.1.43")
+        # VLATT_RIGOL3.align_phase()
+        
+        # VLATT_RIGOL2.set_local()
+        # VLATT_RIGOL3.set_local()
+
+Parameter = TransportSmallDG4162SweepAmplitude

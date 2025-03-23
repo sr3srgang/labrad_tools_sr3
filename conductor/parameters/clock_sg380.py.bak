@@ -27,14 +27,6 @@ class ClockSG380Frequency(ConductorParameter):
             self.last_val = val
             self.value = val
             
-    def apply_correction(self, val):
-        if val is not None:
-            new_freq = self.dev.frequency + val
-            self.dev.frequency = new_freq
-            print('CLOCK SG380 UPDATED IN-CYCLE T0 {} AT {}'.format(new_freq, time.time()))
-            self.last_val = val
-            self.value = val
-            
             
     def update(self):
         if self.value is not None:

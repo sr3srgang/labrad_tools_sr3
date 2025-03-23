@@ -26,9 +26,9 @@ class PID:
     
     def output_signal(self):
         k = self.params["k_prop"]
-        prop = k*self.error_value
+        prop = 0 # k*self.error_value
         integral = k*self.integral_value
-        diff = k*(self.current_reading - self.last_reading)*self.params["t_diff"]/self.params["dt"]
+        diff = 0 # k*(self.current_reading - self.last_reading)*self.params["t_diff"]/self.params["dt"]
         print([prop, integral, diff])
         return prop + integral + diff + self.params["output_default"]
         

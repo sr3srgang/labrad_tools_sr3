@@ -18,7 +18,20 @@ class ClockPulseSG380Frequency(ConductorParameter):
         self.dev = Device()
         if self.value is not None:
             self.dev.frequency = self.value
-
+    def set_value_lock(self, val):
+        if val is not None:
+            self.dev.frequency = val
+            print('CLOCK PULSE SG380 UPDATED IN-CYCLE T0 {} AT {}'.format(val, time.time()))
+            self.last_val = val
+            
+    def apply_correction(self, val):
+        if val is not None:
+            new_freq = self.dev.frequency + val
+            self.dev.frequency = new_freq
+            print('CLOCK SG380 UPDATED IN-CYCLE T0 {} AT {}'.format(new_freq, time.time()))
+            self.last_val = val
+            self.value = val
+            
     def update(self):
         if self.value is not None:
         	if self.value != self.last_val:

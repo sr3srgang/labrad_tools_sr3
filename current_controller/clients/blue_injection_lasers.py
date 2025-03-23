@@ -3,7 +3,8 @@
 #from current_controller.devices.zs import DeviceProxy as ZSProxy
 #from current_controller.devices._3d2 import DeviceProxy as _3D2Proxy
 from current_controller.devices._mot import DeviceProxy as _motProxy
-from current_controller.devices._zeeman import DeviceProxy as _zeemanProxy
+#MM 20241202: removing zeeman laser
+#from current_controller.devices._zeeman import DeviceProxy as _zeemanProxy
 from current_controller.clients.default import CurrentControllerClient
 from current_controller.clients.default import MultipleClientContainer
 
@@ -23,11 +24,11 @@ class ZSClient(CurrentControllerClient):
 class _3D2Client(CurrentControllerClient):
     DeviceProxy = _3D2Proxy
     name = '3d2'
-'''
+
 class _zeemanClient(CurrentControllerClient):
     DeviceProxy = _zeemanProxy
     name = 'Zeeman'
-    
+'''    
 class _motClient(CurrentControllerClient):
     DeviceProxy = _motProxy
     name = 'MOT'
@@ -35,7 +36,7 @@ class _motClient(CurrentControllerClient):
 
 
 class MyClientContainer(MultipleClientContainer):
-    name = 'blue injection lasers'
+    name = 'blue injection laser'
 
 if __name__ == '__main__':
     from PyQt4 import QtGui
@@ -45,7 +46,7 @@ if __name__ == '__main__':
     qt4reactor.install()
     from twisted.internet import reactor
 
-    widgets = [_motClient(reactor), _zeemanClient(reactor)]#(reactor)]#_3DClient(reactor), _2DClient(reactor), ZSClient(reactor), _3D2Client(reactor)]
+    widgets = [_motClient(reactor)]#, _zeemanClient(reactor)]#(reactor)]#_3DClient(reactor), _2DClient(reactor), ZSClient(reactor), _3D2Client(reactor)]
     widget = MyClientContainer(widgets, reactor)
     widget.show()
     reactor.run()
