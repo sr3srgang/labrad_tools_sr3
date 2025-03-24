@@ -911,6 +911,9 @@ class ConductorServer(ThreadedServer):
             tf = time.time()
             if self.verbose:
                 print 'advanced in {} s'.format(tf - ti)
+            self.update("Finished updating all conductor parameters.")
+            if self.verbose:
+                print 'Signal sent for all conductor parameters being updated.'
         except:
             if not suppress_errors:
                 raise
