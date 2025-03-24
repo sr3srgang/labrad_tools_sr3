@@ -110,14 +110,18 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
                          datums[last_swept, k], 'bare_'+p)
             smart_append(None, None, None, datums[swept_ixs, k], 'all_' + p)
         for i in np.arange(n_windows):
+            if i == n_windows - 1:
+                c = c_bkgd
+            else:
+                c = cs[i % len(cs)]
             if not fixed_ixs[i]:
                 dfs[i] = (datums[i, 0] - datums[last_swept, 0])*conv
-                ax.plot(x, dfs[i], marker_swept, color=cs[i])
+                ax.plot(x, dfs[i], marker_swept, color=c)
                 # print('plotter: {}'.format(dfs[i]))
             else:
                 dfs[i] = datums[i, 0]  # just save voltages.
                 ax2.plot(x, dfs[i], markers_fixed[fixed_counter],
-                         color=cs[i], alpha=.1)
+                         color=c, alpha=.1)
                 fixed_counter += 1
         smart_append(None, None, None, datums[fixed_ixs, 0], 'all_fixed')
         ax.set_ylabel('delta freq, sweep', color='white')
