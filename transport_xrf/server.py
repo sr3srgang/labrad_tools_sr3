@@ -25,14 +25,17 @@ class TransportXRFServer(DeviceServer):
  
 	@setting(10)
 	def update(self, c, request_jsonplus = '{}'): # use jsonplus instead of json to preserve tuple type in transport sequence
-		start = time.time()		
-		self.print_debug('transport_xrf_device_server.update() called.')		
-		request = jsonplus.loads(request_jsonplus) # got transport_sequence from `transport_xrf.small_table_script_generator`` conductor parameter.		re
-		transport_sequence = request['transport_sequence']
-		self.print_debug('Got transport sequence: {}'.format(transport_sequence))
+		try:
+			start = time.time()		
+			self.print_debug('transport_xrf_device_server.update() called.')		
+			request = jsonplus.loads(request_jsonplus) # got transport_sequence from `transport_xrf.small_table_script_generator`` conductor parameter.		re
+			transport_sequence = request['transport_sequence']
+			self.print_debug('Got transport sequence: {}'.format(transport_sequence))
 
-		end = time.time()
-		print(f"Time elapsed for arming transport_xrf = {end - start} s.")
+			end = time.time()
+			print(f"Time elapsed for arming transport_xrf = {end - start} s.")
+		except:
+			print("Some error in transport_xrf server")
 		
 	
 Server = TransportXRFServer
