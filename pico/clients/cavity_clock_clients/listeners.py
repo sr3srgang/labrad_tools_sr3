@@ -120,7 +120,7 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
                 # print('plotter: {}'.format(dfs[i]))
             else:
                 dfs[i] = datums[i, 0]  # just save voltages.
-                ax2.plot(x, dfs[i], markers_fixed[fixed_counter],
+                ax2.plot(x, dfs[i], markers_fixed[fixed_counter % len(markers_fixed)],
                          color=c, alpha=.1)
                 fixed_counter += 1
         smart_append(None, None, None, datums[fixed_ixs, 0], 'all_fixed')
