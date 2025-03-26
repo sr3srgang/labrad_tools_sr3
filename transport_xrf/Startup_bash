@@ -1,0 +1,20 @@
+#!/bin/bash -i
+# bash script to startup a Python script in a conda environment
+
+
+# move working directory to the projecct folder
+echo ">>> cd to the app directory..."
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+# echo $SCRIPT_DIR
+cd "$SCRIPT_DIR"
+echo "<<< Working directory set to: ${PWD}"
+echo
+
+# run the main script
+py_path="./server.py"
+echo ">>> Starting app: $py_path ..."
+echo 
+exec python3 $py_path
+echo
+echo "<<< End of the script: $py_path"
+

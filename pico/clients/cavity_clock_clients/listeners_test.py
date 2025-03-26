@@ -8,45 +8,8 @@ from data_analysis.cavity_clock.MM_plotter_package import *
 
 from pico.clients.cavity_clock_clients.params import *
 
-from influxdb.influxdb_write import write_influxdb
-
-
-def smart_append(data_x, data_y, x, y, name):
-    if data_x is not None:
-        data_x.append(x)
-    if data_y is not None:
-        data_y.append(y)
-    try:
-        # write_influxdb(name+'_x', x)
-        write_influxdb(name, y)
-        print('wrote {} to influxdb'.format(name))
-    except Exception as e:
-        print('InfluxDB server not happy:', e)
-
 
 # CAVITY LISTENERS
-
-
-def log_to_influxdb(influxdb_params):
-    try:
-        for (l, p) in influxdb_params:
-            write_influxdb(l, p)
-        print('logged all vals to influxdb')
-    except Exception as e:
-        print('InfluxDB server not happy:', e)
-
-
-def get_influxdb_params(update, influxdb_log):
-    for message_type, message in update.items():
-        value = message.get('cavity_probe_pico')
-        if message_type == 'record' and value is not None:
-            influxdb_params = []
-            for l in influxdb_log:
-                n, x = get_metadata(
-                    value, ax_name=l, str_end='.cavity_probe_pico_A.hdf5')
-                influxdb_params.append((l, x))
-            return influxdb_params
-
 
 def filtered_cavity_time_domain(update, ax, seq):
     # MM 03222023 added listening for sweep params
@@ -85,49 +48,29 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
     if n > 1 and x is not None:
         # Setting numerical factors for converting sweep fitted times to cavity frequencies.
         mod_rate = 1.5e6  # 1.5e6  # MHz/V on 11/2 demod synthesizer
-        t_range = .04  # .04  # set assuming 40 ms windows
+        t_range = .04#.04  # set assuming 40 ms windows
         v_range = sweep[1] - sweep[0]
         # v_fixed = sweep[2]
         conv = v_range/t_range * mod_rate
         # t_fixed = (v_fixed - sweep[0])*t_range/v_range
 
-        markers_fixed = ['.', '.', 'o', 'o', '.', '.', 'o', 'o']
+        markers_fixed = ['.', '.', 'o', 'o']
         marker_swept = 'x'
         n_windows = len(fixed_ixs)
         dfs = np.zeros(n_windows)
         fixed_counter = 0
-        swept_ixs = np.array(
-            [i for i in np.arange(n_windows) if not fixed_ixs[i]])
-
-        # [i for i in np.arange(n_windows) if not fixed_ixs[i]][-1]
-        last_swept = swept_ixs[-1]
-        # MM 20241213: log fit params of final sweep (presumed bare cav) to influxdb
-        # bare_params = ['bare_amp', 'bare_fwhm', 'bare_c']
-        params = ['delta', 'amp', 'fwhm', 'c']
-        for k in np.arange(len(params)):
-            p = params[k]
-            smart_append(None, None, None,
-                         datums[last_swept, k], 'bare_'+p)
-            smart_append(None, None, None, datums[swept_ixs, k], 'all_' + p)
+        last_swept = [i for i in np.arange(n_windows) if not fixed_ixs[i]][-1]
         for i in np.arange(n_windows):
-            if i == n_windows - 1:
-                c = c_bkgd
-            else:
-                c = cs[i % len(cs)]
             if not fixed_ixs[i]:
                 dfs[i] = (datums[i, 0] - datums[last_swept, 0])*conv
-                ax.plot(x, dfs[i], marker_swept, color=c)
-                # print('plotter: {}'.format(dfs[i]))
+                ax.plot(x, dfs[i], marker_swept, color=cs[i])
             else:
                 dfs[i] = datums[i, 0]  # just save voltages.
-                ax2.plot(x, dfs[i], markers_fixed[fixed_counter % len(markers_fixed)],
-                         color=c, alpha=.1)
+                ax2.plot(x, dfs[i], markers_fixed[fixed_counter],
+                         color=cs[i], alpha=.1)
                 fixed_counter += 1
-        smart_append(None, None, None, datums[fixed_ixs, 0], 'all_fixed')
         ax.set_ylabel('delta freq, sweep', color='white')
         # ax2.set_ylabel('delta v, fixed', color='white') #this is showing up on the wrong axis side by default?
-        # smart_append(data_x, data_y, x, dfs, 'cav_fits')
-        # print(dfs)
         data_x.append(x)
         data_y.append(dfs)
         return True, x, dfs
@@ -135,20 +78,14 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
         return False, None, None
 
 
-def exc_frac_cavity(ax, data_x, data_y, x, dfs, fixed_ixs, cav_detuning=2e6):
+def exc_frac_cavity(ax, data_x, data_y, x, dfs, fixed_ixs):
     ax.set_facecolor('xkcd:pinkish grey')
     def f_to_n_delta(f, delta): return f*delta/5e3**2 * (1 + f/delta)
-    def f_to_n(f): return f_to_n_delta(f, cav_detuning)
-    swepts = dfs[np.logical_not(fixed_ixs)]
-    g = f_to_n(swepts[0])
-    e = f_to_n(swepts[1])
+    def f_to_n(f): return f_to_n_delta(f, 1e6)
+    g = f_to_n(dfs[-4])
+    e = f_to_n(dfs[-2])
     exc_frac = e/(e + g)
-    smart_append(data_x, data_y, x, exc_frac, 'cav_exc')
-    smart_append(None, None, x, swepts[0], 'cav_freq_g')
-    # print('influxdb: {}'.format(swepts[0]))
-    smart_append(None, None, x, swepts[1], 'cav_freq_e')
-    # data_x.append(x)
-    # data_y.append(exc_frac)
+
     ax.plot(x, exc_frac, 'ok')
 
 
@@ -193,11 +130,8 @@ def pmt_atom_number(update, ax, data_x, data_y, ax_name=None):
                 return False, None, None, None
 
             # Otherwise, plot and add to saved data
-            # data_x.append(x_ax)
-            # data_y.append(atom_num)
-            smart_append(data_x, data_y, x_ax, atom_num, "pmt_num")
-            smart_append(None, None, x_ax, num_gnd, "pmt_g")
-            smart_append(None, None, x_ax, num_exc, "pmt_e")
+            data_x.append(x_ax)
+            data_y.append(atom_num)
             ax.plot(x_ax, num_gnd, 's', color='white',
                     fillstyle='none', zorder=3)
             ax.plot(x_ax, num_exc, 'd', color='white', zorder=2)
@@ -214,9 +148,8 @@ def pmt_exc_frac(ax, data_x, data_y, x, n_g, n_e):
         exc_frac = calc_excitation(n_g, n_e)
         ax.plot(x, exc_frac, 'o', color='k')
         ax.set_ylabel('Excitation fraction', color='white')
-        smart_append(data_x, data_y, x, exc_frac, 'pmt_exc')
-        # data_x.append(x)
-        # data_y.append(exc_frac)
+        data_x.append(x)
+        data_y.append(exc_frac)
         return True
     else:
         return False

@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../../pico/clients/cavity_clock_clients_beta"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "../../pico/clients/cavity_clock_clients"
+		}
+	],
+	"settings": {}
+}
