@@ -926,17 +926,6 @@ class ConductorServer(ThreadedServer):
             tf = time.time()
             if self.verbose:
                 print 'advanced in {} s'.format(tf - ti)
-            
-            # emit signal after 
-            # subsribed (at least) by XXX
-            self.update("Finished updating all conductor parameters.")
-            self._send_update({'advance_complete': {
-                    'experiment': 'test_exp',
-                    'shot': 1,
-                    'timestamp': time.time()
-                }})
-            if self.verbose:
-                print 'Signal sent for all conductor parameters being updated.'
         except:
             if not suppress_errors:
                 raise
