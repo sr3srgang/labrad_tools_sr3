@@ -19,6 +19,7 @@ from collections import deque
 import glob
 import importlib
 import json
+import jsonplus
 import os
 import sys
 import time
@@ -559,6 +560,20 @@ class ConductorServer(ThreadedServer):
         response_json = json.dumps(response, default=lambda x: None)
         return response_json 
     
+    @setting(11, request_json='s', all='b')
+    def get_parameter_values_jsonplus(self, c, request_jsonplus='{}', all=False):
+        """
+        Same to get_parameter_values() method except that it uses jsonplus
+        instead of json for `request_jsonplus` argument and `response_jsonplus`
+        return to retain data type unique in python
+        """
+        request = jsonplus.loads(request_jsonplus)
+        response = self._get_parameter_values(request, all)
+        self._send_update({'get_parameter_values': response})
+        response_jsonplus = jsonplus.dumps(response, default=lambda x: None)
+        return response_jsonplus
+    
+    
     def _get_parameter_values(self, request={}, all=True):
         """ get parameter values specified in the request.
 
@@ -914,13 +929,12 @@ class ConductorServer(ThreadedServer):
             
             # emit signal after 
             # subsribed (at least) by XXX
-            # self.update("Finished updating all conductor parameters.")
-            # self._send_update({'advance_complete': {
-            #         'experiment': 'test_exp',
-            #         'shot': 1,
-            #         'timestamp': time.time()
-            #     }})
-            
+            self.update("Finished updating all conductor parameters.")
+            self._send_update({'advance_complete': {
+                    'experiment': 'test_exp',
+                    'shot': 1,
+                    'timestamp': time.time()
+                }})
             if self.verbose:
                 print 'Signal sent for all conductor parameters being updated.'
         except:
