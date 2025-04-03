@@ -1,9 +1,15 @@
 # user gitignore
+
 # # conductor
 conductor/.experiments/*
 conductor/parameters/.values/*
 # # transport_xrf_device_server
 transport_xrf/DEBUG*
+
+
+
+
+
 
 # gitignore for vscode as of 2024/12/05
 # https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
