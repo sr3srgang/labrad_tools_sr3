@@ -1,0 +1,90 @@
+>>>>>> Communication with Moglabs XRF  >>>>>
+Command: ; set clock source to 10 MHz external
+	Response: None
+Command: CLKSRC,EXT,100 ; last value: ppln=source multiplication factor =(1 GHz desired freq)/(input freq)
+	Response: OK: Clock source is now EXTERNAL, PLLN=100 (10.000 MHz)
+Command: 
+	Response: None
+Command: ; enter fast table mode
+	Response: None
+Command: MODE,1,TPA
+	Response: OK: CH1 mode now PIFTABLE
+Command: 
+	Response: None
+Command: ; set stanby output
+	Response: None
+Command: FREQ,1,111.2MHz
+	Response: OK: CH1 freq now 111.199999927 MHz (0x1C779A6B)
+Command: POW,1,-17.7dBm
+	Response: OK: CH1 power now -17.70 dBm (0x0028)
+Command: ON,1
+	Response: OK: CH1 output changed
+Command: 
+	Response: None
+Command: ; cleasr any table entries or settings
+	Response: None
+Command: TABLE,CLEAR,1
+	Response: OK: CH1 table cleared
+Command: 
+	Response: None
+Command: ; set frequency as the parallel parameter
+	Response: None
+Command: ; frequency gain should be given; see Section 9.7 in the XRF421 manual (Revision 1.8.3)
+	Response: None
+Command: TABLE,XPARAM,1,FREQ,8
+	Response: OK: Now FREQ: gain 8, min = 109.25 MHz, max = 113.15 MHz, step = 59.60 Hz
+Command: 
+	Response: None
+Command: ; set initial condition
+	Response: None
+Command: TABLE,APPEND,1,111.2MHz,-17.7dBm,0deg,1us ; load condition to serial interface
+	Response: OK: Table now has 1 entries
+Command: TABLE,APPEND,1,FREQ,111.2MHz,16ns,UPD ; activate the above
+	Response: OK: Table now has 2 entries
+Command: 
+	Response: None
+Command: 
+	Response: None
+Command: ; LONG TRASPORT UP
+	Response: None
+Command: 
+	Response: None
+Command: TABLE,XPARAM,1,FREQ,8
+	Response: OK: Now FREQ: gain 8, min = 109.25 MHz, max = 113.15 MHz, step = 59.60 Hz
+Command: ; wait for trigger
+	Response: None
+Command: TABLE,APPEND,1,FREQ,111.2MHz,16ns,TRIGDR 
+	Response: OK: Table now has 3 entries
+Command: 
+	Response: None
+Command: ; sweep
+	Response: None
+Command: TABLE,RAMP,1,FREQ,111.2MHz,113.0532678983266MHz,2.666666666666667us,10000
+	Response: OK: Appended 2 entries to table 1
+Command: ; hold
+	Response: None
+Command: TABLE,APPEND,1,FREQ,113.0532678983266MHz,26666.666666666668us
+	Response: OK: Table now has 6 entries
+Command: ; return
+	Response: None
+Command: TABLE,RAMP,1,FREQ,113.0532678983266MHz,111.2MHz,2.666666666666667us,10000
+	Response: OK: Appended 2 entries to table 1
+Command: ; spell out final condition
+	Response: None
+Command: TABLE,APPEND,1,FREQ,111.2MHz,16ns
+	Response: OK: Table now has 9 entries
+Command: 
+	Response: None
+Command: ; set end-of-table behavior
+	Response: None
+Command: TABLE,REARM,1,off
+	Response: OK: CH1 rearm now OFF
+Command: TABLE,RESTART,1,off
+	Response: OK: CH1 restart now OFF
+Command: 
+	Response: None
+Command: ; start table
+	Response: None
+Command: TABLE,START,1
+	Response: OK: Table started, CH1
+<<<<< Communication with Moglabs XRF  <<<<<

@@ -1,0 +1,23 @@
+; set clock source to 10 MHz external
+CLKSRC,EXT,100 ; last value: ppln=source multiplication factor =(1 GHz desired freq)/(input freq)
+
+; enter fast table mode
+MODE,1,TPA
+
+; set stanby output
+FREQ,1,{base_freq}
+POW,1,{amp}
+ON,1
+
+; cleasr any table entries or settings
+TABLE,CLEAR,1
+
+; set frequency as the parallel parameter
+; frequency gain should be given; see Section 9.7 in the XRF421 manual (Revision 1.8.3)
+TABLE,XPARAM,1,FREQ,8
+
+; set initial condition
+TABLE,APPEND,1,{base_freq},{amp},0deg,1us ; load condition to serial interface
+TABLE,APPEND,1,FREQ,{base_freq},16ns,UPD ; activate the above
+
+

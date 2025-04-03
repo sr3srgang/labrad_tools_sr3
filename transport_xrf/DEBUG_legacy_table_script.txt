@@ -1,0 +1,44 @@
+; set clock source to 10 MHz external
+CLKSRC,EXT,100 ; last value: ppln=source multiplication factor =(1 GHz desired freq)/(input freq)
+
+; enter fast table mode
+MODE,1,TPA
+
+; set stanby output
+FREQ,1,111.2MHz
+POW,1,-17.7dBm
+ON,1
+
+; cleasr any table entries or settings
+TABLE,CLEAR,1
+
+; set frequency as the parallel parameter
+; frequency gain should be given; see Section 9.7 in the XRF421 manual (Revision 1.8.3)
+TABLE,XPARAM,1,FREQ,8
+
+; set initial condition
+TABLE,APPEND,1,111.2MHz,-17.7dBm,0deg,1us ; load condition to serial interface
+TABLE,APPEND,1,FREQ,111.2MHz,16ns,UPD ; activate the above
+
+
+; LONG TRASPORT UP
+
+TABLE,XPARAM,1,FREQ,8
+; wait for trigger
+TABLE,APPEND,1,FREQ,111.2MHz,16ns,TRIGDR 
+
+; sweep
+TABLE,RAMP,1,FREQ,111.2MHz,113.0532678983266MHz,2.666666666666667us,10000
+; hold
+TABLE,APPEND,1,FREQ,113.0532678983266MHz,26666.666666666668us
+; return
+TABLE,RAMP,1,FREQ,113.0532678983266MHz,111.2MHz,2.666666666666667us,10000
+; spell out final condition
+TABLE,APPEND,1,FREQ,111.2MHz,16ns
+
+; set end-of-table behavior
+TABLE,REARM,1,off
+TABLE,RESTART,1,off
+
+; start table
+TABLE,START,1

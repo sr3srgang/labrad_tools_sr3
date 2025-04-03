@@ -1,0 +1,9 @@
+# spell out final condition
+TABLE,APPEND,1,FREQ,{base_freq},16ns
+
+# set end-of-table behavior
+TABLE,REARM,1,off # do not rearm after the table is executed (see `TABLE,ARM` below)
+TABLE,RESTART,1,off # do not restart after the table is executed
+
+# start table
+TABLE,START,1
