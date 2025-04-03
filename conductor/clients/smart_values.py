@@ -9,6 +9,10 @@ from twisted.internet.defer import inlineCallbacks
 from client_tools.connection import connection
 from client_tools.widgets import NeatSpinBox
 
+# from distutils.util import strtobool
+import sys
+
+
 
 class ParameterRow(QtGui.QWidget):
     def __init__(self, parent):
@@ -63,12 +67,21 @@ class ParameterColumn(QtGui.QGroupBox):
 class SmartValuesClient(QtGui.QGroupBox):
     hasNewValue = False
     free = True
-
+    
+    # DEBUG_MODE = True
+    DEBUG_MODE = False
+    def print_debug(self, msg):
+        if self.DEBUG_MODE is not True:
+            return
+        print "[DEBUG] " + str(msg)
+        sys.stdout.flush()
+    
     def __init__(self, reactor, cxn=None):
         QtGui.QDialog.__init__(self)
         self.reactor = reactor
         self.cxn = cxn
         self.connect()
+
 
     @inlineCallbacks
     def connect(self):
@@ -147,14 +160,44 @@ class SmartValuesClient(QtGui.QGroupBox):
     def set_parameter_value(self, parameterRow):
         @inlineCallbacks
         def spv():
+            # load parameter name and value
             name = str(parameterRow.nameBox.text())
-            # 2025/02/19: Joon -- I updated this part to let the client set the None value
-            # value = float(parameterRow.valueBox.value())
-            valuetext = parameterRow.valueBox.text()
-            value = None if valuetext == 'None' else float(valuetext)
+            valuetext = str(parameterRow.valueBox.text())
+
+            # parse value
+            # if valuetext == 'None': # try parsing None
+            #     value = None
+            # else:
+            #     try: # try parsing bool
+            #         value = bool(strtobool(valuetext))
+            #     except ValueError:
+            #         try:
+            #             value = float(valuetext)
+            #         except ValueError:
+            #             value = valuetext  # accept string
+            if valuetext == 'None':
+                # try parsing None
+                value = None
+            # try parsing bool
+            elif valuetext.lower() == "true":
+                value = True
+            elif valuetext.lower() == "false":
+                value = False
+            else:
+                try: # try parsing float
+                    value = float(valuetext)
+                except ValueError:
+                    # parse as string
+                    value = valuetext
+                        
+            # self.print_debug("{} = {} {}".format(name, value, type(value)))
+            print "{} = {} {}".format(name, value, type(value))
+            
             server = yield self.cxn.get_server(self.servername)
             request = {name: value}
-            yield server.set_parameter_values(json.dumps(request))
+            self.print_debug("request = {}".format(request))
+            request_json = json.dumps(request)
+            yield server.set_parameter_values(request_json)
             parameterRow.valueBox.display(value)
         return spv
 
