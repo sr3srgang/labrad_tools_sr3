@@ -3,6 +3,8 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 import numpy as np
 import json
 
+ALLOWED_FIELD_VALUE_TYPES_INFLUXDB = (bool, int, float, str) # allowed type of influxdb field value
+
 # Database credentials
 token = "yelabtoken"
 org = "yelab"
