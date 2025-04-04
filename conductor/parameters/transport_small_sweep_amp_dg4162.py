@@ -37,7 +37,7 @@ class TransportSmallDG4162SweepAmplitude(ConductorParameter):
             # if self.value != self.last_val:
             self.dev_up.sweep_stop_frequency[self.chinx_up] = self.sweep_start_frequency_up + self.value
             self.dev_down.sweep_stop_frequency[self.chinx_down] = self.sweep_start_frequency_down - self.value
-            print(self.param_name + " is " + str(self.value))
+            # print(self.param_name + " is " + str(self.value))
             # self.dev_up.set_local()
             # self.dev_down.set_local()
             self.last_val = self.value
@@ -56,7 +56,7 @@ class TransportSmallDG4162SweepAmplitude(ConductorParameter):
                 # sweep return time
                 self.dev_up.sweep_return_time[self.chinx_up] = t
                 self.dev_down.sweep_return_time[self.chinx_down] = t
-                print(param_name + " is " + str(t))
+                # print(param_name + " is " + str(t))
         
         # # sweep hold time
         param_name = 'transport_small_sweep_hold_time_dg4162'
@@ -66,7 +66,7 @@ class TransportSmallDG4162SweepAmplitude(ConductorParameter):
             if t is not None:
                 self.dev_up.sweep_hold_time[self.chinx_up] = t
                 self.dev_down.sweep_hold_time[self.chinx_down] = t
-                print(param_name + " is " + str(t))
+                # print(param_name + " is " + str(t))
             
         if isUpdated is True:
             self.dev_up.set_local()

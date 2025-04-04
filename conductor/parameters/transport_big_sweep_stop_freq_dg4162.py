@@ -23,7 +23,7 @@ class TransportBigDG4162SweepStopFrequency(ConductorParameter):
         if self.value is not None:
             # if self.value != self.last_val:
             self.dev.sweep_stop_frequency[self.chinx] = self.value
-            print(self.param_name + " is " + str(self.dev.sweep_stop_frequency[self.chinx]))
+            # print(self.param_name + " is " + str(self.dev.sweep_stop_frequency[self.chinx]))
             self.last_val = self.value
             
         self.upload_influxdb()
