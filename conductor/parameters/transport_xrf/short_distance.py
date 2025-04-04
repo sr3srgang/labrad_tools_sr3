@@ -1,18 +1,18 @@
 """
-Conductor parameter to set small transports' trajectory form using Moglabs XRF synthesizer
+Conductor parameter to set short transports' distance using Moglabs XRF synthesizer
 """
 
 from conductor.parameter import ConductorParameter
 
 
-class TransportXRFSmallTransportForm(ConductorParameter):
+class TransportXRFShortDistance(ConductorParameter):
     autostart = True
     priority = 1
     dev = None
     last_val = None
 
     def initialize(self, config):
-        super(TransportXRFSmallTransportForm, self).initialize(config)
+        super(TransportXRFShortDistance, self).initialize(config)
         self.connect_to_labrad()
         
         self.update()
@@ -20,4 +20,4 @@ class TransportXRFSmallTransportForm(ConductorParameter):
     def update(self):
         self.last_val = self.value
 
-Parameter = TransportXRFSmallTransportForm
+Parameter = TransportXRFShortDistance

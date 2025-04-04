@@ -41,7 +41,15 @@ class MyClient(SmartValuesClient):
                         'transport_big_sweep_stop_freq_dg4162',
                         'transport_small_sweep_amp_dg4162',
                         'transport_small_sweep_time_dg4162',
-                        'transport_small_sweep_hold_time_dg4162'])]
+                        'transport_small_sweep_hold_time_dg4162',
+                        'transport_xrf.long_form',
+                        'transport_xrf.long_distance',
+                        'transport_xrf.long_duration',
+                        'transport_xrf.short_form',
+                        'transport_xrf.short_distance',
+                        'transport_xrf.short_duration',
+                        
+                        ])]
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 """
-Conductor parameter to generate and save small transports sequence using Moglabs XRF synthesizer
+Conductor parameter to generate and save Short transports sequence using Moglabs XRF synthesizer
 """
 
 # from labrad.server import LabradServer
@@ -9,7 +9,7 @@ import time
 import numpy as np
 
 
-class TransportXRFSmallTransportSequence(ConductorParameter):
+class TransportXRFShortTransportSequence(ConductorParameter):
     autostart = True
     priority = 2
     dev = None # dummy
@@ -39,7 +39,7 @@ class TransportXRFSmallTransportSequence(ConductorParameter):
         """
         # initialize as a ConductorParameter instance
         # initialize() and also connect_to_labrad() in labrad_tool.conductor.parameter.ConductorParameter
-        super(TransportXRFSmallTransportSequence, self).initialize(config)
+        super(TransportXRFShortTransportSequence, self).initialize(config)
         self.connect_to_labrad() # assign Labrad client in self.cxn
         
         # additional initialization for this parameter
@@ -71,8 +71,8 @@ class TransportXRFSmallTransportSequence(ConductorParameter):
         
         # previous_sequence = ConductorParameter.server.parameters.get( # related to one-shot lag..?
         #     'sequencer.previous_sequence') 
-        is_transport_up = np.array([1 if "transport_small_up" in subseq else 0 for subseq in sequence])
-        is_transport_down = np.array([1 if "transport_small_down" in subseq else 0 for subseq in sequence])
+        is_transport_up = np.array([1 if "transport_Short_up" in subseq else 0 for subseq in sequence])
+        is_transport_down = np.array([1 if "transport_Short_down" in subseq else 0 for subseq in sequence])
         # the sequence of up & down transports over this shot
         # up: +1, down: -1 (e.g, [+1, -1, -1, +1, ...])
         up_down_sequence = np.array([val for val in is_transport_up - is_transport_down if val != 0])
@@ -90,9 +90,9 @@ class TransportXRFSmallTransportSequence(ConductorParameter):
         
         # get relevant parameter values in this shot
         try:
-            form = self.get_control_parameters('transport_xrf.small_form')
-            x = self.get_control_parameters('transport_xrf.small_distance')
-            d = self.get_control_parameters('transport_xrf.small_duration')
+            form = self.get_control_parameters('transport_xrf.Short_form')
+            x = self.get_control_parameters('transport_xrf.Short_distance')
+            d = self.get_control_parameters('transport_xrf.Short_duration')
         except Exception as ex:
             if self.DEBUG_MODE:
                 self.print_debug(ex.args[0])
@@ -139,7 +139,7 @@ class TransportXRFSmallTransportSequence(ConductorParameter):
         self.last_val = self.value
 
 
-Parameter = TransportXRFSmallTransportSequence
+Parameter = TransportXRFShortTransportSequence
 
 """
 Joon's note
