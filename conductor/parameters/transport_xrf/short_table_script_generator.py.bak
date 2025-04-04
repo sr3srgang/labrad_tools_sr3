@@ -1,5 +1,5 @@
 """
-Conductor parameter to generate advance table script for small transports and send it to Moglabs XRF synthesizer
+Conductor parameter to generate advance table script for Short transports and send it to Moglabs XRF synthesizer
 Not really parameter by itself; it loads other transport parameters, forms transport functon,
 Generate advanced table script, and send it to the synthesizer at the beginning of each shot.
 """
@@ -11,7 +11,9 @@ import time
 import json
 import jsonplus
 
-class TransportXRFSmallTableScriptGenerator(ConductorParameter):
+class NoServerError(Exception):
+    pass
+class TransportXRFShortTableScriptGenerator(ConductorParameter):
     autostart = True
     priority = 3
     dev = None # dummy
@@ -24,7 +26,7 @@ class TransportXRFSmallTableScriptGenerator(ConductorParameter):
     saveTableScript = True
     
     
-    DEBUG_MODE = True
+    DEBUG_MODE = False
     def print_debug(self, str):
         if self.DEBUG_MODE is not True:
             return
@@ -47,7 +49,7 @@ class TransportXRFSmallTableScriptGenerator(ConductorParameter):
         """
         # initialize as a ConductorParameter instance
         # initialize() and also connect_to_labrad() in labrad_tool.conductor.parameter.ConductorParameter
-        super(TransportXRFSmallTableScriptGenerator, self).initialize(config)
+        super(TransportXRFShortTableScriptGenerator, self).initialize(config)
         self.connect_to_labrad() # assign Labrad client in self.cxn
         
         # additional initialization for this parameter
@@ -64,7 +66,7 @@ class TransportXRFSmallTableScriptGenerator(ConductorParameter):
         
         # get transport_sequence parameter value of this shot
         try:
-            transport_sequence = self.get_control_parameters('transport_xrf.small_transport_sequence')
+            transport_sequence = self.get_control_parameters('transport_xrf.Short_transport_sequence')
         except Exception as ex:
             if self.DEBUG_MODE:
                 self.print_debug(ex.args[0])
@@ -78,12 +80,21 @@ class TransportXRFSmallTableScriptGenerator(ConductorParameter):
         # >>>>> generate table script  >>>>>
         
         self.print_debug("Generating table script...")
-        self.cxn.transport_xrf_device_server.update(jsonplus.dumps({"transport_sequence": transport_sequence}))
         
-        # <<<<< generate table script <<<<<
+        transport_xrf_device_server = getattr(self.cxn, 'transport_xrf_device_server', None)
+        if transport_xrf_device_server is None:
+            self.last_val = self.value
+            raise NoServerError("transport_xrf_device_server server is not found. Check the server status; is it on and running?")
 
-        
-        
+        # send the transport_sequence to the device server
+        try:
+            self.cxn.transport_xrf_device_server.update(jsonplus.dumps({"transport_sequence": transport_sequence}))
+        except Exception as ex:
+            print("update() could not be called from transport_xrf_device_server. The server might be down. Refer to the following traceback.")
+            self.last_val = self.value
+            raise ex
+        print "Lattice transport XRF sytn updated."
+        # <<<<< generate table script <<<<
         
         # >>>>> save result to file >>>>>
         
@@ -144,7 +155,7 @@ class TransportXRFSmallTableScriptGenerator(ConductorParameter):
 
 
 
-Parameter = TransportXRFSmallTableScriptGenerator
+Parameter = TransportXRFShortTableScriptGenerator
 
 """
 Joon's note

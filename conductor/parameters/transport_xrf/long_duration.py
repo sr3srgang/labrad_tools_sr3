@@ -1,18 +1,18 @@
 """
-Conductor parameter to set small transports' duration in sec using Moglabs XRF synthesizer
+Conductor parameter to set long transports' duration in sec using Moglabs XRF synthesizer
 """
 
 from conductor.parameter import ConductorParameter
 
 
-class TransportXRFSmallDuration(ConductorParameter):
+class TransportXRFLongDuration(ConductorParameter):
     autostart = True
     priority = 1
     dev = None
     last_val = None
 
     def initialize(self, config):
-        super(TransportXRFSmallDuration, self).initialize(config)
+        super(TransportXRFLongDuration, self).initialize(config)
         self.connect_to_labrad()
         
         self.update()
@@ -20,4 +20,4 @@ class TransportXRFSmallDuration(ConductorParameter):
     def update(self):
         self.last_val = self.value
 
-Parameter = TransportXRFSmallDuration
+Parameter = TransportXRFLongDuration

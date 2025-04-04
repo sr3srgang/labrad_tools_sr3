@@ -560,8 +560,8 @@ class ConductorServer(ThreadedServer):
         response_json = json.dumps(response, default=lambda x: None)
         return response_json 
     
-    @setting(11, request_json='s', all='b')
-    def get_parameter_values_jsonplus(self, c, request_jsonplus='{}', all=False):
+    @setting(11, request_jsonplus='s', all='b')
+    def get_parameter_values_jsonplus(self, c, request_jsonplus="{}", all=False):
         """
         Same to get_parameter_values() method except that it uses jsonplus
         instead of json for `request_jsonplus` argument and `response_jsonplus`
