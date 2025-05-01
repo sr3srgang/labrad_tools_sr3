@@ -74,12 +74,13 @@ class UploadParameters(ConductorParameter):
         self.print_debug('Got all parameters from conductor: \n' + parameters_json)
         
         # relay the parameter values to the influxdb_uploader_server.upload_conductor_parameters
-        try:
-            influxdb_uploader_server.upload_conductor_parameters(exp_rel_path, shot_num, parameters_json)
-        except Exception as ex:
-            print("update() could not be called from `{}` server. The server might be down. Refer to the following traceback.".format(servername))
-            self.last_val = self.value
-            raise ex
+        methodname = 'upload_conductor_parameters'
+        upload_conductor_parameters_method = getattr(influxdb_uploader_server, methodname, None)
+        if upload_conductor_parameters_method is None:
+            raise NoServerError("`{}` method in `{}` server is not found. is the server running?".format(methodname, servername))
+        
+        upload_conductor_parameters_method(exp_rel_path, shot_num, parameters_json)
+
         
         print "Conductor parameters recorded in InfluxDB."
         self.print_debug('upload_conductor_parameters() in influxdb_uploader_server called.')
