@@ -1,9 +1,0 @@
-; wait for trigger
-TABLE,APPEND,1,FREQ,{base_freq},16ns,TRIGDR 
-
-; sweep
-TABLE,RAMP,1,FREQ,{base_freq},{freq_to_ramp},{t_ramp_step},{ramp_step_num}
-; hold
-TABLE,APPEND,1,FREQ,{freq_to_ramp},{t_hold}
-; return
-TABLE,RAMP,1,FREQ,{freq_to_ramp},{base_freq},{t_ramp_step},{ramp_step_num}
