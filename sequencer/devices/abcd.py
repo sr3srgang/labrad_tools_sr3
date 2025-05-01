@@ -272,10 +272,10 @@ class ABCD(YeSrDigitalBoard):
             loc=["C", 10], name="C10", mode="auto", manual_output=False, invert=False
         ),
         YeSrDigitalChannel(
-            loc=["C", 11], name="C11", mode="auto", manual_output=False, invert=False
+            loc=["C", 11], name="Moglab XRF transport", mode="auto", manual_output=False, invert=False
         ),
         YeSrDigitalChannel(
-            loc=["C", 12], name="C12", mode="auto", manual_output=False, invert=False
+            loc=["C", 12], name="labjack 1 trigger", mode="auto", manual_output=False, invert=False
         ),
         YeSrDigitalChannel(
             loc=["C", 13], name="C13", mode="auto", manual_output=False, invert=False
