@@ -16,6 +16,15 @@ import pico.clients.cavity_clock_clients.listeners as listeners
 import pico.clients.cavity_clock_clients.fits as fits
 # from client_tools.connection import connection
 
+# >>>>> for InfluxDB uploader >>>>>
+# from influxdb.helper import #validate_influxdb_uploader,\
+from influxdb.helper import INFLUXDB_UPLOADER_SERVER_NAME, INFLUXDB_GET_EXPERIMENT_METHOD_NAME,\
+        INFLUXDB_UPLOAD_METHOD_NAME, INFLUXDB_UPLOADER_TIMEOUT
+from twisted.internet import reactor, defer
+from twisted.internet.defer import Deferred, inlineCallbacks
+import json, traceback
+# <<<<< for InfluxDB uploader <<<<<
+
 
 class MplCanvas(FigureCanvas):
     def __init__(self):
@@ -95,6 +104,7 @@ class CavityClockGui(QDialog):
         server = yield self.cxn.get_server('cavity_probe_pico')
         yield server.signal__update(self.update_id)
         yield server.addListener(listener=self.receive_update, source=None, ID=self.update_id)
+        
         print('connected to cavity probe pico server')
 
     @inlineCallbacks
@@ -147,11 +157,78 @@ class CavityClockGui(QDialog):
                     lims[i, 2] = current_y[0]
                 all_ax[i].set_ylim(lims[i, 2:4])
 
+
+    # @inlineCallbacks
+    # def validate_influxdb_uploader(self):
+    #     """
+    #     Check if the InfluxDB uploader server and methods are available and
+    #     return the availability.
+    #     """
+    #     # # if alabrad client is not given as argument, create one and return it
+    #     # if cxn is None:
+    #     #     cxn = labrad.connect()
+    #     cxn = self.cxn
+        
+    #     is_available = False
+    #     uploader_server = None
+    #     get_current_experiment_info = None
+    #     upload_experiment_shot = None
+    #     try:
+    #         print(f"[DEBUG] cxn = {cxn} ({type(cxn)})")
+    #         uploader_server = yield cxn.get_server(INFLUXDB_UPLOADER_SERVER_NAME)
+    #         uploader_server = getattr(cxn, INFLUXDB_UPLOADER_SERVER_NAME, None)
+    #         if uploader_server is None:
+    #             raise AttributeError(f"`{INFLUXDB_UPLOADER_SERVER_NAME}` server is not found. Check if the server is running.")
+    #         get_current_experiment_info = getattr(uploader_server,INFLUXDB_GET_EXPERIMENT_METHOD_NAME, None)
+    #         if get_current_experiment_info is None:
+    #             raise AttributeError(f"`{INFLUXDB_GET_EXPERIMENT_METHOD_NAME}()` method in `{INFLUXDB_GET_EXPERIMENT_METHOD_NAME}` server is not found. Check if the server is running.")
+    #         upload_experiment_shot = getattr(uploader_server, INFLUXDB_UPLOAD_METHOD_NAME, None)
+    #         if upload_experiment_shot is None:
+    #             raise AttributeError(f"`{INFLUXDB_UPLOAD_METHOD_NAME}()` method in `{INFLUXDB_GET_EXPERIMENT_METHOD_NAME}` server is not found. Check if the server is running.")
+    #         is_available = True
+    #     except:
+    #         print("[WARN] Failed to connection to influxDB.")
+    #         traceback.print_exc()
+    #         print()
+            
+    #     # print(f"[DEBUG] InfluxDB uploader server is available: {is_available}\n"
+    #     #         f"[DEBUG] \tuploader_server = {uploader_server}\n"
+    #     #         f"[DEBUG] \tget_current_experiment_info = {get_current_experiment_info}\n"
+    #     #         f"[DEBUG] \tupload_experiment_shot = {upload_experiment_shot}\n")
+    #     return is_available, uploader_server, get_current_experiment_info, upload_experiment_shot
+
+    
+    
+    @inlineCallbacks
     def receive_update(self, c, update_json):
+        print(f"[DEBUG] {self.shot_counter}. receive_update() called.")
         update = json.loads(update_json)
+        
+        # >>>>> InfluxDB upload >>>>>
+        # kick off getting the current experiment info before doing main tasks
+        # is_influxdb_uploader_available, influxdb_uploader_server, \
+        #     influxdb_get_current_experiment_info, influxdb_upload_experiment_shot = \
+        #         validate_influxdb_uploader(self.cxn.cxn)
+        # print(f"[DEBUG] is_influxdb_uploader_available = {is_influxdb_uploader_available}")
+        
+        uploader_server = yield self.cxn.get_server(INFLUXDB_UPLOADER_SERVER_NAME)
+        # get_current_experiment_info = getattr(uploader_server,INFLUXDB_GET_EXPERIMENT_METHOD_NAME, None)
+        # upload_experiment_shot = getattr(uploader_server, INFLUXDB_UPLOAD_METHOD_NAME, None)
+        
+        is_influxdb_uploader_available = uploader_server is not None
+        if is_influxdb_uploader_available:
+            # experiment_info_d = uploader_server.get_current_experiment_info() # type: ignore
+            # experiment_info_d.addTimeout(INFLUXDB_UPLOADER_TIMEOUT, reactor)
+            experiment_info_json = yield uploader_server.get_current_experiment_info()
+            experiment_info = json.loads(experiment_info_json)
+            # experiment_info_list = [experiment_info[key] for key in ["exp_rel_path", "shot_num", "timestamp"]]
+            print(f"[DEBUG] experiment_info = {experiment_info}")
+        # <<<<< InfluxDB upload <<<<<
 
         this_expt, this_path = listeners.get_expt(update)
         if this_expt is not None and (self.expt != this_expt or self.shot_counter >= self.counter_thresh):
+            
+            
             # MM updated 20241030 to save data when end expt is run, not just when a new expt starts
             # if (not self.expt.isnumeric()) and (self.data_path is not None):
             if (self.data_path is not None):
@@ -170,8 +247,9 @@ class CavityClockGui(QDialog):
                 if self.influxdb_params is not None:
                     listeners.log_to_influxdb(self.influxdb_params)
                 self.save_counter += 1
-                self.shot_counter = 0
+                self.shot_counter= 0
                 self.data_path = None
+                
 
             if self.expt != this_expt:
                 self.save_counter = 0
@@ -241,6 +319,34 @@ class CavityClockGui(QDialog):
         # Add back past lims to prevent rescaling
         # self.enforce_lim(lims, preset)
         self.canvas.draw()
+        
+        # # >>>>> InfluxDB upload >>>>>
+        # if is_influxdb_uploader_available:
+        #     try:
+        #         # get deferred experiment info return
+        #         # experiment_info_json = yield experiment_info_d
+        #         # experiment_info = json.loads(experiment_info_json)
+        #         # experiment_info_list = [experiment_info[key] for key in ["exp_rel_path", "shot_num", "timestamp"]]
+        #         # print(experiment_info)
+        #         exp_rel_path = experiment_info["exp_rel_path"]
+        #         shot_num = experiment_info["shot_num"]
+        #         timestamp = experiment_info["timestamp"]
+        #         # Configure and upload records
+        #         measurement = "labrad_upload_server"
+        #         tags = {}
+        #         fields = {name: value for (name, value) in self.influxdb_params}
+        #         fields_json = json.dumps(fields)
+        #         print(f"[DEBUG] fields_json = {fields_json}")
+        #         uploaded_from = f"receive_update()@cavity_clock.py"
+        #         yield uploader_server.upload_experiment_shot(exp_rel_path, shot_num, timestamp, uploaded_from, json.dumps(fields_json), json.dumps(tags), measurement) # type: ignore
+        #         print(f"[INFO] InfluxDB upload successful.")
+        #     except defer.TimeoutError:
+        #         print(f"[WARN] No reply from {INFLUXDB_UPLOADER_SERVER_NAME} in {INFLUXDB_UPLOADER_TIMEOUT} s – "
+        #             "skipping upload.")
+        #     except Exception as exc:
+        #         print(f"[WARN] InfluxDB upload failed.")
+        #         traceback.print_exc()
+        # # <<<<<< InfluxDB upload <<<<<
 
 
 # Add buttons to select config, fit methods
