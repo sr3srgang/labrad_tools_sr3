@@ -1,3 +1,5 @@
+# From https://github.com/sr3srgang/20250307-Moglabs-XRF-synthesizer----ramp-with-table-mode/blob/56c07de340274dc13d17198e3e5aebb0f69e6d93/mogdevice_custom/mogdevice_custom.py
+
 # 2025/03/07: Created by Joonseok Hur
 # A wrapper for mogdevice.MOGDevice class to
 # add more methods: send_script and send_file
@@ -27,7 +29,7 @@ class MOGDevice(BaseMOGDevice):
 
         :param script_text: A string containing the complete table script.
         """
-        print("Sending script to device:")
+        # self.print_debug("Sending script to device:")
         # print(script_text)
         commands = script_text.strip().splitlines()
         responses = [None]*len(commands)
@@ -61,7 +63,7 @@ class MOGDevice(BaseMOGDevice):
         return self.send_script(script_text)
 
 
-class MOGDevice_dummy(BaseMOGDevice):
+class MOGDevice_dummy(MOGDevice):
     """
     Dummy MOGDevice class for testing
     """

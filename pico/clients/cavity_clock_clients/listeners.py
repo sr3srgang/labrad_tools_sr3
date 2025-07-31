@@ -54,7 +54,7 @@ def filtered_cavity_time_domain(update, ax, seq):
     # MM -03212023 written for compatibility with multiple triggers of ps6000a
     # MM05082023 determining window fits from sequence
     fixed_ixs = get_windows(seq)  # MM 20230508 added in "MM plotter package"
-    ax.set_facecolor('xkcd:pinkish grey')
+    ax.set_facecolor('xkcd:light pink')
     for message_type, message in update.items():
         value = message.get('cavity_probe_pico')
         if message_type == 'record' and value is not None:
@@ -70,7 +70,7 @@ def filtered_cavity_time_domain(update, ax, seq):
 
 def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_name=None):
     # MM 20230508 assuming run after filtered_cavity_time_domain w/ process_shot_var
-    ax.set_facecolor('xkcd:pinkish grey')
+    ax.set_facecolor('xkcd:light pink')
     # Extracting shot number
     for message_type, message in update.items():
         value = message.get('cavity_probe_pico')
@@ -116,7 +116,8 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
                 c = cs[i % len(cs)]
             if not fixed_ixs[i]:
                 dfs[i] = (datums[i, 0] - datums[last_swept, 0])*conv
-                ax.plot(x, dfs[i], marker_swept, color=c)
+                ax.plot(x, dfs[i], marker_swept, color=c, ms=9, mew=3)
+                ax.plot(x, dfs[i], marker_swept, color='k', ms=9, mew=1)
                 # print('plotter: {}'.format(dfs[i]))
             else:
                 dfs[i] = datums[i, 0]  # just save voltages.
@@ -136,7 +137,7 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
 
 
 def exc_frac_cavity(ax, data_x, data_y, x, dfs, fixed_ixs, cav_detuning=2e6):
-    ax.set_facecolor('xkcd:pinkish grey')
+    ax.set_facecolor('xkcd:light pink')
     def f_to_n_delta(f, delta): return f*delta/5e3**2 * (1 + f/delta)
     def f_to_n(f): return f_to_n_delta(f, cav_detuning)
     swepts = dfs[np.logical_not(fixed_ixs)]

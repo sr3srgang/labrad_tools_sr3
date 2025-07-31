@@ -7,8 +7,6 @@ Intended to have low priority (i.e., big priority value assigned) to be updated 
 from conductor.parameter import ConductorParameter
 import json
 
-class NoServerError(Exception):
-    pass
 class UploadParameters(ConductorParameter):
 
     autostart = True
@@ -66,7 +64,7 @@ class UploadParameters(ConductorParameter):
         influxdb_uploader_server = getattr(self.cxn, servername, None)
         if influxdb_uploader_server is None:
             self.last_val = self.value
-            raise NoServerError("`{}` server is not found. Check the server status; is it on and running?".format(servername))
+            raise AttributeError("`{}` server is not found. Check the server status; is it on and running?".format(servername))
 
         # get all parameters of this shot from conductor server
         request_json="{}"; all=True

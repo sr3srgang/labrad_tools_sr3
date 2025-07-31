@@ -11,7 +11,7 @@ xkcd_cs = ['hot magenta', 'orangered', 'manilla',
            'kiwi green', 'azul', 'vivid purple']
 cs = ['xkcd:'+c for c in xkcd_cs]
 styles = ['-', '--', '-.']
-c_bkgd = 'xkcd:light grey'
+c_bkgd = 'xkcd:grey'
 # cs = ['white', 'k', 'blue', 'brown', 'green',
 #       'white', 'k', 'blue', 'brown', 'green', 'gray']
 # styles = ['--', '--', '--', '--', '--', '-', '-', '-', '-', '-', '-.']
@@ -138,9 +138,9 @@ def process_shot_fit(file, fxn, p0, lp=set_lowpass, ax=None, colors=cs, c_bkgd=c
                 s = styles[int(j/len(colors))]
             if c != 'red':
                 ax.plot((ts + h_offset)*1e3,
-                        all_traces[j] + v_offset, '.', color=c, markersize=.5, alpha=.3)
+                        all_traces[j] + v_offset, 'o', color=c, markersize=1, alpha=.1)
                 ax.plot((ts_fit + h_offset)*1e3, fxn[j](ts_fit, *popt) + v_offset,
-                        s, color=c, label=trace_names[j], linewidth=2)
+                        s, color=c, label=trace_names[j], linewidth=1)
             ax.set_xlabel('Time (ms)')
     return fits, fits_unc
 
