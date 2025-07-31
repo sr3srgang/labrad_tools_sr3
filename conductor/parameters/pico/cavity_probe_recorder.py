@@ -21,7 +21,8 @@ class Recorder(ConductorParameter):
     	'cav_fixed',
     	'cav_fixed_noProbe', 
     	'cav_sweep_strong',
-    	'cav_fixed_strong'	
+    	'cav_fixed_strong', 
+    	'cav_fixed_small'	
         ]
 
     def initialize(self, config):

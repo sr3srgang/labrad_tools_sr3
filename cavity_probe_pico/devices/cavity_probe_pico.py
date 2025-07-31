@@ -22,7 +22,7 @@ class CavityPico(Picoscope):
         },
         'B': {
             'coupling': 'DC',
-            'VRange':  .05,
+            'VRange':  0.2,
             'probeAttenuation': 1.0,
             'enabled': True,
         },
