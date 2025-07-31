@@ -104,6 +104,13 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
         # MM 20241213: log fit params of final sweep (presumed bare cav) to influxdb
         # bare_params = ['bare_amp', 'bare_fwhm', 'bare_c']
         params = ['delta', 'amp', 'fwhm', 'c']
+
+        def RAM_DAC(v_range, t_range, sweep_start, last_swept):
+
+            voltage = (last_swept[0]-.0005)*v_range/t_range + sweep_start
+            return voltage
+
+        DAC_voltage = RAM_DAC(v_range, t_range, sweep[0], datums[last_swept])
         for k in np.arange(len(params)):
             p = params[k]
             smart_append(None, None, None,
@@ -131,9 +138,9 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
         # print(dfs)
         data_x.append(x)
         data_y.append(dfs)
-        return True, x, dfs
+        return True, x, dfs, DAC_voltage, n
     else:
-        return False, None, None
+        return False, None, None, None, None
 
 
 def exc_frac_cavity(ax, data_x, data_y, x, dfs, fixed_ixs, cav_detuning=2e6):

@@ -8,14 +8,15 @@ MODE,1,TPA
 ; set stanby output
 FREQ,1,{base_freq}
 POW,1,{amp}
-ON,1
+; ON,1,SIG
+; OFF,1,POW
 
 ; cleasr any table entries or settings
 TABLE,CLEAR,1
 
 ; set frequency as the parallel parameter
 ; frequency gain should be given; see Section 9.7 in the XRF421 manual (Revision 1.8.3)
-TABLE,XPARAM,1,FREQ,0 ; dummy gain value -- will be set later
+TABLE,XPARAM,1,FREQ,{freq_gain}
 
 ; set initial condition
 TABLE,APPEND,1,{base_freq},{amp},0deg,1us ; load condition to serial interface

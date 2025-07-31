@@ -18,13 +18,6 @@ import datetime
 from pathlib import Path
 
 
-LATTICE_WAVELENGTH = 813.428e-9 # m
-LATTICE_CONSTANT = LATTICE_WAVELENGTH/2 # m
-BASE_FREQUENCY= 111.2e6 # Hz
-AMPLITUDE = -17.70 # dBm
-DDS_FREQ_STEP = 0.232831 # Hz
-TPA_FREQ_GAIN_BIT = 15
-
 class TransportXRFServer(DeviceServer):
     # name as a Labrad server
     # Also, name in the DeviceServer.devices static dictionary (via DeviceServer._initialize_devices())
@@ -32,12 +25,13 @@ class TransportXRFServer(DeviceServer):
  
     # print useful debug messages if enabled
     DEBUG_MODE = False
+    DEBUG_MODE = True
     def print_debug(self, str):
         if self.DEBUG_MODE is not True:
             return
         print("[DEBUG] " + str + "\n\tfrom " + __file__)
         
-    SCRIPT_DIR = Path(__file__).resolve().parent
+    SCRIPT_DIR = Path(__file__).resolve().parent / "table scripts"
     
     # >>>>>>> LabradServer methods >>>>>>>
 
@@ -83,6 +77,9 @@ class TransportXRFServer(DeviceServer):
     # >>>>>>> trasport methods >>>>>>>
     
     def _send_script(self, script):
+        """
+        Send script to Moglabs (and save the generated table script in debug mode).
+        """
         commands, responses = self.dev.send_script(script)
         self.print_debug("Sent script to Moglabs XRF.")
         
@@ -111,13 +108,24 @@ class TransportXRFServer(DeviceServer):
             is_legacy_transport = request["is_legacy_transport"]
             if is_legacy_transport:
                 # generate table script for legacy transport
-                script, Af, freq_gain, t_ramp_step, ramp_step_num = self.legacy_transport._get_transport_script(request)
+                script, freq_gain, Af, t_ramp_step, ramp_step_num = self.legacy_transport.get_transport_script(request)
                 
-                msg = f"Legacy mode. Af={Af}, freq_gain={freq_gain}, t_ramp_step={t_ramp_step}, ramp_step_num={ramp_step_num}"
+                msg = f"Legacy mode. freq_gain={freq_gain}, Af={Af}, t_ramp_step={t_ramp_step}, ramp_step_num={ramp_step_num}"
             else:
-            # raise NotImplementedError("Non-legacy transports comming soon...")
-                transport_sequence = request['transport_sequence']
-                self.print_debug('Got transport sequence: {}'.format(transport_sequence))
+                # raise NotImplementedError("Non-legacy transports comming soon...")
+                # transport_sequence = request['transport_sequence']
+                # self.print_debug('Got transport sequence: {}'.format(transport_sequence))
+                
+                freq_gain = request["freq_gain"]
+                d_long = request["d_long"]
+                t_long = request["t_long"]
+                d_short = request["d_short"]
+                t_short = request["t_short"]
+                up_down_sequence_short = request["up_down_sequence_short"]
+                
+                script = ""
+
+                
                 
             # <<<<< Get advanced table script for transport to send to Moglab XRF <<<<<
             

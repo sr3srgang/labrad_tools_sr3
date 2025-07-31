@@ -1,5 +1,5 @@
-; spell out final condition
-TABLE,APPEND,1,FREQ,{base_freq},16ns
+; spell out final condition; it has to be at least 1 us
+TABLE,APPEND,1,FREQ,{base_freq},1us
 
 ; set end-of-table behavior
 TABLE,REARM,1,off
