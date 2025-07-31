@@ -41,7 +41,7 @@ class RamServoLock(ConductorParameter):
 		err_sig = self.server.parameters.get('bare_dac_voltage').value
 		if err_sig is not None:
 		    out = self.PID.update(err_sig)
-		    print("new cav aom val from ram servo: {}".format(out)
+		    print("new cav aom val from ram servo: {}".format(out))
 		    self.server.parameters.get('cav_aom_813_rigol').set_value_lock(out)
 		    
         

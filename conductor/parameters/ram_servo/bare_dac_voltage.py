@@ -1,5 +1,5 @@
 from conductor.parameter import ConductorParameter
-
+import os, np
 #MM 20250731
 #read in value of bare cavity dac offset from pico client
 #to be used with cav_aom_813_rigol in setting up a RAM servo for cavity lock
@@ -42,8 +42,7 @@ class BareDACVoltage(ConductorParameter):
                     val = file.read()
                 print(val)
                 self.value = val
+            except:
+                pass
 
-        #print(self.value)
- 
-    
 Parameter = BareDACVoltage
