@@ -19,6 +19,8 @@ import traceback
 #     print(msg, file=sys.stderr)
 
 
+ALLOWED_FIELD_VALUE_TYPES_INFLUXDB = (bool, int, float, str) # allowed type of influxdb field value
+
 class InfluxDBUploader(ThreadedServer):
     name = "influxdb_uploader_server"
     
@@ -50,6 +52,7 @@ class InfluxDBUploader(ThreadedServer):
         """overidding stopServer() placeholder in LabradServer"""
         pass
     
+
     # <<<<<<< LabradServer methods <<<<<<<
     
     
@@ -103,6 +106,57 @@ class InfluxDBUploader(ThreadedServer):
         """
         The most general method for InfluxDB upload.
         Upload "records" to Sr3 bucket in yemonitor InfluxDB.
+<<<<<<< HEAD
+        
+        "records" is a list of "record"s.
+        "record" is a set of data with the associated timestamp; simply a data point at a time.
+        "record" is given as a dictionary like below:
+        record = {   
+            "measurement": "live_data",
+                "tags": { 
+                    "host": "myhost",
+                    },
+                "fields": {
+                    "<name1>": <value1>,
+                    "<name2>": <value2>,
+                    },
+        }
+        
+        :param records: A record or a list of records to upload. Each record is a dictionary.
+        """
+        if isinstance(records, list) is False:
+            records = [records]
+            
+        self._verify_influxdb_records(records)
+            
+        with InfluxDBClient(url=self.INFLUXDB_URL, token=self.INFLUXDB_TOKEN, org=self.INFLUXDB_ORG) as client:
+            with client.write_api(write_options=SYNCHRONOUS) as writer:
+                writer.write(bucket=self.INFLUXDB_BUCKET, record=records)
+                
+        print("Uploaded to InfluxDB")
+        print()
+    
+    @setting(1, records_json='s')
+    def upload(self, c, records_json):
+        """
+        LabRAD-server method wrapper of _upload() method
+        Refer to the doctring of _upload() method for details.
+        
+        wrapper-specific arguments:
+        :param records_json: The JSON-serialized records to upload.
+        """
+        self.print_debug('upload() called.')
+        records = json.loads(records_json)
+        self.print_debug(f"Received & parsed records: {pformat(records)}")
+        
+        # upload the records to InfluxDB
+        self._upload(records)
+    
+    # <<<<< General InfluxDB upload <<<<<
+    
+    
+    
+    # >>>>> Upload for a RossRAD experiment shot >>>>> 
         
         "records" is a list of "record"s.
         "record" is a set of data with the associated timestamp; simply a data point at a time.
@@ -294,6 +348,7 @@ class InfluxDBUploader(ThreadedServer):
         }
         experiment_info_json = json.dumps(experiment_info)
         return experiment_info_json
+>>>>>>> 5e30e62caf09244121cc7db9af20a54d00bcb45b
         
     def _upload_experiment_shot(self, exp_rel_path, shot_num, timestamp, uploaded_from, 
                      fields, tags = {}, measurement = "labrad_upload_server"):
@@ -307,7 +362,7 @@ class InfluxDBUploader(ThreadedServer):
         :param shot_num: The shot number to be got from conductor server.
         :param timestamp: The timestamp of the experiment to be got from conductor server.
         :param uploaded_from: The source of the upload.
-                            Intended use: the name of function, method()@class, script file name, etc
+                            Intended use: the name of function, method@class, script file name, etc
                             that calls this method or the server method wrapper for this method.
         :param fields: The fields (i.e. data) to upload.
         :param tags: The tags (i.e. metadata) for the record.
@@ -350,6 +405,16 @@ class InfluxDBUploader(ThreadedServer):
             
         # upload to InfluxDB
         self._upload(record)
+<<<<<<< HEAD
+    
+    @setting(2, exp_rel_path='s', shot_num='i', timestamp='v', uploaded_from='s',
+                   fields_json='s', tags_json="s", measurement='s')
+    def upload_experiment_shot(self, c, exp_rel_path, shot_num, timestamp, uploaded_from,
+                   fields_json, tags_json, measurement):
+        """
+        LabRAD-server method wrapper of _upload_experiment_shot() method
+        Refer to the doctring of _upload_experiment_shot() method for details.
+
         
     
     @setting(3, exp_rel_path='s', shot_num='i', timestamp='v', uploaded_from='s',
@@ -360,11 +425,15 @@ class InfluxDBUploader(ThreadedServer):
         Refer to the doctring of _upload_experiment_shot() method for details.
         See also the docstring of get_current_experiment_info() method
         for the full picture of the intended use.
+>>>>>>> 5e30e62caf09244121cc7db9af20a54d00bcb45b
         
         wrapper-specific arguments:
         :param fields_json: The JSON-serialized fields to upload.
         :param tags: The JSON-serialized tags for the record.
         """
+
+        self.print_debug('upload_shot() called.')
+
         # self.print_debug('upload_experiment_shot() called.')
         print(
             f"upload_experiment_shot() called from {uploaded_from}: "
@@ -372,6 +441,7 @@ class InfluxDBUploader(ThreadedServer):
             f"shot_num={shot_num}, "
             f"measurement={measurement}"
             )
+
         
         # deserialize the JSON arguments
         fields = json.loads(fields_json)
@@ -393,13 +463,17 @@ class InfluxDBUploader(ThreadedServer):
         self._upload_experiment_shot(exp_rel_path, shot_num, timestamp, uploaded_from, 
                                      fields, tags, measurement)
         
-        
+
     
     # <<<<< Upload for a RossRAD experiment shot <<<<<<<
     
     # >>>>> Upload for conductor parameters >>>>>
     
     def _upload_conductor_parameters(self, exp_rel_path, shot_num, parameters):
+        """
+<<<<<<< HEAD
+        Upload the conductor parameters for a RossRAD experiment shot to InfluxDB.
+        
         """
         Upload the conductor parameters for a RossRAD experiment shot to `conductor_parameters` measurement.
         Optionally upload values derived from conductor parameters.
@@ -420,6 +494,7 @@ class InfluxDBUploader(ThreadedServer):
         # parameters = experiment["parameter_values"]
         # timestamp = parameters["timestamp"]
         # <<<<<<<<<<
+>>>>>>> 5e30e62caf09244121cc7db9af20a54d00bcb45b
         
         timestamp = parameters["timestamp"]
         
@@ -427,7 +502,11 @@ class InfluxDBUploader(ThreadedServer):
         measurement = "conductor_parameters"
         # IT IS IMPORTANT to give a unique "uploaded_from" and `tags` below or 
         # the record will overide the previous record in the db for the shot.
+<<<<<<< HEAD
+        uploaded_from = "upload_conductor_parameters@labrad_upload_server"
+=======
         uploaded_from = "upload_conductor_parameters()@labrad_upload_server"
+>>>>>>> 5e30e62caf09244121cc7db9af20a54d00bcb45b
         tags = {
             "type": "conductor parameter",
         }
@@ -445,7 +524,13 @@ class InfluxDBUploader(ThreadedServer):
             if isinstance(value, (int,float)):
                 value = float(value)
             parameters_upload[name] = value
+<<<<<<< HEAD
+    
+        print_error(f"parameters uploaded: {list(parameters_upload.keys())}")
+        print_error(f"parameters skipped: {list(parameters_skip.keys())}")
+=======
         
+>>>>>>> 5e30e62caf09244121cc7db9af20a54d00bcb45b
         
         self._upload_experiment_shot(exp_rel_path, shot_num, timestamp, 
                      uploaded_from=uploaded_from,
@@ -467,12 +552,15 @@ class InfluxDBUploader(ThreadedServer):
             self._upload_experiment_shot(exp_rel_path, shot_num, timestamp, 
                      uploaded_from=uploaded_from,
                      fields=fields, tags=tags, measurement=measurement)
+<<<<<<< HEAD
+=======
             
         msg = "Conductor paramters uploaded:"
         msg += f"\n\tuploaded: {list(parameters_upload.keys())}"
         # msg += f"\n\tskipped: {list(parameters_skip.keys())}"
         msg += f"\n\tskipped: {[(name, str(type(value))) for name, value in parameters_skip.items()]}"
         print(msg)
+>>>>>>> 5e30e62caf09244121cc7db9af20a54d00bcb45b
         
         
         
@@ -498,7 +586,7 @@ class InfluxDBUploader(ThreadedServer):
     #     }
 
         
-
+    #@setting(3, exp_rel_path='s', shot_num='i', parameters_json='s')
     @setting(4, exp_rel_path='s', shot_num='i', parameters_json='s')
     def upload_conductor_parameters(self, c, exp_rel_path, shot_num, parameters_json):
         """
@@ -509,7 +597,9 @@ class InfluxDBUploader(ThreadedServer):
         :param parameters_json: The JSON-serialized conductor parameters to upload.
         """
         self.print_debug('upload_conductor_parameters() called.')
+
         # print(f"upload_conductor_parameters() called by {c}")
+
         
         # parse arguments
         parameters = json.loads(parameters_json)

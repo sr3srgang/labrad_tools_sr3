@@ -98,37 +98,57 @@ class SmartValuesClient(QtGui.QGroupBox):
             self.setDisabled(True)
 
     def populateGUI(self):
-        # Main vertical layout to hold everything
-        self.mainLayout = QtGui.QVBoxLayout()
+        
+        self.parameterCols = [ParameterColumn(
+            self) for i in range(self.numCols)]
 
-        # NEW: Add a top text label
-        self.headerLabel = QtGui.QLabel("Smart Values Control Panel")
-        font = QtGui.QFont()
-        font.setPointSize(14)
-        font.setBold(True)
-        self.headerLabel.setFont(font)
-        self.headerLabel.setAlignment(QtCore.Qt.AlignCenter)
-        self.headerLabel.setStyleSheet("padding: 6px; background-color: #f0f0f0;")
+        # # Main vertical layout to hold everything
+        # self.mainLayout = QtGui.QVBoxLayout()
 
-        self.mainLayout.addWidget(self.headerLabel)
+        # # NEW: Add a top text label
+        # self.headerLabel = QtGui.QLabel("Smart Values Control Panel")
+        # font = QtGui.QFont()
+        # font.setPointSize(14)
+        # font.setBold(True)
+        # self.headerLabel.setFont(font)
+        # self.headerLabel.setAlignment(QtCore.Qt.AlignCenter)
+        # self.headerLabel.setStyleSheet("padding: 6px; background-color: #f0f0f0;")
 
-        # Grid layout of parameter columns
-        self.paramLayout = QtGui.QHBoxLayout()
-        for pc in self.parameterCols:
-            self.paramLayout.addWidget(pc)
+        # self.mainLayout.addWidget(self.headerLabel)
 
-        self.paramLayout.setSpacing(1)
-        self.paramLayout.setContentsMargins(0, 0, 0, 0)
+        # # Grid layout of parameter columns
+        # self.paramLayout = QtGui.QHBoxLayout()
+        # for pc in self.parameterCols:
+        #     self.paramLayout.addWidget(pc)
 
-        self.mainLayout.addLayout(self.paramLayout)
+        # self.paramLayout.setSpacing(1)
+        # self.paramLayout.setContentsMargins(0, 0, 0, 0)
 
-        self.setLayout(self.mainLayout)
+        # self.mainLayout.addLayout(self.paramLayout)
+
+        # self.setLayout(self.mainLayout)
 
         # # Optional: resize widget
         # self.setFixedSize(
         #     (1 + self.numCols) * (self.nameBoxWidth + self.valueBoxWidth + 4),
         #     (2 + self.numRows) * (self.boxHeight + 2) + 60
         # )
+
+        self.layout = QtGui.QHBoxLayout()
+
+        for pc in self.parameterCols:
+            self.layout.addWidget(pc)
+
+        self.layout.setSpacing(1)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+
+        self.setFixedSize((1 + self.numCols)*(self.nameBoxWidth + self.valueBoxWidth +
+                          4),
+                          (2 + self.numRows)*(self.boxHeight+2))
+        # self.updateAll_button = QtGui.QTabWidget()
+        # self.setWindowTitle('test')
+
+        self.setLayout(self.layout)
 
         #
         # self.updateAll_button.setTabPosition(QtGui.QTabWidget.North)

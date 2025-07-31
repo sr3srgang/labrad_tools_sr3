@@ -29,7 +29,10 @@ class DG4162(object):
         if self.is_vervose:
             msg = "RIGOL {}: {}.".format(self._vxi11_address, msg)
             print(msg)
-        
+    def set_channel_freq(self, channel, frequency):
+    	print(frequency, self._frequency_range)
+        #safe_freq = self._validate_freq_input(self._validate_freq_input)    
+        self._set_ch_param('frequency', ':SOURce{}:FREQuency:FIXed', channel, frequency)
 
     def _validate_freq_input(self, frequency):
         """

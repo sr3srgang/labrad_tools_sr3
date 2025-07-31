@@ -42,12 +42,16 @@ class MyClient(SmartValuesClient):
                         'transport_small_sweep_amp_dg4162',
                         'transport_small_sweep_time_dg4162',
                         'transport_small_sweep_hold_time_dg4162',
+                        'transport_xrf.legacy_mode',
                         'transport_xrf.long_form',
                         'transport_xrf.long_distance',
-                        'transport_xrf.long_duration',
+                        'sequencer.transport_xrf_long_duration',
                         'transport_xrf.short_form',
                         'transport_xrf.short_distance',
-                        'transport_xrf.short_duration',
+                        'transport_xrf.short_distance_down',
+                        'sequencer.transport_xrf_short_duration',
+                        'transport_xrf.freq_gain',
+                        'transport_xrf.update',
                         
                         ])]
 
