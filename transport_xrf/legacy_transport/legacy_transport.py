@@ -119,7 +119,7 @@ class LegacyTransport:
         
         # calcualte freq sweep amplitudes and freq gains for long and short transports
         Af_long, _ = self._get_freq_sweep_amplitude_gain(d_long,  t_ramp_long, t_hold_long)
-        # print(f"d_long={d_long}, t_ramp_long={t_ramp_long}, t_hold_long={t_hold_long}, Af_long={Af_long}")
+        print(f"d_long={d_long}, t_ramp_long={t_ramp_long}, t_hold_long={t_hold_long}, Af_long={Af_long}")
         Af_short, _ = self._get_freq_sweep_amplitude_gain(d_short, t_ramp_short, t_hold_short)
         # print(f"d_short={d_short}, t_ramp_short={t_ramp_short}, t_hold_short={t_hold_short}, Af_short={Af_short}")
         Af_short_down, _ = self._get_freq_sweep_amplitude_gain(d_short_down, t_ramp_short, t_hold_short)

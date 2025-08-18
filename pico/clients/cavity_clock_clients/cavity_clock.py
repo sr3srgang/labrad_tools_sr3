@@ -93,6 +93,7 @@ class CavityClockGui(QDialog):
         self.x_ax = None
         self.connect_to_labrad_cav()
         self.connect_to_labrad_clock()
+        self.connect_to_labrad_conductor()
         self.populate()
 
     # Labrad connection:
@@ -121,6 +122,13 @@ class CavityClockGui(QDialog):
         yield server.signal__update(self.update_id)
         yield server.addListener(listener=self.receive_update, source=None, ID=self.update_id)
         print('connected to clock pico server')
+
+    @inlineCallbacks
+    def connect_to_labrad_conductor(self):
+        yield self.cxn.connect(name='conductor pico client')
+        conductor_server = yield self.cxn.get_server('conductor')
+        # yield conductor_server.signal__update(self.update_id-1)
+        yield conductor_server.addListener(listener=self.receive_update, source=None, ID=self.update_id-1)
 
     def populate(self):
         self.setWindowTitle("Clock + cavity gui")
@@ -314,13 +322,17 @@ class CavityClockGui(QDialog):
                                                                                    self.canvas.data_x[2], self.canvas.data_y[2], datums, self.sweep, windows, ax_name=self.x_ax)
             # self.canvas.lim_set[2] = True
             # MM added to save DAC voltage so conductor can find value:
-            if self.data_path is not None:
-                fname = os.path.join(self.data_path,
-                                     "bare_dac_voltage_"+shot_num+".txt")
-                with open(fname, 'w') as file:
-                    file.write(str(DAC_voltage))
+            server = yield self.cxn.get_server('conductor')
+            request = {"ram_servo.bare_dac_voltage": DAC_voltage}
+            yield server.set_parameter_values(json.dumps(request))
+            # if self.data_path is not None:
+            # folder_path = os.path.join(self.data_path, self.expt)
+            # fname = os.path.join(folder_path,
+            #                     "bare_dac_voltage_"+str(shot_num)+".txt")
+            # with open(fname, 'w') as file:
+            # file.write(str(DAC_voltage))
             # self.conductor_server.set_parameters(
-                # json.dumps({'bare_dac_voltage': DAC_voltage}))
+            # json.dumps({'bare_dac_voltage': DAC_voltage}))
             # 'bare_dac_voltage').set_value(DAC_voltage)
             listeners.exc_frac_cavity(
                 self.canvas.data_axes[3], self.canvas.data_x[3], self.canvas.data_y[3], x, dfs, windows)
@@ -359,7 +371,6 @@ class CavityClockGui(QDialog):
 
 
 # Add buttons to select config, fit methods
-
 
     def add_subplot_buttons(self):
         self.nav.addAction('Fit', self.do_fit)

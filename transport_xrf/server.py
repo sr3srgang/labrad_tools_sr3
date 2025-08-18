@@ -109,6 +109,7 @@ class TransportXRFServer(DeviceServer):
             if is_legacy_transport:
                 # generate table script for legacy transport
                 script, freq_gain, Af, t_ramp_step, ramp_step_num = self.legacy_transport.get_transport_script(request)
+                print(script)
                 
                 msg = f"Legacy mode. freq_gain={freq_gain}, Af={Af}, t_ramp_step={t_ramp_step}, ramp_step_num={ramp_step_num}"
             else:
@@ -122,6 +123,7 @@ class TransportXRFServer(DeviceServer):
                 d_short = request["d_short"]
                 t_short = request["t_short"]
                 up_down_sequence_short = request["up_down_sequence_short"]
+                print("SEQUENCE", up_down_sequence_short)
                 
                 script = ""
 
