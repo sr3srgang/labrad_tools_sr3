@@ -25,7 +25,7 @@ class TransportXRFServer(DeviceServer):
  
     # print useful debug messages if enabled
     DEBUG_MODE = False
-    DEBUG_MODE = True
+    # DEBUG_MODE = True
     def print_debug(self, str):
         if self.DEBUG_MODE is not True:
             return
@@ -110,7 +110,6 @@ class TransportXRFServer(DeviceServer):
                 # generate table script for legacy transport
                 script, freq_gain, Af, t_ramp_step, ramp_step_num = self.legacy_transport.get_transport_script(request)
                 print(script)
-                
                 msg = f"Legacy mode. freq_gain={freq_gain}, Af={Af}, t_ramp_step={t_ramp_step}, ramp_step_num={ramp_step_num}"
             else:
                 # raise NotImplementedError("Non-legacy transports comming soon...")
@@ -171,7 +170,8 @@ class TransportXRFServer(DeviceServer):
             print(traceback.format_exc(), file=sys.stderr)
         finally:
             end = time.time()
-            self.print_debug(f"Time elapsed for preparing transport_xrf = {end - start} s.")
+            # self.print_debug(f"Time elapsed for preparing transport_xrf = {end - start} s.")
+            print(f"Time elapsed for preparing transport_xrf = {end - start} s.")
             
     # <<<<<<< trasport methods <<<<<<<
         
