@@ -5,7 +5,7 @@ import os
 
 class LegacyTransport:
     DEBUG_MODE = False
-    DEBUG_MODE = True
+    # DEBUG_MODE = True
     def _print_debug(self, str):
         if self.DEBUG_MODE is not True:
             return
@@ -150,9 +150,9 @@ class LegacyTransport:
         script += self._get_transport_entries(Af_long, t_ramp_step_long, ramp_step_num_long, t_hold_long)
         script += "\n"
         # # short transports
-        print("SEQUENCE:", up_down_sequence_short)
+        # print("SEQUENCE:", up_down_sequence_short)
         if up_down_sequence_short:
-            # self._print_debug(f"up_down_sequence_short={up_down_sequence_short}")
+            self._print_debug(f"up_down_sequence_short={up_down_sequence_short}")
             script += "; SHORT TRASPORTS\n\n"
             # script += f"TABLE,XPARAM,1,FREQ,{freq_gain_short}\n\n" # step resolution = 7.45 Hz
             for multiplier in up_down_sequence_short:

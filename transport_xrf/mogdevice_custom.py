@@ -1,56 +1,104 @@
 # From https://github.com/sr3srgang/20250307-Moglabs-XRF-synthesizer----ramp-with-table-mode/blob/56c07de340274dc13d17198e3e5aebb0f69e6d93/mogdevice_custom/mogdevice_custom.py
 
 # 2025/03/07: Created by Joonseok Hur
+# 2025/08/19: last modified by JH
 # A wrapper for mogdevice.MOGDevice class to
 # add more methods: send_script and send_file
 # (see docstrings of the methods for details)
 
 from mogdevice import MOGDevice as BaseMOGDevice
+import time
+
+CRLF = b"\r\n"
 
 class MOGDevice(BaseMOGDevice):
-    """
-    Extended MOGDevice with additional functionality to send table script commands.
-    """
+    MAX_TABLE_ENTRY_NUM = 8191
+    
     def __new__(cls, address, isDummy=False):
         if isDummy:
             return MOGDevice_dummy(address)
         return super().__new__(cls)
     
     def __init__(self, address, isDummy=False):
-        # Only initialize if not a dummy.
-        if isDummy:
+        # Only initialize if this is a true MOGDevice instance.
+        if type(self) is not MOGDevice:
+            # Already initialized as a dummy.
             return
         super().__init__(address)
+        # ... additional initialization for non-dummy instances
+        
+    def cmd_batch(self, cmds):
+        """
+        Sends a batch of commands to the device and returns the responses.
+        Only use if each command produces a short single-line text reply or an exception will be raised.
+        """
+        # 1) Build one big payload (ensure each line ends with CRLF; add a final CRLF)
+        cmds = [cmd.rstrip("\r\n") for cmd in cmds] # strip CRLF if any;
+        num_cmd = len(cmds)
+        payload = "\r\n".join(cmds) + "\r\n"  # join lines with CRLF and add the CRLF at the end
+        payload = payload.encode() # encode to bytes
+
+        # 2) Clear stale device output
+        self.flush()
+
+        # 3) Single write to device
+        self.send_raw(payload)
+
+        # 4) Drain responses
+        timeout = 1 # seconds
+        deadline = time.time() + timeout
+        buf = b""
+        while not buf:
+            buf = self.flush(timeout=0.1)
+            if time.time() > deadline:
+                raise TimeoutError(f"No replies received before timeout ({timeout} s).")
+
+        # 5) check if the responses are Unicode strings
+        try:
+            text = buf if isinstance(buf, str) else buf.decode()
+        except UnicodeDecodeError as ex:
+            raise Exception("Some responses are not Unicode strings.") from ex
+        # split and validate count
+        resps = [line.strip() for line in text.splitlines() if line.strip()]
+        if len(resps) != num_cmd:
+            raise TimeoutError(f"Got {len(resps)}/{num_cmd} replies. Ensure each line returns exactly one-line response.")
+
+        # 6) Check for device errors
+        errors = []
+        for i, (cmd, line) in enumerate(zip(cmds, resps), start=1):
+            if line.startswith("ERR:"):
+                errors.append(f"[Line {i}] {line}  | cmd={cmd!r}")
+        if errors:
+            raise RuntimeError("Device reported errors:\n\t" + "\n\t".join(errors))
+        
+        return resps
         
     def send_script(self, script_text):
         """
         Sends the provided script string to the synthesizer.
         Each non-empty, non-comment line is sent as a command.
+        Returns the commands and responses.
 
         :param script_text: A string containing the complete table script.
         """
-        # self.print_debug("Sending script to device:")
-        # print(script_text)
-        commands = script_text.strip().splitlines()
-        responses = [None]*len(commands)
-        for ic, line in enumerate(commands):
-            command = line.strip()
-            if not command or command.startswith(';'):
-                continue  # Skip empty lines and comments
-            response = self.cmd(command)
-            responses[ic] = response
-            # print("Command:", command, "\n\tResponse:", response)
+        # format & filter script lines
+        lines = []
+        for line in script_text.strip().splitlines():
+            line = line.strip()
+            if not line or line.startswith(';'): # filter out the comment lines (with ;)
+                continue
+            lines += [line]
+        lines = [line for line in lines if line]  # drop empty lines
+        # send command batch
+        commands = lines
+        responses = self.cmd_batch(commands)
         return commands, responses
-        
-        # Optionally dump the binary table to verify that it was programmed correctly.
-        # binary_table = self.ask_bin('TABLE,DUMP,1')
-        # print("Binary table length:", len(binary_table))
 
     def send_file(self, script_file_path):
         """
         Loads a table script from the given file path and sends it to the synthesizer.
 
-        :param script_file_path: Path to the script file (e.g., "simple_sinusoidal_freq_ramp.atm")
+        :param script_file_path: Path to the script file (e.g., "./simple_sinusoidal_freq_ramp.atm")
         """
         try:
             with open(script_file_path, "r", encoding="utf-8") as f:
@@ -59,8 +107,8 @@ class MOGDevice(BaseMOGDevice):
             print(f"Error reading script file: {e}")
             return
 
-        # print("Loaded script from", script_file_path)
-        return self.send_script(script_text)
+        print("Loaded script from", script_file_path)
+        self.send_script(script_text)
 
 
 class MOGDevice_dummy(MOGDevice):

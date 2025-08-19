@@ -109,7 +109,7 @@ class TransportXRFServer(DeviceServer):
             if is_legacy_transport:
                 # generate table script for legacy transport
                 script, freq_gain, Af, t_ramp_step, ramp_step_num = self.legacy_transport.get_transport_script(request)
-                print(script)
+                # print(script)
                 msg = f"Legacy mode. freq_gain={freq_gain}, Af={Af}, t_ramp_step={t_ramp_step}, ramp_step_num={ramp_step_num}"
             else:
                 # raise NotImplementedError("Non-legacy transports comming soon...")
@@ -134,6 +134,7 @@ class TransportXRFServer(DeviceServer):
             
             self._send_script(script)
             print('Trasport updated: ' + msg)
+            print()
             
             # <<<<< send script to Moglabs XRF <<<<<
              
