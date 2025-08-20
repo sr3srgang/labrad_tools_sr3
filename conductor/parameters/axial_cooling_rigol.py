@@ -3,7 +3,7 @@ from conductor.parameter import ConductorParameter
 import time
 
 class Device(DG4162):
-    _vxi11_address = "192.168.1.23" #idk
+    _vxi11_address = "192.168.1.135" #idk
 
 
 class aomDG4162Frequency(ConductorParameter):
@@ -31,7 +31,8 @@ class aomDG4162Frequency(ConductorParameter):
         if self.value is not None:
         	if self.value != self.last_val:
            		#self.dev.frequency = self.value
-           		self.dev.set_channel_freq(1, self.value)
+           		print('testing!!')
+           		self.dev.set_channel_freq(2, self.value)
            		#print(self.value)
            		#print("DG4162Frequency is " + str(self.dev.frequency))
 			self.last_val = self.value

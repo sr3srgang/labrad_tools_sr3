@@ -1,11 +1,12 @@
 from conductor.parameter import ConductorParameter
-import os, np
+import os
+import numpy as np
 #MM 20250731
 #read in value of bare cavity dac offset from pico client
 #to be used with cav_aom_813_rigol in setting up a RAM servo for cavity lock
 class BareDACVoltage(ConductorParameter):
-    autostart = True
-    priority = 5 #just needs to be higher htan cav_aom_813_rigol
+    autostart = False
+    priority = 5 #just needs to be higher than cav_aom_813_rigol
    
     data_filename = 'bare_dac_voltage_{}.txt'
     data_directory = os.path.join(os.getenv('PROJECT_DATA_PATH'), 'data')
@@ -34,6 +35,8 @@ class BareDACVoltage(ConductorParameter):
             return os.path.join(data_dirctory, rel_point_path)
     	
     def update(self):
+        print(self.value)
+        '''
         path = self.find_path()
         print(path)
         if path is not None:
@@ -44,5 +47,6 @@ class BareDACVoltage(ConductorParameter):
                 self.value = val
             except:
                 pass
+                '''
 
 Parameter = BareDACVoltage
