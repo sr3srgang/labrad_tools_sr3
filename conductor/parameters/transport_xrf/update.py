@@ -71,10 +71,19 @@ class TransportXRFTableScriptGenerator(ConductorParameter):
             self.print_debug('transport_xrf.update = {}; Skipping update...'.format(self.value))
             return
         
+        # get experiment name & shot number of this shot
+        exp_rel_path = self.server.experiment.get('name')
+        shot_num = self.server.experiment.get('shot_number')
+        self.print_debug('experiment name = {} (type={}), shot number = {} (type={})'.format(exp_rel_path, type(exp_rel_path), shot_num, type(shot_num)))
+        if exp_rel_path is None or shot_num is None:
+            self.print_debug('experiment name or shot number is None. Returning...')
+            return
+        
         # >>>>> identify transports in sequence >>>>>
 
-        # get relevant parameter values for this shot``
+        # get relevant parameter values for this shot
         try:
+            update_shot = self.get_control_parameters('transport_xrf.update_shot')
             is_legacy_sequency = self.get_control_parameters('transport_xrf.legacy_mode')
             # sequence
             sequence = self.get_control_parameters('sequencer.sequence')
@@ -103,10 +112,20 @@ class TransportXRFTableScriptGenerator(ConductorParameter):
             return
         
         
+        # Update device only at the first shot if transport_xrf.update_shot is False
+        if not update_shot:
+            msg = "transport_xrf.update_shot is False and"
+            if shot_num > 0:
+                msg += "num_shot > 0. Skipping update..."
+                return
+            else:
+                msg += "num_shot = 0. Continuing update..."
+
+        
+        # >>>>> form the sequence to send to the device server >>>>>
         if sequence is None:
             return
         
-        # 
         is_transport_up_short = np.array([1 if "transport_short_up" in subseq else 0 for subseq in sequence])
         is_transport_down_short = np.array([1 if "transport_short_down" in subseq else 0 for subseq in sequence])
         # the sequence of up & down transports over this shot
@@ -115,9 +134,13 @@ class TransportXRFTableScriptGenerator(ConductorParameter):
         up_down_sequence_short = list(up_down_sequence_short)
         self.print_debug("up_down_sequence_short={}".format(up_down_sequence_short))
         
+        
         # # return inf there is no transport in the sequence
         # if len(up_dow_sequence_short) == 0:
         #     return
+        
+        # <<<<< form the sequence to send to the device server <<<<<
+        
         
         # >>>>> generate table script  >>>>>
         
