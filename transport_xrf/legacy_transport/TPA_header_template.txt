@@ -1,6 +1,8 @@
 ; set clock source to 10 MHz external
 ; CLKSRC,EXT,100 ; last value: ppln=source multiplication factor =(1 GHz desired freq)/(input freq)
-CLKSRC,INT
+; set clock source to 1 GHz external
+; CLKSRC,EXT,1
+; CLKSRC,INT
 
 ; enter fast table mode
 MODE,1,TPA
