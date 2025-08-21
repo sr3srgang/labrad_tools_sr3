@@ -51,6 +51,7 @@ class MyClient(SmartValuesClient):
                         'transport_xrf.short_distance_down',
                         'sequencer.transport_xrf_short_duration',
                         'transport_xrf.freq_gain',
+                        'transport_xrf.update_shot',
                         'transport_xrf.update',
                         
                         ])]
