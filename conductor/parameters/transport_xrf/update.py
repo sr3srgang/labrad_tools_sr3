@@ -30,8 +30,8 @@ class TransportXRFTableScriptGenerator(ConductorParameter):
     saveTableScript = True
     
     
-    # DEBUG_MODE = False
-    DEBUG_MODE = True
+    DEBUG_MODE = False
+    # DEBUG_MODE = True
     def print_debug(self, str):
         if self.DEBUG_MODE is not True:
             return
@@ -84,6 +84,7 @@ class TransportXRFTableScriptGenerator(ConductorParameter):
         # get relevant parameter values for this shot
         try:
             update_shot = self.get_control_parameters('transport_xrf.update_shot')
+            self.print_debug("Got update_shot = {}".format(update_shot))
             is_legacy_sequency = self.get_control_parameters('transport_xrf.legacy_mode')
             # sequence
             sequence = self.get_control_parameters('sequencer.sequence')
@@ -95,7 +96,7 @@ class TransportXRFTableScriptGenerator(ConductorParameter):
             # long transport
             form_long = self.get_control_parameters('transport_xrf.long_form')
             d_long = self.get_control_parameters('transport_xrf.long_distance')
-            # d_long = self.get_control_parameters('transport_xrf.long_duration')
+            # t_long = self.get_control_parameters('transport_xrf.long_duration')
             t_long = self.get_control_parameters('sequencer.transport_xrf_long_duration')
             self.print_debug("Got params long transport: form={}, x={}, d={}".format(form_long, d_long, t_long))
             # short transports
@@ -114,12 +115,14 @@ class TransportXRFTableScriptGenerator(ConductorParameter):
         
         # Update device only at the first shot if transport_xrf.update_shot is False
         if not update_shot:
-            msg = "transport_xrf.update_shot is False and"
+            msg = "transport_xrf.update_shot is False "
             if shot_num > 0:
-                msg += "num_shot > 0. Skipping update..."
+                msg += "and num_shot > 0. Skipping update..."
+                self.print_debug(msg)
                 return
             else:
-                msg += "num_shot = 0. Continuing update..."
+                msg += "but num_shot = 0 (i.e., first shot). Continuing update..."
+                self.print_debug(msg)
 
         
         # >>>>> form the sequence to send to the device server >>>>>
