@@ -2,8 +2,9 @@
 TABLE,APPEND,1,FREQ,{base_freq},1us
 
 ; set end-of-table behavior
-TABLE,REARM,1,off
-TABLE,RESTART,1,off
+TABLE,NORESET,1,on
+TABLE,REARM,1,on
+TABLE,RESTART,1,on
 
 ; start table
 TABLE,START,1
