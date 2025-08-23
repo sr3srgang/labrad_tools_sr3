@@ -27,15 +27,23 @@ class MOGDevice(BaseMOGDevice):
         super().__init__(address)
         # ... additional initialization for non-dummy instances
         
-    def cmd_batch(self, cmds):
+    def _get_command_batch(self, cmds):
         """
-        Sends a batch of commands to the device and returns the responses.
+        Prepares a batch of commands for sending to the device.
+        """
+        # ensure each line ends with CRLF; add a final CRLF
+        cmds = [cmd.rstrip("\r\n") for cmd in cmds] # strip CRLF if any;
+        payload = "\r\n".join(cmds) + "\r\n"  # join lines with CRLF and add the CRLF at the end
+        # payload = payload.encode() # encode to bytes
+        return payload
+    
+    def send_batch(self, cmds):
+        """
+        Send a batch of commands to the device and returns the responses.
         Only use if each command produces a short single-line text reply or an exception will be raised.
         """
         # 1) Build one big payload (ensure each line ends with CRLF; add a final CRLF)
-        cmds = [cmd.rstrip("\r\n") for cmd in cmds] # strip CRLF if any;
-        num_cmd = len(cmds)
-        payload = "\r\n".join(cmds) + "\r\n"  # join lines with CRLF and add the CRLF at the end
+        payload = self._get_command_batch(cmds)
         payload = payload.encode() # encode to bytes
 
         # 2) Clear stale device output
@@ -43,6 +51,15 @@ class MOGDevice(BaseMOGDevice):
 
         # 3) Single write to device
         self.send_raw(payload)
+
+    def cmd_batch(self, cmds):
+        """
+        Commands (send command & receive response) a batch of commands to the device and returns the responses.
+        Only use if each command produces a short single-line text reply or an exception will be raised.
+        """
+        num_cmd = len(cmds)
+        
+        self.send_batch(cmds)
 
         # 4) Drain responses
         timeout = 1 # seconds
@@ -60,8 +77,6 @@ class MOGDevice(BaseMOGDevice):
             raise Exception("Some responses are not Unicode strings.") from ex
         # split and validate count
         resps = [line.strip() for line in text.splitlines() if line.strip()]
-        if len(resps) != num_cmd:
-            raise TimeoutError(f"Got {len(resps)}/{num_cmd} replies. Ensure each line returns exactly one-line response.")
 
         # 6) Check for device errors
         errors = []
@@ -71,9 +86,13 @@ class MOGDevice(BaseMOGDevice):
         if errors:
             raise RuntimeError("Device reported errors:\n\t" + "\n\t".join(errors))
         
+        if len(resps) != num_cmd:
+            # raise TimeoutError(f"Got {len(resps)}/{num_cmd} replies. Ensure each line returns exactly one-line response.")
+            msg = "Got {len(resps)}/{num_cmd} replies. Ensure each line returns exactly one-line response."
+            print("[Warning]" + msg + "\n\tfrom " + __file__)
         return resps
         
-    def send_script(self, script_text):
+    def send_script(self, script_text, send_batch=False, get_response=True):
         """
         Sends the provided script string to the synthesizer.
         Each non-empty, non-comment line is sent as a command.
@@ -89,12 +108,27 @@ class MOGDevice(BaseMOGDevice):
                 continue
             lines += [line]
         lines = [line for line in lines if line]  # drop empty lines
-        # send command batch
+        
+        # send command
         commands = lines
-        responses = self.cmd_batch(commands)
+        responses = [None]*len(commands)
+        if send_batch is True:
+            if get_response is True:
+                responses = self.cmd_batch(commands)
+            else:
+                self.send_batch(commands)
+        else:
+            for ic, command in enumerate(commands):
+                if get_response is True:
+                    response = self.cmd(command)
+                    responses[ic] = response
+                else:
+                    self.send(command)
+        
         return commands, responses
+    
 
-    def send_file(self, script_file_path):
+    def send_file(self, script_file_path, send_batch = False):
         """
         Loads a table script from the given file path and sends it to the synthesizer.
 
@@ -108,7 +142,7 @@ class MOGDevice(BaseMOGDevice):
             return
 
         print("Loaded script from", script_file_path)
-        self.send_script(script_text)
+        self.send_script(script_text, send_batch)
 
 
 class MOGDevice_dummy(MOGDevice):

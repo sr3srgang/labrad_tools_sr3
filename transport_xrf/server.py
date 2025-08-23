@@ -46,11 +46,13 @@ class TransportXRFServer(DeviceServer):
         # connect to Moglabs XRF
         device_address = '192.168.1.190'
         print("Connecting to device...", end=" ")
+        dev = None
         try:
             dev = MOGDevice(device_address)
         except Exception as ex:
             # attempt close connection and raise the error
-            try: dev.close()
+            try: 
+                if dev is not None: dev.close()
             except: pass
             finally: raise ex
 
@@ -80,7 +82,8 @@ class TransportXRFServer(DeviceServer):
         """
         Send script to Moglabs (and save the generated table script in debug mode).
         """
-        commands, responses = self.dev.send_script(script)
+        # commands, responses = self.dev.send_script(script, send_batch=True, get_response=False)
+        commands, responses = self.dev.send_script(script, send_batch=False, get_response=False)
         self.print_debug("Sent script to Moglabs XRF.")
         
         if self.DEBUG_MODE:
@@ -90,17 +93,23 @@ class TransportXRFServer(DeviceServer):
                         f"\tResponse: {responses[ic]}\n"
                 )
             msg += "<<<<< Communication with Moglabs XRF  <<<<<\n"
-            
-            save_path = self.SCRIPT_DIR / "DEBUG_xrf_commands_responses.txt"
-            self.print_debug(f"Saving generated script to {save_path} ...")
-            with open(save_path, "w") as file:
-                file.write(msg)
+            self.print_debug(msg)
+            # save_path = self.SCRIPT_DIR / "DEBUG_xrf_commands_responses.txt"
+            # self.print_debug(f"Saving generated script to {save_path} ...")
+            # with open(save_path, "w") as file:
+            #     file.write(msg)
+                
+        save_path = self.SCRIPT_DIR / "table_script_sent.txt"
+        print(f"Saving generated script to {save_path} ...", end=" ")
+        with open(save_path, "w") as file:
+            file.write(script)
+        print("Done.")
 
     # Caution: setting number has to start from 10. 0 -- 9 are reserved for DeviceServer.      
     @setting(10)
     def update_transport(self, c, request_jsonplus = '{}'): # use jsonplus instead of json to preserve tuple type in transport sequence
         self.print_debug('transport_xrf_device_server.update() called.')
-        start = time.time()
+        t_start = time.time()
         try:
             # >>>>> Get advanced table script for transport to send to Moglab XRF >>>>>
             request = jsonplus.loads(request_jsonplus) # got transport_sequence from `transport_xrf.small_table_script_generator`` conductor parameter.        re
@@ -127,12 +136,12 @@ class TransportXRFServer(DeviceServer):
                 script = ""
 
                 
-                
             # <<<<< Get advanced table script for transport to send to Moglab XRF <<<<<
             
             # >>>>> send script to Moglabs XRF >>>>>
-            
+            start_send = time.time()
             self._send_script(script)
+            end_send = time.time(); t_exe_send = end_send - start_send
             print('Trasport updated: ' + msg)
             print()
             
@@ -170,10 +179,11 @@ class TransportXRFServer(DeviceServer):
             print("Some error in transport_xrf server.", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
         finally:
-            end = time.time()
+            t_end = time.time(); t_exe = t_end - t_start
             # self.print_debug(f"Time elapsed for preparing transport_xrf = {end - start} s.")
-            print(f"Time elapsed for preparing transport_xrf = {end - start} s.")
-            
+            print(f"Time elapsed for preparing transport_xrf = {t_exe} s.")
+            print(f"\t- {t_exe_send} s to send script to Moglabs XRF.")
+
     # <<<<<<< trasport methods <<<<<<<
         
     

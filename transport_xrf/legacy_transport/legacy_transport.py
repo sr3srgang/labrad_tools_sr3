@@ -170,19 +170,6 @@ class LegacyTransport:
         # # footer
         script += self.footer_template_script.format(base_freq=f"{BASE_FREQUENCY/1e6}MHz")
         
-        # if self.DEBUG_MODE:
-        #     save_path = self.SCRIPT_DIR / "DEBUG_legacy_table_script.txt"
-        #     self._print_debug(f"Saving generated script to {save_path} ...")
-        #     with open(save_path, "w") as file:
-        #         file.write(script)
-        #     self._print_debug("Saved.")
-            
-        save_path = self.SCRIPT_DIR / "legacy_table_script.txt"
-        print(f"Saving generated script to {save_path} ...", end=" ")
-        with open(save_path, "w") as file:
-            file.write(script)
-        print("Done.")
-        
         Af = {"long": Af_long, "short": Af_short, "short_down": Af_short_down*-1}
         t_ramp_step = {"long": t_ramp_step_long, "short": t_ramp_step_short, "short_down": t_ramp_step_short_down}
         ramp_step_num = {"long": ramp_step_num_long, "short": ramp_step_num_short, "short_down": ramp_step_num_short_down}
