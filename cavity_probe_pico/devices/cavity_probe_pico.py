@@ -7,7 +7,7 @@ class CavityPico(Picoscope):
     picoscope_serialnumber = 'IW990/0033'
     # Properties for data recording:
     picoscope_trigger_threshold = .1
-    picoscope_timeout = 10000#10000#0#10000#100000  # in ms
+    picoscope_timeout = 20000#10000#0#10000#100000  # in ms
     picoscope_duration = .04 #.04  # .52 #20230313 MM updated for multiple capture testing
     picoscope_sampling_interval = 1e-6  # 2e-6
     # 2e-6#48e-9#16e-9#16e-9#16e-9#25e-6#16e-9

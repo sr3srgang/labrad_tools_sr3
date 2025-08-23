@@ -11,15 +11,14 @@ import time
 
 CRLF = b"\r\n"
 
-
 class MOGDevice(BaseMOGDevice):
     MAX_TABLE_ENTRY_NUM = 8191
-
+    
     def __new__(cls, address, isDummy=False):
         if isDummy:
             return MOGDevice_dummy(address)
         return super().__new__(cls)
-
+    
     def __init__(self, address, isDummy=False):
         # Only initialize if this is a true MOGDevice instance.
         if type(self) is not MOGDevice:
@@ -27,7 +26,7 @@ class MOGDevice(BaseMOGDevice):
             return
         super().__init__(address)
         # ... additional initialization for non-dummy instances
-
+        
     def cmd_batch(self, cmds):
         """
         Sends a batch of commands to the device and returns the responses.
@@ -36,9 +35,8 @@ class MOGDevice(BaseMOGDevice):
         # 1) Build one big payload (ensure each line ends with CRLF; add a final CRLF)
         cmds = [cmd.rstrip("\r\n") for cmd in cmds] # strip CRLF if any;
         num_cmd = len(cmds)
-        # join lines with CRLF and add the CRLF at the end
-        payload = "\r\n".join(cmds) + "\r\n"
-        payload = payload.encode()  # encode to bytes
+        payload = "\r\n".join(cmds) + "\r\n"  # join lines with CRLF and add the CRLF at the end
+        payload = payload.encode() # encode to bytes
 
         # 2) Clear stale device output
         self.flush()
@@ -53,8 +51,7 @@ class MOGDevice(BaseMOGDevice):
         while not buf:
             buf = self.flush(timeout=0.1)
             if time.time() > deadline:
-                raise TimeoutError(
-                    f"No replies received before timeout ({timeout} s).")
+                raise TimeoutError(f"No replies received before timeout ({timeout} s).")
 
         # 5) check if the responses are Unicode strings
         try:
@@ -64,7 +61,7 @@ class MOGDevice(BaseMOGDevice):
         # split and validate count
         resps = [line.strip() for line in text.splitlines() if line.strip()]
         if len(resps) != num_cmd:
-            raise TypeError(f"Got {len(resps)}/{num_cmd} replies. Ensure each line returns exactly one-line response.")
+            raise TimeoutError(f"Got {len(resps)}/{num_cmd} replies. Ensure each line returns exactly one-line response.")
 
         # 6) Check for device errors
         errors = []
@@ -72,11 +69,10 @@ class MOGDevice(BaseMOGDevice):
             if line.startswith("ERR:"):
                 errors.append(f"[Line {i}] {line}  | cmd={cmd!r}")
         if errors:
-            raise RuntimeError(
-                "Device reported errors:\n\t" + "\n\t".join(errors))
-
+            raise RuntimeError("Device reported errors:\n\t" + "\n\t".join(errors))
+        
         return resps
-
+        
     def send_script(self, script_text):
         """
         Sends the provided script string to the synthesizer.
@@ -89,8 +85,7 @@ class MOGDevice(BaseMOGDevice):
         lines = []
         for line in script_text.strip().splitlines():
             line = line.strip()
-            # filter out the comment lines (with ;)
-            if not line or line.startswith(';'):
+            if not line or line.startswith(';'): # filter out the comment lines (with ;)
                 continue
             lines += [line]
         lines = [line for line in lines if line]  # drop empty lines
@@ -98,8 +93,6 @@ class MOGDevice(BaseMOGDevice):
         commands = lines
         responses = self.cmd_batch(commands)
         return commands, responses
-
-
 
     def send_file(self, script_file_path):
         """
@@ -122,7 +115,6 @@ class MOGDevice_dummy(MOGDevice):
     """
     Dummy MOGDevice class for testing
     """
-
     def __init__(self, address):
         self.address = address
         print("Dummy device initialized at", address)
@@ -151,7 +143,7 @@ class MOGDevice_dummy(MOGDevice):
 if __name__ == '__main__':
     # For Ethernet connection, use the device IP (e.g., '10.1.1.23')
     # For USB connection, use the COM port (e.g., 'COM4')
-
+    
     device_address = '192.168.1.190'
     print("Connecting to device...", end=" ")
     dev = MOGDevice(device_address)
@@ -164,30 +156,30 @@ if __name__ == '__main__':
     base_freq = 110e6  # Hz; 110 MHz
     power = 7.5  # 30 dBm
     template_script = \
-        """
+"""
 MODE,1,NSB
 FREQ,1,{base_freq}Hz
 POW,1,{power}dBm
 ON,1
 """
-    script = template_script.format(
-        base_freq=base_freq, power=power)  # Example frequency
+    script = template_script.format(base_freq=base_freq,power=power)  # Example frequency
 
     print("Sending script:")
     print(script)
     print()
-
+    
     commands, responses = dev.send_script(script)
-
+    
     print("Script sent:")
     for ic in range(len(commands)):
         print("Command:", commands[ic])
         print("\tResponse:", responses[ic])
     print()
-
+    
     # # Program the device using the script file
     # script_file = "simple_sinusoidal_freq_ramp.atm"
     # dev.send_file(script_file)
 
     # Close the device connection when done
     dev.close()
+

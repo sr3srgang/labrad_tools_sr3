@@ -6,6 +6,4 @@ TABLE,RAMP,1,FREQ,{base_freq},{freq_to_ramp},{t_ramp_step},{ramp_step_num}
 TABLE,APPEND,1,FREQ,{freq_to_ramp},{t_hold}
 ; return
 TABLE,RAMP,1,FREQ,{freq_to_ramp},{base_freq},{t_ramp_step},{ramp_step_num}
-; spell out final condition; it has to be at least 1 us
-TABLE,APPEND,1,FREQ,{base_freq},1us
 
