@@ -4,6 +4,7 @@
 ; CLKSRC,EXT,1
 ; CLKSRC,INT
 
+
 ; enter fast table mode
 MODE,1,TPA
 
