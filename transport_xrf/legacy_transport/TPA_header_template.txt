@@ -10,6 +10,8 @@ MODE,1,TPA
 ; set stanby output
 FREQ,1,{base_freq}
 POW,1,{amp}
+ON,1
+ON,2
 ; ON,1,SIG
 ; OFF,1,POW
 
