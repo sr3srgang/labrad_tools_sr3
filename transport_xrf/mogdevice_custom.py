@@ -149,7 +149,7 @@ class MOGDevice_dummy(MOGDevice):
     """
     Dummy MOGDevice class for testing
     """
-    def __init__(self, address):
+    def __init__(self, address, isDummy=True):
         self.address = address
         print("Dummy device initialized at", address)
 
