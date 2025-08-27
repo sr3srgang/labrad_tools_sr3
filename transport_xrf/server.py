@@ -48,7 +48,8 @@ class TransportXRFServer(DeviceServer):
         print("Connecting to device...", end=" ")
         dev = None
         try:
-            dev = MOGDevice(device_address)
+            # dev = MOGDevice(device_address)
+            dev = MOGDevice(device_address, isDummy=True) # init dummy device for debug
         except Exception as ex:
             # attempt close connection and raise the error
             try: 
@@ -73,10 +74,23 @@ class TransportXRFServer(DeviceServer):
         print("Done.")
         
     # <<<<<<< LabradServer methods <<<<<<<
-  
-
 
     # >>>>>>> trasport methods >>>>>>>
+    
+    def get_transport_script(self, request):
+        # raise NotImplementedError("Non-legacy transports comming soon...")
+        # transport_sequence = request['transport_sequence']
+        # self.print_debug('Got transport sequence: {}'.format(transport_sequence))
+        
+        freq_gain = request["freq_gain"]
+        d_long = request["d_long"]
+        t_long = request["t_long"]
+        d_short = request["d_short"]
+        t_short = request["t_short"]
+        up_down_sequence_short = request["up_down_sequence_short"]
+        print("SEQUENCE", up_down_sequence_short)
+
+        script = ""
     
     def _send_script(self, script):
         """
@@ -94,16 +108,35 @@ class TransportXRFServer(DeviceServer):
                 )
             msg += "<<<<< Communication with Moglabs XRF  <<<<<\n"
             self.print_debug(msg)
-            # save_path = self.SCRIPT_DIR / "DEBUG_xrf_commands_responses.txt"
-            # self.print_debug(f"Saving generated script to {save_path} ...")
-            # with open(save_path, "w") as file:
-            #     file.write(msg)
                 
         save_path = self.SCRIPT_DIR / "table_script_sent.txt"
         print(f"Saving generated script to {save_path} ...", end=" ")
         with open(save_path, "w") as file:
             file.write(script)
         print("Done.")
+        
+    # def upload_to_influxdb(self, request):
+    #     uploader_server_name = "influxdb_uploader_server"
+    #     uploader_server = getattr(self.cxn, uploader_server_name, None)
+    #     if uploader_server is None:
+    #         print(f"`{uploader_server_name}` server not found.")
+    #         print(traceback.format_exc(), file=sys.stderr)
+    #     else:
+    #         methodname = "upload_experiment_shot"
+    #         upload_experiment_shot = getattr(uploader_server, methodname, None)
+    #         if upload_experiment_shot is None:
+    #             print("No upload_experiment_shot")
+    #         upload_experiment_shot(self, c, exp_rel_path, shot_num, timestamp, uploaded_from,
+    #             fields_json, tags_json, measurement)
+    #         try:
+    #             uploader_server.upload_conductor_parameters(
+    #                 exp_rel_path=request["exp_rel_path"],
+    #                 shot_num=request["shot_num"],
+    #                 parameters_json=json.dumps(request),
+    #             )
+    #         except:
+    #             print("Failed to upload data to InfluxDB.")
+    #             print(traceback.format_exc(), file=sys.stderr)
 
     # Caution: setting number has to start from 10. 0 -- 9 are reserved for DeviceServer.      
     @setting(10)
@@ -112,6 +145,7 @@ class TransportXRFServer(DeviceServer):
         t_start = time.time()
         try:
             # >>>>> Get advanced table script for transport to send to Moglab XRF >>>>>
+            
             request = jsonplus.loads(request_jsonplus) # got transport_sequence from `transport_xrf.small_table_script_generator`` conductor parameter.        re
             # 813.428
             is_legacy_transport = request["is_legacy_transport"]
@@ -121,22 +155,13 @@ class TransportXRFServer(DeviceServer):
                 # print(script)
                 msg = f"Legacy mode. freq_gain={freq_gain}, Af={Af}, t_ramp_step={t_ramp_step}, ramp_step_num={ramp_step_num}"
             else:
-                # raise NotImplementedError("Non-legacy transports comming soon...")
-                # transport_sequence = request['transport_sequence']
-                # self.print_debug('Got transport sequence: {}'.format(transport_sequence))
-                
-                freq_gain = request["freq_gain"]
-                d_long = request["d_long"]
-                t_long = request["t_long"]
-                d_short = request["d_short"]
-                t_short = request["t_short"]
-                up_down_sequence_short = request["up_down_sequence_short"]
-                print("SEQUENCE", up_down_sequence_short)
-                
-                script = ""
+                script, freq_gain, Af, t_ramp_step, ramp_step_num = self.get_transport_script(request)
+                msg = "\n"
+                msg += f"\n\tlong transport: XXX"
+                msg += f"\n\tshort transport: YYY"
 
-                
             # <<<<< Get advanced table script for transport to send to Moglab XRF <<<<<
+            
             
             # >>>>> send script to Moglabs XRF >>>>>
             start_send = time.time()
@@ -148,32 +173,10 @@ class TransportXRFServer(DeviceServer):
             # <<<<< send script to Moglabs XRF <<<<<
              
              
-            # >>>>> Upload to InfluxDB >>>>>         
+            # upload to InfluxDB
+            # self.upload_to_influxdb(request)     
 
-            # uploader_server_name = "influxdb_uploader_server"
-            # uploader_server = getattr(self.cxn, uploader_server_name, None)
-            # if uploader_server is None:
-            #     print(f"`{uploader_server_name}` server not found.")
-            #     print(traceback.format_exc(), file=sys.stderr)
-            # else:
-            #     methodname = "upload_experiment_shot"
-            #     upload_experiment_shot = getattr(uploader_server, methodname, None)
-            #     if upload_experiment_shot is None:
-            #         print("No upload_experiment_shot")
-            #     upload_experiment_shot(self, c, exp_rel_path, shot_num, timestamp, uploaded_from,
-            #        fields_json, tags_json, measurement):
-            #     try:
-            #         uploader_server.upload_conductor_parameters(
-            #             exp_rel_path=request["exp_rel_path"],
-            #             shot_num=request["shot_num"],
-            #             parameters_json=json.dumps(request),
-            #         )
-            #     except:
-            #         print("Failed to upload data to InfluxDB.")
-            #         print(traceback.format_exc(), file=sys.stderr)
-            
-            # <<<<< Upload to InfluxDB <<<<<  
-            
+
         except:
             print("Some error in transport_xrf server.")
             print("Some error in transport_xrf server.", file=sys.stderr)
