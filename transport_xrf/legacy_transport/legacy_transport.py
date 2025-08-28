@@ -90,15 +90,18 @@ class LegacyTransport:
         
         
     def get_transport_script(self, request):
+        up_down_sequence_short = request["up_down_sequence_short"]
         freq_gain = request["freq_gain"]
         d_long = request["d_long"]
         t_long = request["t_long"]
         d_short = request["d_short"]
-        t_short = request["t_short"]
-        #MM 20250617
         d_short_down = request["d_short_down"]
-        up_down_sequence_short = request["up_down_sequence_short"]
-        
+        t_short = request["t_short"]
+       
+        # set small transport up and down distances the same if d_short_down conductor parameter has None value
+        if d_short_down is None:
+            d_short_down = d_short
+
         msg_debug = ( 
                      "Got transport parameters:\n"
                      f"\n\tlong: x={d_long}, d={t_long}"

@@ -1,0 +1,10 @@
+; spell out final condition; it has to be at least 1 us
+TABLE,APPEND,1,FREQ,{base_freq},1ms
+
+; set end-of-table behavior
+TABLE,NORESET,1,on
+TABLE,REARM,1,on
+TABLE,RESTART,1,on
+
+; start table
+TABLE,START,1

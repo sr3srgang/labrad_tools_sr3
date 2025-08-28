@@ -8,6 +8,7 @@ import jsonplus
 
 from mogdevice_custom import MOGDevice
 from transport_xrf.constants import *
+from transport.transport import Transport
 from legacy_transport.legacy_transport import LegacyTransport
 
 import time
@@ -48,8 +49,8 @@ class TransportXRFServer(DeviceServer):
         print("Connecting to device...", end=" ")
         dev = None
         try:
-            # dev = MOGDevice(device_address)
-            dev = MOGDevice(device_address, isDummy=True) # init dummy device for debug
+            dev = MOGDevice(device_address)
+            # dev = MOGDevice(device_address, isDummy=True) # init dummy device for debug
         except Exception as ex:
             # attempt close connection and raise the error
             try: 
@@ -63,6 +64,7 @@ class TransportXRFServer(DeviceServer):
         print("\tDevice info:", dev.ask('info'))
         
         # instantiate legacy transport class
+        self.transport = Transport()
         self.legacy_transport = LegacyTransport()
         
 
@@ -77,27 +79,27 @@ class TransportXRFServer(DeviceServer):
 
     # >>>>>>> trasport methods >>>>>>>
     
-    def get_transport_script(self, request):
-        # raise NotImplementedError("Non-legacy transports comming soon...")
-        # transport_sequence = request['transport_sequence']
-        # self.print_debug('Got transport sequence: {}'.format(transport_sequence))
+    # def get_transport_script(self, request):
+    #     # raise NotImplementedError("Non-legacy transports comming soon...")
+    #     # transport_sequence = request['transport_sequence']
+    #     # self.print_debug('Got transport sequence: {}'.format(transport_sequence))
         
-        freq_gain = request["freq_gain"]
-        d_long = request["d_long"]
-        t_long = request["t_long"]
-        d_short = request["d_short"]
-        t_short = request["t_short"]
-        up_down_sequence_short = request["up_down_sequence_short"]
-        print("SEQUENCE", up_down_sequence_short)
+    #     freq_gain = request["freq_gain"]
+    #     d_long = request["d_long"]
+    #     t_long = request["t_long"]
+    #     d_short = request["d_short"]
+    #     t_short = request["t_short"]
+    #     up_down_sequence_short = request["up_down_sequence_short"]
+    #     print("SEQUENCE", up_down_sequence_short)
 
-        script = ""
+    #     script = ""
     
     def _send_script(self, script):
         """
         Send script to Moglabs (and save the generated table script in debug mode).
         """
         # commands, responses = self.dev.send_script(script, send_batch=True, get_response=False)
-        commands, responses = self.dev.send_script(script, send_batch=False, get_response=False)
+        commands, responses = self.dev.send_script(script, send_batch=False, get_response=True)
         self.print_debug("Sent script to Moglabs XRF.")
         
         if self.DEBUG_MODE:
@@ -155,10 +157,20 @@ class TransportXRFServer(DeviceServer):
                 # print(script)
                 msg = f"Legacy mode. freq_gain={freq_gain}, Af={Af}, t_ramp_step={t_ramp_step}, ramp_step_num={ramp_step_num}"
             else:
-                script, freq_gain, Af, t_ramp_step, ramp_step_num = self.get_transport_script(request)
-                msg = "\n"
-                msg += f"\n\tlong transport: XXX"
-                msg += f"\n\tshort transport: YYY"
+                msg = ""
+                is_there_short = bool(request["up_down_sequence_short"])
+                script, metadata = self.transport.get_transport_script(request)
+                msg += "\n\tlong transport: "
+                if request["form_long"] == "legacy":
+                    msg += "legacy form"
+                else:
+                    msg += f"distance error={metadata["long_up"]["transport_error"]*100:.3f}%"
+                if is_there_short:
+                    msg += "\n\tshort transport: "
+                    if request["form_short"] == "legacy":
+                        msg += "legacy form"
+                    else:
+                        msg += f"distance error={metadata["short_up"]["transport_error"]*100:.3f}% (up), {metadata["short_down"]["transport_error"]*100:.3f}% (down)"
 
             # <<<<< Get advanced table script for transport to send to Moglab XRF <<<<<
             
