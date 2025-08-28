@@ -31,7 +31,7 @@ class LegacyTransport:
         with open(template_path, "r") as file:
             footer_template_script = file.read()
         self.footer_template_script = footer_template_script
-        print("Legacy tranport templates loaded.")
+        print("Legacy transport templates loaded.")
         
     def _get_freq_sweep_amplitude_gain(self, d, t_ramp, t_hold):
         # get freq sweep amplitude Af

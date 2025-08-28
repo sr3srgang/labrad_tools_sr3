@@ -164,13 +164,13 @@ class TransportXRFServer(DeviceServer):
                 if request["form_long"] == "legacy":
                     msg += "legacy form"
                 else:
-                    msg += f"distance error={metadata["long_up"]["transport_error"]*100:.3f}%"
+                    msg += f"distance error={metadata['long_up']['transport_error']*100:.3f}%"
                 if is_there_short:
                     msg += "\n\tshort transport: "
                     if request["form_short"] == "legacy":
                         msg += "legacy form"
                     else:
-                        msg += f"distance error={metadata["short_up"]["transport_error"]*100:.3f}% (up), {metadata["short_down"]["transport_error"]*100:.3f}% (down)"
+                        msg += f"distance error={metadata['short_up']['transport_error']*100:.3f}% (up), {metadata['short_down']['transport_error']*100:.3f}% (down)"
 
             # <<<<< Get advanced table script for transport to send to Moglab XRF <<<<<
             
