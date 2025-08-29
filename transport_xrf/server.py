@@ -80,21 +80,6 @@ class TransportXRFServer(DeviceServer):
 
     # >>>>>>> trasport methods >>>>>>>
     
-    # def get_transport_script(self, request):
-    #     # raise NotImplementedError("Non-legacy transports comming soon...")
-    #     # transport_sequence = request['transport_sequence']
-    #     # self.print_debug('Got transport sequence: {}'.format(transport_sequence))
-        
-    #     freq_gain = request["freq_gain"]
-    #     d_long = request["d_long"]
-    #     t_long = request["t_long"]
-    #     d_short = request["d_short"]
-    #     t_short = request["t_short"]
-    #     up_down_sequence_short = request["up_down_sequence_short"]
-    #     print("SEQUENCE", up_down_sequence_short)
-
-    #     script = ""
-    
     def _send_script(self, script):
         """
         Send script to Moglabs (and save the generated table script in debug mode).
