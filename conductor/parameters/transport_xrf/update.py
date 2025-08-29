@@ -98,15 +98,17 @@ class TransportXRFTableScriptGenerator(ConductorParameter):
             d_long = self.get_control_parameters('transport_xrf.long_distance')
             # t_long = self.get_control_parameters('transport_xrf.long_duration')
             t_long = self.get_control_parameters('sequencer.transport_xrf_long_duration')
-            self.print_debug("Got params long transport: form={}, x={}, d={}".format(form_long, d_long, t_long))
+            num_piece_long = self.get_control_parameters('transport_xrf.long_num_piece')
+            self.print_debug("Got params long transport: form={}, x={}, d={}, num_piece={}".format(form_long, d_long, t_long, num_piece_long))
             # short transports
             form_short = self.get_control_parameters('transport_xrf.short_form')
             d_short = self.get_control_parameters('transport_xrf.short_distance')
             # t_short = self.get_control_parameters('transport_xrf.short_duration')
             t_short = self.get_control_parameters('sequencer.transport_xrf_short_duration')
+            num_piece_short = self.get_control_parameters('transport_xrf.short_num_piece')
             #MM 20250617: adding tunable down distance
             d_short_down = self.get_control_parameters('transport_xrf.short_distance_down')
-            self.print_debug("Got params for short trasports: form={}, d={}, t={}".format(form_short, d_short, t_short))
+            self.print_debug("Got params for short trasports: form={}, d={}, t={}, num_piece={}".format(form_short, d_short, t_short, num_piece_short))
         except Exception as ex:
             if self.DEBUG_MODE:
                 self.print_debug(ex.args[0])
@@ -161,9 +163,11 @@ class TransportXRFTableScriptGenerator(ConductorParameter):
             "form_long": form_long,
             "d_long": d_long,
             "t_long": t_long,
+            "num_piece_long": num_piece_long,
             "form_short": form_short,
             "d_short": d_short,
             "t_short": t_short,
+            "num_piece_short": num_piece_short,
             "up_down_sequence_short": up_down_sequence_short,
             "d_short_down": d_short_down,
         }
