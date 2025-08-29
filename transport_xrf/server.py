@@ -12,6 +12,7 @@ from transport.transport import Transport
 from legacy_transport.legacy_transport import LegacyTransport
 
 import time
+from datetime import datetime
 import os
 import sys
 import traceback
@@ -98,6 +99,14 @@ class TransportXRFServer(DeviceServer):
         """
         Send script to Moglabs (and save the generated table script in debug mode).
         """
+        # save_path = self.SCRIPT_DIR / "table_script_sent.txt"
+        datetime_str_now = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
+        save_path = self.SCRIPT_DIR / f"table_script_sent {datetime_str_now}.txt"
+        print(f"Saving generated script to {save_path} ...", end=" ")
+        with open(save_path, "w") as file:
+            file.write(script)
+        print("Done.")
+        
         # commands, responses = self.dev.send_script(script, send_batch=True, get_response=False)
         commands, responses = self.dev.send_script(script, send_batch=False, get_response=True)
         self.print_debug("Sent script to Moglabs XRF.")
@@ -110,12 +119,6 @@ class TransportXRFServer(DeviceServer):
                 )
             msg += "<<<<< Communication with Moglabs XRF  <<<<<\n"
             self.print_debug(msg)
-                
-        save_path = self.SCRIPT_DIR / "table_script_sent.txt"
-        print(f"Saving generated script to {save_path} ...", end=" ")
-        with open(save_path, "w") as file:
-            file.write(script)
-        print("Done.")
         
     # def upload_to_influxdb(self, request):
     #     uploader_server_name = "influxdb_uploader_server"
@@ -187,17 +190,18 @@ class TransportXRFServer(DeviceServer):
              
             # upload to InfluxDB
             # self.upload_to_influxdb(request)     
-
+            
+            t_end = time.time(); t_exe = t_end - t_start
+            # self.print_debug(f"Time elapsed for preparing transport_xrf = {end - start} s.")
+            print(f"Time elapsed for preparing transport_xrf = {t_exe} s.")
+            print(f"\t- {t_exe_send} s to send script to Moglabs XRF.")
 
         except:
             print("Some error in transport_xrf server.")
             print("Some error in transport_xrf server.", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
         finally:
-            t_end = time.time(); t_exe = t_end - t_start
-            # self.print_debug(f"Time elapsed for preparing transport_xrf = {end - start} s.")
-            print(f"Time elapsed for preparing transport_xrf = {t_exe} s.")
-            print(f"\t- {t_exe_send} s to send script to Moglabs XRF.")
+            pass
 
     # <<<<<<< trasport methods <<<<<<<
         

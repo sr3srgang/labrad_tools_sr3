@@ -1,7 +1,7 @@
 from transport_xrf.constants import *
 import numpy as np
 from pathlib import Path  # updated
-from typing import Tuple
+from typing import Tuple, Callable
 
 class Transport:
     DEBUG_MODE = False
@@ -21,7 +21,7 @@ class Transport:
         "linear": lambda t: np.ones_like(t),
         "quadratic": lambda t: 2*t,
         "sine": lambda t: 2*np.sin(np.pi*t)**2,
-        "minjerk": lambda t: t**3*(10 - 15*t + 6*t**2)
+        "minjerk": lambda t: 30*t**2*(1 - t)**2
     }
         
     def __init__(self):
@@ -63,7 +63,7 @@ class Transport:
             num_update = qt
         else:
             # set update period to be a minimal multiple of the time resolution s.t. time quanta are smaller than freq quanta
-            multiplier = np.ceil(qt/qf)
+            multiplier = np.ceil(qt/abs(qf))
             update_period = multiplier*XPARAM_MIN_DURATION
             num_update = round(T/update_period)
             
@@ -101,7 +101,7 @@ class Transport:
         return cmd, is_ramp
     
         
-    def _get_transport_entries(self, func_df: callable, T: float, phin: float, num_piece: int, res_df: float):
+    def _get_transport_entries(self, func_df: Callable, T: float, phin: float, num_piece: int, res_df: float):
         """
         Return transport entries for a given transport function and parameters. The function is approximated to the piecewise linear functions.
         
@@ -157,14 +157,14 @@ class Transport:
         form_long = request["form_long"]
         d_long = request["d_long"]
         t_long = request["t_long"]
-        num_piece_long = request["num_piece_long"]
+        num_piece_long = int(request["num_piece_long"])
         # short transport parameters
         up_down_sequence_short = request["up_down_sequence_short"]
         form_short = request["form_short"]
         d_short = request["d_short"]
         d_short_down = request["d_short_down"]
         t_short = request["t_short"]
-        num_piece_short = request["num_piece_short"]
+        num_piece_short = int(request["num_piece_short"])
         
         # set small transport up and down distances the same if d_short_down conductor parameter has None value
         is_there_short_down = bool(d_short_down) and d_short_down is not None
@@ -247,30 +247,103 @@ class Transport:
         return script, metadata
 
 
+# test script
 if __name__ == "__main__":
     import textwrap
+    import matplotlib.pylab as plt
     
+    # >>> conductor parameter values >>>
     request = {
         "freq_gain": 8,
-        "form_long": "linear",
+        "form_long": "minjerk",
         "d_long": 4e-2,
         "t_long": 100e-3,
-        "num_piece_long": 1,
+        "num_piece_long": 21,
         "up_down_sequence_short": [+1, -1, +1, -1],
         "form_short": "sine",
-        "d_short": 4e-2,
+        "d_short": 160e-6,
         "d_short_down": None,
-        "t_short": 100e-3,
+        "t_short": 2e-3,
         "num_piece_short": 11,
     }
+    # <<< conductor parameter values <<<
+    
+    if request["d_short_down"] is None:
+        request["d_short_down"] = request["d_short"]
     
     transport = Transport()
+    # generate script
     script, metadata = transport.get_transport_script(request)
+    
+    # print result
     print("script:")
     print(textwrap.indent(script, "\t"))
     print()
     print()
+    
     print("metadata:")
     print(textwrap.indent(str(metadata), "\t"))
+    print()
+    print()
     
+    print(
+        f"distance error={metadata['long_up']['transport_error']*100:.3f}% (long up)"
+        f", {metadata['short_up']['transport_error']*100:.3f}% (short up)"
+        f", {metadata['short_down']['transport_error']*100:.3f}% (short down)"
+    )
+    print()
+    
+    # save script
+    save_path = Path(__file__).parent / f"test_table_script.txt"
+    with open(save_path, "w") as file:
+        file.write(script)
+
+    # plot
+    # = {"long": , "short": ,}
+    func_df = {"long": transport.forms[request["form_long"]], "short": transport.forms[request["form_short"]]}
+    T = {"long": request["t_long"], "short": request["t_short"],}
+    phin = {"long_up": request["d_long"]/LATTICE_CONSTANT, "short_up": request["d_short"]/LATTICE_CONSTANT, "short_down": request["d_short_down"]/LATTICE_CONSTANT}
+    num_piece = {"long": request["num_piece_long"], "short": request["num_piece_short"]}
+    tsp = {"long": np.linspace(0, 1, 1000)*T["long"], "short": np.linspace(0, 1, 1000)*T["short"],}
+    dfsp = {"long_up": func_df["long"](tsp["long"]/T["long"])*phin["long_up"]/T["long"], "short_up": func_df["short"](tsp["short"]/T["short"])*phin["short_up"]/T["short"], "short_down": -func_df["short"](tsp["short"]/T["short"])*phin["short_down"]/T["short"]}
+    ts = {"long": np.linspace(0, 1, num_piece["long"] + 1)*T["long"], "short": np.linspace(0, 1, num_piece["short"] + 1)*T["short"]}
+    dfs = {"long_up": metadata["long_up"]["dfs"], "short_up": metadata["short_up"]["dfs"], "short_down": metadata["short_down"]["dfs"]}
+    are_ramps = {"long_up": metadata["long_up"]["are_ramps"], "short_up": metadata["short_up"]["are_ramps"], "short_down": metadata["short_down"]["are_ramps"]}
+
+
+
+    fig, axs = plt.subplots(3, 1, figsize=(4, 8))
+    # long up
+    ax = axs[0]
+    ax.plot(tsp["long"]*1e3, dfsp["long_up"]/1e6, 'b-')
+    ax.plot(ts["long"]*1e3, dfs["long_up"]/1e6, "r.--", markersize=8)
+    ax.set_xlabel("Time [ms]")
+    ax.set_ylabel("Frequency [MHz]")
+    ax.set_title("long_up")
+    
+    # short up
+    ax = axs[1]
+    ax.plot(tsp["short"]*1e3, dfsp["short_up"]/1e6, 'b-')
+    ax.plot(ts["short"]*1e3, dfs["short_up"]/1e6, "r.--", markersize=8)
+    ax.set_xlabel("Time [ms]")
+    ax.set_ylabel("Frequency [MHz]")
+    ax.set_title("short_up")
+    
+    # short down
+    ax = axs[2]
+    ax.plot(tsp["short"]*1e3, dfsp["short_down"]/1e6, 'b-')
+    ax.plot(ts["short"]*1e3, dfs["short_down"]/1e6, "r.--", markersize=8)
+    ax.set_xlabel("Time [ms]")
+    ax.set_ylabel("Frequency [MHz]")
+    ax.set_title("short_down")
+
+    fig.tight_layout()
+
+    fig.savefig(Path(__file__).parent / "transport.png")
+
+    # for i, is_ramp in enumerate(are_ramps):
+    #     if is_ramp:
+    #         h = ax.axvspan(ts[i], ts[i+1], color="red", alpha=0.1)
+    #     else:
+    #         h = ax.axvspan(ts[i], ts[i+1], color="blue", alpha=0.1)
     
