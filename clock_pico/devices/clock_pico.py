@@ -6,7 +6,7 @@ class ClockPico(Picoscope):
     picoscope_serialnumber = 'FP648/023'  # 'DU009/008'#'IU888/0102'
     # Properties for data recording:
     picoscope_trigger_threshold = 2
-    picoscope_timeout =20000#10000# 10000#20000  # 5000
+    picoscope_timeout =20000#10000#20000#10000# 10000#20000  # 5000
     picoscope_duration = 1e-3
     picoscope_sampling_interval = 2e-6
     picoscope_n_capture = 3  # 2
