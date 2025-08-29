@@ -89,7 +89,7 @@ class TransportXRFServer(DeviceServer):
         Get the experiment info of the current shot.
         """
         experiment_info = {}
-        cxn = self.server.client
+        cxn = self.client
         conductor_server = getattr(cxn, 'conductor', None)
         if conductor_server is None:
             raise AttributeError("Conductor server is not found. Check if the server is running.")
