@@ -24,6 +24,9 @@ class TransportXRFServer(DeviceServer):
     # name as a Labrad server
     # Also, name in the DeviceServer.devices static dictionary (via DeviceServer._initialize_devices())
     name = 'transport_xrf_device_server'
+    
+    # RossRAD expriment data path 
+    EXPERIMENT_DATA_PATH = "/home/srgang/H/data/data/" # in toph
  
     # print useful debug messages if enabled
     DEBUG_MODE = False
@@ -77,6 +80,28 @@ class TransportXRFServer(DeviceServer):
         print("Done.")
         
     # <<<<<<< LabradServer methods <<<<<<<
+    
+    
+    # >>>>>>> RossRAD control methods >>>>>>>
+    
+    def _get_experiment_info(self) -> dict:
+        """
+        Get the experiment info of the current shot.
+        """
+        experiment_info = {}
+        cxn = self.server.client
+        conductor_server = getattr(cxn, 'conductor', None)
+        if conductor_server is None:
+            raise AttributeError("Conductor server is not found. Check if the server is running.")
+        get_experiment_id = getattr(conductor_server, 'get_experiment_id', None)
+        if get_experiment_id is None:
+            raise AttributeError("get_experiment_id() method in conductor server is not found. Check if the server is running.")
+        response_json = get_experiment_id()
+        experiment_info = json.loads(response_json)
+        return experiment_info
+    
+    # <<<<<<< RossRAD control methods <<<<<<
+    
 
     # >>>>>>> trasport methods >>>>>>>
     
@@ -84,14 +109,6 @@ class TransportXRFServer(DeviceServer):
         """
         Send script to Moglabs (and save the generated table script in debug mode).
         """
-        # save_path = self.SCRIPT_DIR / "table_script_sent.txt"
-        datetime_str_now = datetime.datetime.now().strftime("%Y%m%d_%H:%M:%S")
-        save_path = self.SCRIPT_DIR / f"table_script_sent {datetime_str_now}.txt"
-        print(f"Saving generated script to {save_path} ...", end=" ")
-        with open(save_path, "w") as file:
-            file.write(script)
-        print("Done.")
-        
         # commands, responses = self.dev.send_script(script, send_batch=True, get_response=False)
         commands, responses = self.dev.send_script(script, send_batch=False, get_response=True)
         self.print_debug("Sent script to Moglabs XRF.")
@@ -104,6 +121,29 @@ class TransportXRFServer(DeviceServer):
                 )
             msg += "<<<<< Communication with Moglabs XRF  <<<<<\n"
             self.print_debug(msg)
+    
+    def _save_script(self, script):
+        """
+        save the script argument in a txt file as this shot's one
+        Also save in "./table script" folder for debug purpose
+        """
+        experiment_info = self._get_experiment_info() # get this shot's info from conductor
+        exp_rel_path = experiment_info["exp_rel_path"]
+        shot_num = experiment_info["shot_num"]
+        exp_path = Path(self.EXPERIMENT_DATA_PATH).resolve() / exp_rel_path
+        fname = f"{shot_num}.transport_xrf_script.txt"
+        fpath = exp_path / fname
+        
+        print(f"Saving generated script to {fpath} ...", end=" ")
+        with open(fpath, "w") as file:
+            file.write(script)
+        print("Done.")
+        
+        fpath = self.SCRIPT_DIR / "table_script_sent.txt"
+        print(f"Saving generated script to {fpath} ...", end=" ")
+        with open(fpath, "w") as file:
+            file.write(script)
+        print("Done.")
         
     # def upload_to_influxdb(self, request):
     #     uploader_server_name = "influxdb_uploader_server"
@@ -162,6 +202,8 @@ class TransportXRFServer(DeviceServer):
 
             # <<<<< Get advanced table script for transport to send to Moglab XRF <<<<<
             
+            # save generated table script for each shot in the exp folder
+            self._save_script(script)
             
             # >>>>> send script to Moglabs XRF >>>>>
             start_send = time.time()
