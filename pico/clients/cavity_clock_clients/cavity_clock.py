@@ -365,7 +365,8 @@ class CavityClockGui(QDialog):
             'UPLOAD BARE TO RAM SERVO TIME: {:.5f}'.format(ram_servo_time - cav_raw_time))
         # Add back past lims to prevent rescaling
         # self.enforce_lim(lims, preset)
-        self.canvas.draw()
+        if ran:
+            self.canvas.draw()
         final_time = time.time()
         print(
             'CAV EXC AND DRAW TIME: {:.5f}'.format(final_time - ram_servo_time))
