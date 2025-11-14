@@ -110,12 +110,22 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
             voltage = (last_swept[0]-.0005)*v_range/t_range + sweep_start
             return voltage
 
+        def cav_resonance_voltage(v_range, t_range, sweep_start, last_swept, swept):
+            voltage = (swept[0]-last_swept[0])*v_range/t_range + sweep_start
+            return voltage
+
         DAC_voltage = RAM_DAC(v_range, t_range, sweep[0], datums[last_swept])
+        try:
+            write_influxdb('Cav_Resonance', DAC_voltage)
+        except:
+            1
+
         for k in np.arange(len(params)):
             p = params[k]
             smart_append(None, None, None,
                          datums[last_swept, k], 'bare_'+p)
             smart_append(None, None, None, datums[swept_ixs, k], 'all_' + p)
+
         for i in np.arange(n_windows):
             if i == n_windows - 1:
                 c = c_bkgd
@@ -125,6 +135,7 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
                 dfs[i] = (datums[i, 0] - datums[last_swept, 0])*conv
                 ax.plot(x, dfs[i], marker_swept, color=c, ms=9, mew=3)
                 ax.plot(x, dfs[i], marker_swept, color='k', ms=9, mew=1)
+
                 # print('plotter: {}'.format(dfs[i]))
             else:
                 dfs[i] = datums[i, 0]  # just save voltages.
@@ -132,6 +143,13 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
                          color=c, alpha=.1)
                 fixed_counter += 1
         smart_append(None, None, None, datums[fixed_ixs, 0], 'all_fixed')
+        try:
+            # print('all_freq')
+            # print(datums[swept_ixs, 0])
+            smart_append(None, None, None,
+                         dfs[swept_ixs], 'all_freq_list')
+        except:
+            print('Wrong, all_freq')
         ax.set_ylabel('delta freq, sweep', color='white')
         # ax2.set_ylabel('delta v, fixed', color='white') #this is showing up on the wrong axis side by default?
         # smart_append(data_x, data_y, x, dfs, 'cav_fits')

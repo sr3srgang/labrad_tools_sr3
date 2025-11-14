@@ -95,7 +95,7 @@ class LegacyTransport:
         d_long = request["d_long"]
         t_long = request["t_long"]
         d_short = request["d_short"]
-        d_short_down = request["d_short_down"]
+        d_short_down = request["d_short_down"]#request["d_short_down"]
         t_short = request["t_short"]
        
         # set small transport up and down distances the same if d_short_down conductor parameter has None value

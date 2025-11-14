@@ -24,6 +24,7 @@ from twisted.internet import reactor, defer
 from twisted.internet.defer import Deferred, inlineCallbacks
 import json
 import traceback
+import time
 # <<<<< for InfluxDB uploader <<<<<
 
 
@@ -66,7 +67,7 @@ class MplCanvas(FigureCanvas):
 
         self.fig.set_tight_layout(True)
         FigureCanvas.__init__(self, self.fig)
-        self.setFixedSize(1920, 1014)
+        self.setFixedSize(1850, 1014)
 
     def reset_data(self):
         self.data_x = [[] for _ in np.arange(self.n_data_plots)]
@@ -94,6 +95,7 @@ class CavityClockGui(QDialog):
         self.connect_to_labrad_cav()
         self.connect_to_labrad_clock()
         self.connect_to_labrad_conductor()
+
         self.populate()
 
     # Labrad connection:
@@ -129,6 +131,8 @@ class CavityClockGui(QDialog):
         conductor_server = yield self.cxn.get_server('conductor')
         # yield conductor_server.signal__update(self.update_id-1)
         yield conductor_server.addListener(listener=self.receive_update, source=None, ID=self.update_id-1)
+        self.conductor_server = conductor_server
+        self.influxdb_helper = yield self.cxn.get_server(INFLUXDB_UPLOADER_SERVER_NAME)
 
     def populate(self):
         self.setWindowTitle("Clock + cavity gui")
@@ -211,6 +215,7 @@ class CavityClockGui(QDialog):
 
     @inlineCallbacks
     def receive_update(self, c, update_json):
+        start_time = time.time()
         print(f"[DEBUG] {self.shot_counter}. receive_update() called.")
         update = json.loads(update_json)
 
@@ -221,20 +226,23 @@ class CavityClockGui(QDialog):
         #         validate_influxdb_uploader(self.cxn.cxn)
         # print(f"[DEBUG] is_influxdb_uploader_available = {is_influxdb_uploader_available}")
 
-        uploader_server = yield self.cxn.get_server(INFLUXDB_UPLOADER_SERVER_NAME)
-        # get_current_experiment_info = getattr(uploader_server,INFLUXDB_GET_EXPERIMENT_METHOD_NAME, None)
-        # upload_experiment_shot = getattr(uploader_server, INFLUXDB_UPLOAD_METHOD_NAME, None)
+        # yield self.cxn.get_server(INFLUXDB_UPLOADER_SERVER_NAME)
+        if False:
+            uploader_server = self.influxdb_helper
+            # get_current_experiment_info = getattr(uploader_server,INFLUXDB_GET_EXPERIMENT_METHOD_NAME, None)
+            # upload_experiment_shot = getattr(uploader_server, INFLUXDB_UPLOAD_METHOD_NAME, None)
 
-        is_influxdb_uploader_available = uploader_server is not None
-        if is_influxdb_uploader_available:
-            # experiment_info_d = uploader_server.get_current_experiment_info() # type: ignore
-            # experiment_info_d.addTimeout(INFLUXDB_UPLOADER_TIMEOUT, reactor)
-            experiment_info_json = yield uploader_server.get_current_experiment_info()
-            experiment_info = json.loads(experiment_info_json)
-            # experiment_info_list = [experiment_info[key] for key in ["exp_rel_path", "shot_num", "timestamp"]]
-            print(f"[DEBUG] experiment_info = {experiment_info}")
+            is_influxdb_uploader_available = uploader_server is not None
+            if is_influxdb_uploader_available:
+                # experiment_info_d = uploader_server.get_current_experiment_info() # type: ignore
+                # experiment_info_d.addTimeout(INFLUXDB_UPLOADER_TIMEOUT, reactor)
+                experiment_info_json = yield uploader_server.get_current_experiment_info()
+                experiment_info = json.loads(experiment_info_json)
+                # experiment_info_list = [experiment_info[key] for key in ["exp_rel_path", "shot_num", "timestamp"]]
+                print(f"[DEBUG] experiment_info = {experiment_info}")
         # <<<<< InfluxDB upload <<<<<
-
+        influx_time = time.time()
+        print('INFLUXDB ELAPSED TIME: {:.5f}'.format(influx_time-start_time))
         this_expt, this_path = listeners.get_expt(update)
         if this_expt is not None and (self.expt != this_expt or self.shot_counter >= self.counter_thresh):
 
@@ -286,6 +294,9 @@ class CavityClockGui(QDialog):
                 self.data_path = this_path
                 self.canvas.fig.suptitle(self.expt)
                 self.canvas.lim_set = self.canvas.lim_default
+        ax_time = time.time()
+        print(
+            'AXIS/DATA MANAGE ELAPSED TIME: {:.5f}'.format(ax_time-influx_time))
 
         # Figure out cavity measurement parameters/sequences
         sweep, seq = listeners.sweep_params(update)
@@ -299,7 +310,9 @@ class CavityClockGui(QDialog):
             update, self.influxdb_log)
         if influxdb_params is not None:
             self.influxdb_params = influxdb_params
-
+        select_params_time = time.time()
+        print('SELECTED PARAM DIRECT UPLOAD: {:.5f}'.format(
+            select_params_time-ax_time))
         # Get current lims to prevent re-scaling
         lims = self.preserve_lim()
         preset = self.canvas.lim_set.copy()
@@ -312,19 +325,29 @@ class CavityClockGui(QDialog):
                                                                         self.canvas.data_y[0], ax_name=self.x_ax)
         self.canvas.lim_set[3] = listeners.pmt_exc_frac(
             self.canvas.data_axes[1], self.canvas.data_x[1], self.canvas.data_y[1], x, n_g, n_e)
+        pmt_time = time.time()
+        print(
+            'PMT ELAPSED TIME: {:.5f}'.format(pmt_time - ax_time))
 
         # MM 041322 updating for homodyne listeners
         ran, datums, windows = listeners.filtered_cavity_time_domain(
             update, self.canvas.trace_axes[1], self.seq)
+        cav_raw_time = time.time()
+        print(
+            'CAV TRACE ELAPSED TIME: {:.5f}'.format(cav_raw_time - pmt_time))
         if ran:
             self.shot_counter += 1
             processed_sweeps, x, dfs, DAC_voltage, shot_num = listeners.sweep_to_f(update, self.canvas.data_axes[2], self.canvas.cav_snd_y,
                                                                                    self.canvas.data_x[2], self.canvas.data_y[2], datums, self.sweep, windows, ax_name=self.x_ax)
             # self.canvas.lim_set[2] = True
             # MM added to save DAC voltage so conductor can find value:
-            server = yield self.cxn.get_server('conductor')
+
+            # yield self.cxn.get_server('conductor')
+            server = self.conductor_server
             request = {"ram_servo.bare_dac_voltage": DAC_voltage}
-            yield server.set_parameter_values(json.dumps(request))
+            server.set_parameter_values(json.dumps(request))
+            # yield server.set_parameter_values(json.dumps(request))
+
             # if self.data_path is not None:
             # folder_path = os.path.join(self.data_path, self.expt)
             # fname = os.path.join(folder_path,
@@ -337,9 +360,16 @@ class CavityClockGui(QDialog):
             listeners.exc_frac_cavity(
                 self.canvas.data_axes[3], self.canvas.data_x[3], self.canvas.data_y[3], x, dfs, windows)
 
+        ram_servo_time = time.time()
+        print(
+            'UPLOAD BARE TO RAM SERVO TIME: {:.5f}'.format(ram_servo_time - cav_raw_time))
         # Add back past lims to prevent rescaling
         # self.enforce_lim(lims, preset)
         self.canvas.draw()
+        final_time = time.time()
+        print(
+            'CAV EXC AND DRAW TIME: {:.5f}'.format(final_time - ram_servo_time))
+        print('TOTAL TIME:{:.5f}'.format(final_time - start_time))
 
         # # >>>>> InfluxDB upload >>>>>
         # if is_influxdb_uploader_available:
