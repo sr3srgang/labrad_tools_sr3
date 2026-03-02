@@ -19,7 +19,6 @@ LATTICE_CONSTANT = LATTICE_WAVELENGTH/2 # m
 BASE_FREQUENCY= 111.2e6 # Hz
 AMPLITUDE = -17.70 # dBm
 DDS_FREQ_STEP = 0.232831 # Hz
-FM_GAIN_BIT = 15
 
 class TransportXRFServer(DeviceServer):
     # name as a Labrad server
@@ -33,7 +32,7 @@ class TransportXRFServer(DeviceServer):
             return
         print("[DEBUG] " + str + "\n\tfrom " + __file__)
     
-    
+    # >>>>>>> for server >>>>>>>
 
     def __init__(self):
         # essentially inherited LabradServers's __init__ method; no need to modify it.
@@ -87,9 +86,12 @@ class TransportXRFServer(DeviceServer):
         print("Disconnecting from the device...", end=" ")
         self.dev.close()
         print("Done.")
-  
+        
+    # >>>>>>> for server >>>>>>>
+        
+    # <<<<<<< for transport <<<<<<<
              
-    def generate_transport_entries(self, x, d):
+    def _generate_transport_entries(self, x, d):
         phin = x/LATTICE_CONSTANT
         df = 3*phin/2/d
         t_ramp = t_hold = d / 3
@@ -106,7 +108,7 @@ class TransportXRFServer(DeviceServer):
         )
         
    
-    def generate_legacy_transport(self, request):
+    def _generate_legacy_transport(self, request):
         x_long = request["x_long"]
         d_long = request["d_long"]
         x_short = request["x_short"]
@@ -132,7 +134,7 @@ class TransportXRFServer(DeviceServer):
         # # # long transport up
         script += "; LONG TRASPORT UP\n\n"
         script += "TABLE,XPARAM,1,FREQ,8\n" # step resolution = 59.6 Hz
-        script += self.generate_transport_entries(x_long, d_long)
+        script += self._generate_transport_entries(x_long, d_long)
 
         # # short transports
         if up_down_sequence_short:
@@ -141,7 +143,7 @@ class TransportXRFServer(DeviceServer):
             for multiplier in up_down_sequence_short:
                 script += "; up\n" if multiplier == +1 else "; down\n"
                 x = multiplier*x_short
-                script += self.generate_transport_entries(x, d_short)
+                script += self._generate_transport_entries(x, d_short)
 
         # # footer
         script += self.footer_template_script.format(base_freq=f"{BASE_FREQUENCY/1e6}MHz")
@@ -160,7 +162,7 @@ class TransportXRFServer(DeviceServer):
     # Caution: setting number has to start from 10. 0 -- 9 are reserved for DeviceServer.     
  
     @setting(10)
-    def update(self, c, request_jsonplus = '{}'): # use jsonplus instead of json to preserve tuple type in transport sequence
+    def generate(self, c, request_jsonplus = '{}'): # use jsonplus instead of json to preserve tuple type in transport sequence
         self.print_debug('transport_xrf_device_server.update() called.')
         start = time.time()
         try:
@@ -169,7 +171,7 @@ class TransportXRFServer(DeviceServer):
             is_legacy_transport = request["is_legacy_transport"]
             if is_legacy_transport:
                 # generate table script for legacy transport
-                script = self.generate_legacy_transport(request)
+                script = self._generate_legacy_transport(request)
                 # send script to Moglabs XRF
                 commands, responses = self.dev.send_script(script)
                 print("Sent script to Moglabs XRF.")
@@ -186,12 +188,12 @@ class TransportXRFServer(DeviceServer):
                     with open(save_path, "w") as file:
                         file.write(msg)
                 return
-   
-            raise NotImplementedError("Non-legacy transports comming soon...")
-    #        transport_sequence = request['transport_sequence']
-    #         self.print_debug('Got transport sequence: {}'.format(transport_sequence))
+            else:
+                raise NotImplementedError("Non-legacy transports comming soon...")
+        #        transport_sequence = request['transport_sequence']
+        #         self.print_debug('Got transport sequence: {}'.format(transport_sequence))
+        
 
-               
         except:
             print("Some error in transport_xrf server.")
             print("Some error in transport_xrf server.", file=sys.stderr)
@@ -200,6 +202,7 @@ class TransportXRFServer(DeviceServer):
             end = time.time()
             print(f"Time elapsed for preparing transport_xrf = {end - start} s.")
         
+    # >>>>>>> for transport >>>>>>>
     
 Server = TransportXRFServer
 
