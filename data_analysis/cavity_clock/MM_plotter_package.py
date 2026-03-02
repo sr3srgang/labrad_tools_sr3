@@ -8,13 +8,10 @@ from scipy.optimize import minimize, curve_fit
 # ['xkcd:bubblegum pink', 'xkcd:marigold', 'xkcd:celadon', 'xkcd:pale lilac']
 # cs = ['white', 'k', 'white', 'k', 'white', 'k', 'gray']
 xkcd_cs = ['hot magenta', 'orangered', 'manilla',
-           'kiwi green', 'azul', 'vivid purple', 'light grey']
+           'kiwi green', 'azul', 'vivid purple']
 cs = ['xkcd:'+c for c in xkcd_cs]
 styles = ['-', '--', '-.']
-<<<<<<< HEAD
-=======
 c_bkgd = 'xkcd:grey'
->>>>>>> 479b15fdb911db58c41c4c87c81a2f2552bbc3b9
 # cs = ['white', 'k', 'blue', 'brown', 'green',
 #       'white', 'k', 'blue', 'brown', 'green', 'gray']
 # styles = ['--', '--', '--', '--', '--', '-', '-', '-', '-', '-', '-.']
@@ -105,7 +102,7 @@ def fixed_fit(t, b):
     return t*0 + b
 
 
-def process_shot_fit(file, fxn, p0, lp=set_lowpass, ax=None, colors=cs, styles=styles, fit_exclude=.001):
+def process_shot_fit(file, fxn, p0, lp=set_lowpass, ax=None, colors=cs, c_bkgd=c_bkgd, styles=styles, fit_exclude=.001):
     ts, trace_names, all_traces = get_lp_traces(file)
     print(len(all_traces))
     # MM added 20230323 to exclude transient beginning/end behavior from fit. To remove, set fit_exclude = 0.
@@ -135,16 +132,15 @@ def process_shot_fit(file, fxn, p0, lp=set_lowpass, ax=None, colors=cs, styles=s
         h_offset = 0  # max(ts)*j
         v_offset = 0  # .05*j
         if ax is not None:
-            c = colors[j % len(colors)]
-            s = styles[int(j/len(colors))]
+            if j == n_fits - 1:
+                c = c_bkgd
+                s = styles[0]
+            else:
+                c = colors[j % len(colors)]
+                s = styles[int(j/len(colors))]
             if c != 'red':
                 ax.plot((ts + h_offset)*1e3,
-<<<<<<< HEAD
-                        all_traces[j] + v_offset, '.', color=c, markersize=.5, alpha=.3)
-            if colors[j] != 'red':
-=======
                         all_traces[j] + v_offset, 'o', color=c, markersize=1, alpha=.1)
->>>>>>> 479b15fdb911db58c41c4c87c81a2f2552bbc3b9
                 ax.plot((ts_fit + h_offset)*1e3, fxn[j](ts_fit, *popt) + v_offset,
                         s, color=c, label=trace_names[j], linewidth=1)
             ax.set_xlabel('Time (ms)')
