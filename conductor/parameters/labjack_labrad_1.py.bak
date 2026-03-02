@@ -1,0 +1,112 @@
+"""
+Conductor parameter to kick off the labjack_labrad_1 data streaming synchronized with pulse sequence.
+The value is json-serialized configuration of the pulse-sequence streaming (None for no streaming)
+"""
+
+from conductor.parameter import ConductorParameter
+import json
+
+class LabjackLabrad1(ConductorParameter):
+    autostart = True
+    priority = 2
+    value_type = 'data' # 'single' 'list'
+    last_val = None
+    
+    DEBUG_MODE = False
+    def print_debug(self, msg):
+        if self.DEBUG_MODE is not True:
+            return
+        print "[DEBUG] " + str(msg) + "\n\tfrom " + __file__
+    
+
+    def initialize(self, config):
+        super(LabjackLabrad1, self).initialize(config)
+        self.connect_to_labrad()
+        
+        self.update()
+        
+    def _parse_stream_pulse_sequence_args(self):
+        """
+        Checks if the labjack_labrad_1's stream pulse sequence configuration parsed from this parameter value conforms to the specified type structure.
+        """
+        args = self.value
+        if not isinstance(args, dict):
+            raise TypeError("Parsed parameter values is not a dictionary.")
+        
+        # channels argument
+        key = 'channels'
+        if key not in args:
+            raise ValueError("Parsed parameter values does not have {}.".format(key))
+        channels = args[key]
+        if isinstance(channels, list) is False:
+            raise TypeError("Key '{}' in parsed parameter is not a list.".format(key))
+        for i, channel in enumerate(channels):
+            if isinstance(channel, (str, unicode)) is False:
+                raise TypeError("A value in key '{}' is not a string: {} ({}).".format(key, channel, type(channel)))
+            channels[i] = str(channel)
+            
+        # sampling rate argument
+        key = 'sampling_rate'
+        if key not in args:
+            raise ValueError("Parsed parameter values does not have {}.".format(key))
+        sampling_rate = args[key]
+        if isinstance(sampling_rate, (int, float)) is False:
+            raise TypeError("Key '{}' in parsed parameter is not a int or float.".format(key))
+        sampling_rate = float(sampling_rate)
+        
+        return channels, sampling_rate
+
+    
+    def update(self):
+        if self.value is None:
+            self.print_debug("the parameter value is None. Returning...".format(self.value))
+            return
+        
+        # get experiment name & shot number of this shot
+        exp_rel_path = self.server.experiment.get('name')
+        shot_num = self.server.experiment.get('shot_number')
+        self.print_debug('experiment name = {} (type={}), shot number = {} (type={})'.format(exp_rel_path, type(exp_rel_path), shot_num, type(shot_num)))
+        if exp_rel_path is None or shot_num is None:
+            self.print_debug('experiment name or shot number is None. Returning...')
+            self.last_val = self.value
+            return
+        
+        # check if the labjack_server and methods are available
+        labjack_server = getattr(self.cxn, 'labjack_server', None)
+        if labjack_server is None:
+            self.last_val = self.value
+            raise AttributeError("labjack_server is not found. Check the server status; is it on and running?")
+        if getattr(labjack_server, 'call_in_thread', None) is None:
+            raise AttributeError("")
+        
+        # send request to initiate stream in pulse sequence
+        
+        # parse & check configuration from parameter value
+        args = self.value
+        try:
+            channels, sampling_rate = self._parse_stream_pulse_sequence_args()
+        except:
+            print "[ERROR] Invalid 'labjack_labrad_1' conductor parameter value."
+            self.last_val = self.value
+            raise
+        
+        duration = 0.3
+        labjack_server.call_in_thread(json.dumps({
+            "labjack_labrad_1": { # device name
+                "stream_pulse_sequence": { # method name: 
+                    # 'args': [],
+                    'kwargs': {
+                        'channels': channels,
+                        'duration_s': duration,
+                        'sampling_rate_Hz': sampling_rate,
+                        },
+                    }, 
+            }
+        }))
+
+        print "labjack_labrad_1 stream in requested; duration = {} s".format(duration)
+
+        
+        self.last_val = self.value
+
+Parameter = LabjackLabrad1

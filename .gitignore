@@ -5,6 +5,7 @@ conductor/.experiments/*
 conductor/parameters/.values/*
 # # transport_xrf_device_server
 transport_xrf/DEBUG*
+transport_xrf/table scripts/*
 
 
 

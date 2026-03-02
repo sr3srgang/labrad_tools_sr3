@@ -54,7 +54,7 @@ def filtered_cavity_time_domain(update, ax, seq):
     # MM -03212023 written for compatibility with multiple triggers of ps6000a
     # MM05082023 determining window fits from sequence
     fixed_ixs = get_windows(seq)  # MM 20230508 added in "MM plotter package"
-    ax.set_facecolor('xkcd:pinkish grey')
+    ax.set_facecolor('xkcd:light pink')
     for message_type, message in update.items():
         value = message.get('cavity_probe_pico')
         if message_type == 'record' and value is not None:
@@ -70,7 +70,7 @@ def filtered_cavity_time_domain(update, ax, seq):
 
 def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_name=None):
     # MM 20230508 assuming run after filtered_cavity_time_domain w/ process_shot_var
-    ax.set_facecolor('xkcd:pinkish grey')
+    ax.set_facecolor('xkcd:light pink')
     # Extracting shot number
     for message_type, message in update.items():
         value = message.get('cavity_probe_pico')
@@ -104,11 +104,28 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
         # MM 20241213: log fit params of final sweep (presumed bare cav) to influxdb
         # bare_params = ['bare_amp', 'bare_fwhm', 'bare_c']
         params = ['delta', 'amp', 'fwhm', 'c']
+
+        def RAM_DAC(v_range, t_range, sweep_start, last_swept):
+
+            voltage = (last_swept[0]-.0005)*v_range/t_range + sweep_start
+            return voltage
+
+        def cav_resonance_voltage(v_range, t_range, sweep_start, last_swept, swept):
+            voltage = (swept[0]-last_swept[0])*v_range/t_range + sweep_start
+            return voltage
+
+        DAC_voltage = RAM_DAC(v_range, t_range, sweep[0], datums[last_swept])
+        try:
+            write_influxdb('Cav_Resonance', DAC_voltage)
+        except:
+            1
+
         for k in np.arange(len(params)):
             p = params[k]
             smart_append(None, None, None,
                          datums[last_swept, k], 'bare_'+p)
             smart_append(None, None, None, datums[swept_ixs, k], 'all_' + p)
+
         for i in np.arange(n_windows):
             if i == n_windows - 1:
                 c = c_bkgd
@@ -116,7 +133,9 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
                 c = cs[i % len(cs)]
             if not fixed_ixs[i]:
                 dfs[i] = (datums[i, 0] - datums[last_swept, 0])*conv
-                ax.plot(x, dfs[i], marker_swept, color=c)
+                ax.plot(x, dfs[i], marker_swept, color=c, ms=9, mew=3)
+                ax.plot(x, dfs[i], marker_swept, color='k', ms=9, mew=1)
+
                 # print('plotter: {}'.format(dfs[i]))
             else:
                 dfs[i] = datums[i, 0]  # just save voltages.
@@ -124,19 +143,26 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
                          color=c, alpha=.1)
                 fixed_counter += 1
         smart_append(None, None, None, datums[fixed_ixs, 0], 'all_fixed')
+        try:
+            # print('all_freq')
+            # print(datums[swept_ixs, 0])
+            smart_append(None, None, None,
+                         dfs[swept_ixs], 'all_freq_list')
+        except:
+            print('Wrong, all_freq')
         ax.set_ylabel('delta freq, sweep', color='white')
         # ax2.set_ylabel('delta v, fixed', color='white') #this is showing up on the wrong axis side by default?
         # smart_append(data_x, data_y, x, dfs, 'cav_fits')
         # print(dfs)
         data_x.append(x)
         data_y.append(dfs)
-        return True, x, dfs
+        return True, x, dfs, DAC_voltage, n
     else:
-        return False, None, None
+        return False, None, None, None, None
 
 
 def exc_frac_cavity(ax, data_x, data_y, x, dfs, fixed_ixs, cav_detuning=2e6):
-    ax.set_facecolor('xkcd:pinkish grey')
+    ax.set_facecolor('xkcd:light pink')
     def f_to_n_delta(f, delta): return f*delta/5e3**2 * (1 + f/delta)
     def f_to_n(f): return f_to_n_delta(f, cav_detuning)
     swepts = dfs[np.logical_not(fixed_ixs)]

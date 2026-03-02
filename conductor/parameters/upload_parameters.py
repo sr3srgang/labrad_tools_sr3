@@ -7,8 +7,6 @@ Intended to have low priority (i.e., big priority value assigned) to be updated 
 from conductor.parameter import ConductorParameter
 import json
 
-class NoServerError(Exception):
-    pass
 class UploadParameters(ConductorParameter):
 
     autostart = True
@@ -66,7 +64,7 @@ class UploadParameters(ConductorParameter):
         influxdb_uploader_server = getattr(self.cxn, servername, None)
         if influxdb_uploader_server is None:
             self.last_val = self.value
-            raise NoServerError("`{}` server is not found. Check the server status; is it on and running?".format(servername))
+            raise AttributeError("`{}` server is not found. Check the server status; is it on and running?".format(servername))
 
         # get all parameters of this shot from conductor server
         request_json="{}"; all=True
@@ -74,12 +72,13 @@ class UploadParameters(ConductorParameter):
         self.print_debug('Got all parameters from conductor: \n' + parameters_json)
         
         # relay the parameter values to the influxdb_uploader_server.upload_conductor_parameters
-        try:
-            influxdb_uploader_server.upload_conductor_parameters(exp_rel_path, shot_num, parameters_json)
-        except Exception as ex:
-            print("update() could not be called from `{}` server. The server might be down. Refer to the following traceback.".format(servername))
-            self.last_val = self.value
-            raise ex
+        methodname = 'upload_conductor_parameters'
+        upload_conductor_parameters_method = getattr(influxdb_uploader_server, methodname, None)
+        if upload_conductor_parameters_method is None:
+            raise NoServerError("`{}` method in `{}` server is not found. is the server running?".format(methodname, servername))
+        
+        upload_conductor_parameters_method(exp_rel_path, shot_num, parameters_json)
+
         
         print "Conductor parameters recorded in InfluxDB."
         self.print_debug('upload_conductor_parameters() in influxdb_uploader_server called.')

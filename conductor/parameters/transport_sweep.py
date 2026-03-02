@@ -10,7 +10,7 @@ class TransportSweep(ConductorParameter):
     other_frequency = 111.174e6
     default = True
     #offset = 1e6
-    ramp_rate =-128#0#2**15# -8
+    ramp_ratee =-128#0#2**15# -8
 
     def initialize(self,config):
         self.connect_to_labrad()
@@ -24,7 +24,7 @@ class TransportSweep(ConductorParameter):
         if self.value is not None:
             print('transport param called')
             if self.default:
-                freq = self.default_frequency
+                freq = self.default_frquency
             else:
                 freq = self.default_frequency #self.other_frequency
             self.default = not self.default

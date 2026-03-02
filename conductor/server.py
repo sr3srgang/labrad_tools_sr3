@@ -1037,6 +1037,23 @@ class ConductorServer(ThreadedServer):
         update_json = json.dumps(update, default=lambda x: None)
         self.update(update_json)
     
+    @setting(12, returns='s')
+    def get_experiment_id(self, c):
+        """ get the current experiment id (experiment name & shot #)"""
+        
+        experiment_id = {
+            'exp_rel_path': self.experiment.get('name'),
+            'shot_num': self.experiment.get('shot_number'),
+        }
+        experiment_id_json = json.dumps(experiment_id)
+        return experiment_id_json
+    
+    @setting(13, returns='s')
+    def get_experiment(self, c):
+        experiment_json = json.dumps(self.experiment)
+        return experiment_json
+    
+    
 Server = ConductorServer
 
 if __name__ == "__main__":

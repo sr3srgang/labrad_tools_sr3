@@ -67,39 +67,54 @@ class TransportXRFTableScriptGenerator(ConductorParameter):
         See labrad_tool.conductor.parameter.ConductorParameter.__doc__
         """
         
+        if self.value is None or self.value is False:
+            self.print_debug('transport_xrf.update = {}; Skipping update...'.format(self.value))
+            return
+        
         # >>>>> identify transports in sequence >>>>>
 
-        # get relevant parameter values for this shot
+        # get relevant parameter values for this shot``
         try:
+            is_legacy_sequency = self.get_control_parameters('transport_xrf.legacy_mode')
             # sequence
             sequence = self.get_control_parameters('sequencer.sequence')
+            self.print_debug("Got sequencer.sequence = {}".format(sequence))
+            self.print_debug("type(sequence) = {}".format(type(sequence)))
+            sequence = [str(subseq) for subseq in sequence] # convert unicode type to str type
+            # XPARAM frequency control gain
+            freq_gain = self.get_control_parameters('transport_xrf.freq_gain')
             # long transport
             form_long = self.get_control_parameters('transport_xrf.long_form')
-            x_long = self.get_control_parameters('transport_xrf.long_distance')
-            d_long = self.get_control_parameters('transport_xrf.long_duration')
+            d_long = self.get_control_parameters('transport_xrf.long_distance')
+            # d_long = self.get_control_parameters('transport_xrf.long_duration')
+            t_long = self.get_control_parameters('sequencer.transport_xrf_long_duration')
+            self.print_debug("Got params long transport: form={}, x={}, d={}".format(form_long, d_long, t_long))
             # short transports
             form_short = self.get_control_parameters('transport_xrf.short_form')
-            x_short = self.get_control_parameters('transport_xrf.short_distance')
-            d_short = self.get_control_parameters('transport_xrf.short_duration')
+            d_short = self.get_control_parameters('transport_xrf.short_distance')
+            # t_short = self.get_control_parameters('transport_xrf.short_duration')
+            t_short = self.get_control_parameters('sequencer.transport_xrf_short_duration')
+            self.print_debug("Got params for short trasports: form={}, d={}, t={}".format(form_short, d_short, t_short))
         except Exception as ex:
             if self.DEBUG_MODE:
                 self.print_debug(ex.args[0])
             return
-        self.print_debug("Got sequence.value = {}".format(sequence))
-        self.print_debug("Got params long transport: form={}, x={}, d={}".format(form_long, x_long, d_long))
-        self.print_debug("Got params for short trasports: form={}, x={}, d={}".format(form_short, x_short, d_short))
+        
         
         if sequence is None:
             return
         
-        # 
-        is_transport_up_short = np.array([1 if "transport_short_up" in subseq else 0 for subseq in sequence])
-        is_transport_down_short = np.array([1 if "transport_short_down" in subseq else 0 for subseq in sequence])
-        # the sequence of up & down transports over this shot
-        # up: +1, down: -1 (e.g, [+1, -1, -1, +1, ...])
-        up_down_sequence_short = np.array([val for val in is_transport_up_short - is_transport_down_short if val != 0])
-        up_down_sequence_short = list(up_down_sequence_short)
-        self.print_debug("up_down_sequence_short={}".format(up_down_sequence_short))
+        #
+        long_short_transport_sequence = [
+            ('l', +1) if "transport_long_up" in subseq
+            else ('l', -1) if "transport_long_down" in subseq
+            else ('s', +1) if "transport_short_up" in subseq
+            else ('s', -1) if "transport_short_down" in subseq
+            else None
+            for subseq in sequence
+        ]
+        long_short_transport_sequence = [subseq for subseq in long_short_transport_sequence if subseq is not None]
+        self.print_debug("long_short_transport_sequence={}".format(long_short_transport_sequence))
         
         # # return inf there is no transport in the sequence
         # if len(up_dow_sequence_short) == 0:
@@ -116,18 +131,19 @@ class TransportXRFTableScriptGenerator(ConductorParameter):
 
         # send the transport_sequence to the device server
         request = {
-            "is_legacy_transport": True,
+            "is_legacy_transport": is_legacy_sequency,
+            "freq_gain": freq_gain,
             "form_long": form_long,
-            "x_long": x_long,
             "d_long": d_long,
+            "t_long": t_long,
             "form_short": form_short,
-            "x_short": x_short,
             "d_short": d_short,
-            "up_down_sequence_short": up_down_sequence_short,
+            "t_short": t_short,
+            "long_short_transport_sequence": long_short_transport_sequence,
         }
         request_jsonplus = jsonplus.dumps(request)
         try:
-            self.cxn.transport_xrf_device_server.update(request_jsonplus)
+            self.cxn.transport_xrf_device_server.update_transport(request_jsonplus)
         except Exception as ex:
             print("update() could not be called from transport_xrf_device_server. The server might be down. Refer to the following traceback.")
             self.last_val = self.value
@@ -138,7 +154,7 @@ class TransportXRFTableScriptGenerator(ConductorParameter):
         
         # assign value to this parameter
         # here it will be some useful information about the transport
-        self.value = {}
+        # self.value = {}
         self.last_val = self.value
 
 
