@@ -337,14 +337,15 @@ class CavityClockGui(QDialog):
             'CAV TRACE ELAPSED TIME: {:.5f}'.format(cav_raw_time - pmt_time))
         if ran:
             self.shot_counter += 1
-            processed_sweeps, x, dfs, DAC_voltage, shot_num = listeners.sweep_to_f(update, self.canvas.data_axes[2], self.canvas.cav_snd_y,
-                                                                                   self.canvas.data_x[2], self.canvas.data_y[2], datums, self.sweep, windows, ax_name=self.x_ax)
+            processed_sweeps, x, dfs, DAC_voltage, homodyne_offset, shot_num = listeners.sweep_to_f(update, self.canvas.data_axes[2], self.canvas.cav_snd_y,
+                                                                                                    self.canvas.data_x[2], self.canvas.data_y[2], datums, self.sweep, windows, ax_name=self.x_ax)
             # self.canvas.lim_set[2] = True
             # MM added to save DAC voltage so conductor can find value:
 
             # yield self.cxn.get_server('conductor')
             server = self.conductor_server
-            request = {"ram_servo.bare_dac_voltage": DAC_voltage}
+            request = {"ram_servo.bare_dac_voltage": DAC_voltage,
+                       "ram_servo.homodyne_offset_voltage": homodyne_offset}
             server.set_parameter_values(json.dumps(request))
             # yield server.set_parameter_values(json.dumps(request))
 

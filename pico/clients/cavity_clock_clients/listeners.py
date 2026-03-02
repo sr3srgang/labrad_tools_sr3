@@ -54,12 +54,17 @@ def filtered_cavity_time_domain(update, ax, seq):
     # MM -03212023 written for compatibility with multiple triggers of ps6000a
     # MM05082023 determining window fits from sequence
     fixed_ixs = get_windows(seq)  # MM 20230508 added in "MM plotter package"
+    print(fixed_ixs, len(fixed_ixs))
     ax.set_facecolor('xkcd:light pink')
     for message_type, message in update.items():
         value = message.get('cavity_probe_pico')
+        print(message)
+        print('testing')
         if message_type == 'record' and value is not None:
             ax.clear()
+            print('HELLOOOOO')
             fits, _ = process_shot_var(value, fixed_ixs, ax=ax)
+            print('did fits')
             ax.legend(labelcolor='k')
             ax.set_xlabel('Time (ms)', color='white')
             ax.set_ylabel('Homodyne Voltage', color='white')
@@ -94,6 +99,7 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
         markers_fixed = ['.', '.', 'o', 'o', '.', '.', 'o', 'o']
         marker_swept = 'x'
         n_windows = len(fixed_ixs)
+        print("windows:", n_windows)
         dfs = np.zeros(n_windows)
         fixed_counter = 0
         swept_ixs = np.array(
@@ -106,20 +112,22 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
         params = ['delta', 'amp', 'fwhm', 'c']
 
         def RAM_DAC(v_range, t_range, sweep_start, last_swept):
+            offset = 0  # .5e-3  # 1e-3
 
-            voltage = (last_swept[0]-.0005)*v_range/t_range + sweep_start
+            voltage = (last_swept[0]-offset)*v_range/t_range + sweep_start
             return voltage
 
         def cav_resonance_voltage(v_range, t_range, sweep_start, last_swept, swept):
             voltage = (swept[0]-last_swept[0])*v_range/t_range + sweep_start
             return voltage
-
+        print('EXTRACTING VALS FROM BARE FIT', print(datums.shape))
         DAC_voltage = RAM_DAC(v_range, t_range, sweep[0], datums[last_swept])
         try:
             write_influxdb('Cav_Resonance', DAC_voltage)
         except:
             1
-
+        homodyne_offset = datums[last_swept][3]
+        print('PLOTTING')
         for k in np.arange(len(params)):
             p = params[k]
             smart_append(None, None, None,
@@ -156,7 +164,7 @@ def sweep_to_f(update, ax, ax2, data_x, data_y, datums, sweep, fixed_ixs, ax_nam
         # print(dfs)
         data_x.append(x)
         data_y.append(dfs)
-        return True, x, dfs, DAC_voltage, n
+        return True, x, dfs, DAC_voltage, homodyne_offset, n
     else:
         return False, None, None, None, None
 
@@ -166,8 +174,8 @@ def exc_frac_cavity(ax, data_x, data_y, x, dfs, fixed_ixs, cav_detuning=2e6):
     def f_to_n_delta(f, delta): return f*delta/5e3**2 * (1 + f/delta)
     def f_to_n(f): return f_to_n_delta(f, cav_detuning)
     swepts = dfs[np.logical_not(fixed_ixs)]
-    g = f_to_n(swepts[0])
-    e = f_to_n(swepts[1])
+    g = f_to_n(swepts[2])
+    e = f_to_n(swepts[3])
     exc_frac = e/(e + g)
     smart_append(data_x, data_y, x, exc_frac, 'cav_exc')
     smart_append(None, None, x, swepts[0], 'cav_freq_g')

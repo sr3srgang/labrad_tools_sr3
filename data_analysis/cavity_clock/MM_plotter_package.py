@@ -61,6 +61,7 @@ def read_file(f, trace=None):
     else:
         ts = np.array(file['time'])
         trace_names = list(file.keys())
+        print(trace_names)
         trace_names.remove('time')
         all_traces = []
         for n in trace_names:
@@ -103,6 +104,7 @@ def fixed_fit(t, b):
 
 def process_shot_fit(file, fxn, p0, lp=set_lowpass, ax=None, colors=cs, c_bkgd=c_bkgd, styles=styles, fit_exclude=.001):
     ts, trace_names, all_traces = get_lp_traces(file)
+    print(len(all_traces))
     # MM added 20230323 to exclude transient beginning/end behavior from fit. To remove, set fit_exclude = 0.
     fit_ix = np.logical_and(ts > fit_exclude, ts < max(ts) - fit_exclude)
 
@@ -183,5 +185,15 @@ def jackknife_std(deltas, rng=.8):
 
 def get_windows(seq):
     # MM 20230508, assuming windows either sweep or fix, returns fixed indices. to be used w/ process_shot_var
+    # MM updated 20250210 for new 3trig sequence
     cav_seq = [s for s in seq if "cav_" in s]
-    return ["fixed" in s for s in cav_seq]
+
+    isFixed = []
+    for s in cav_seq:
+        if "3trig" in s:
+            isFixed.append(False)
+            isFixed.append(True)
+            isFixed.append(False)
+        else:
+            isFixed.append("fixed" in s)
+    return isFixed
